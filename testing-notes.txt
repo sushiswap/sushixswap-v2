@@ -1,0 +1,33 @@
+
+
+Testing That Needs To Be Done
+-------------------------------
+
+
+1) Bridge bridge() calls
+  params:
+    BridgeParams calldata _bridgeParams
+    bytes calldata _swapPayload
+    bytes calldata _payloadData
+
+  2 cases of bridge operations
+    1) non-native token bridges
+
+    2) native token bridges
+
+  Two types of payloads result in two different operations on destination chain:
+    1) swapPayload -> swaps on destination chain
+    2) payLoadData -> need to look into what this consists of
+
+2) Swap n Bridge swapAndBridge() calls
+  params:
+    BridgeParams calldata _bridgeParams
+    bytes calldata _swapPayload
+    bytes calldata _payloadData
+
+Mocks To Create
+-----------------
+Think we need to mock messaging system.
+
+1) Layerzero messaging system
+  - Mock the calls that come into sgReceive()
