@@ -14,5 +14,7 @@ test-gas-report:
 	forge test -vv --gas-report
 trace:
 	forge test -vvvv
+coverage:
+	forge coverage
 
 .PHONY: test
