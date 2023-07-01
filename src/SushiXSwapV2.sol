@@ -83,17 +83,21 @@ contract SushiXSwapV2 is ISushiXSwapV2, Ownable, Multicall {
             (IRouteProcessor.RouteProcessorData)
         );
 
-        IERC20(rpd.tokenIn).safeTransferFrom(
-            msg.sender,
-            address(this),
-            rpd.amountIn
-        );
+        if (rpd.tokenIn != NATIVE_ADDRESS) {
+            IERC20(rpd.tokenIn).safeTransferFrom(
+                msg.sender,
+                address(this),
+                rpd.amountIn
+            );
+        } else {
+            weth.deposit{value: rpd.amountIn}();
+        }
 
         // increase token approval to RP
         IERC20(rpd.tokenIn).safeIncreaseAllowance(address(rp), rpd.amountIn);
 
         rp.processRoute(
-            rpd.tokenIn,
+            rpd.tokenIn != NATIVE_ADDRESS ? rpd.tokenIn : address(weth),
             rpd.amountIn,
             rpd.tokenOut,
             rpd.amountOutMin,
@@ -150,18 +154,10 @@ contract SushiXSwapV2 is ISushiXSwapV2, Ownable, Multicall {
     {
         // swap and bridge
 
-        if (_bridgeParams.tokenIn != NATIVE_ADDRESS) {
-            IERC20(_bridgeParams.tokenIn).safeTransferFrom(
-                msg.sender,
-                address(this),
-                _bridgeParams.amountIn
-            );
-        } else {
-            weth.deposit{value: _bridgeParams.amountIn}();
-        }
-
         _swap(_swapData);
 
+        // todo: you only need to pass adapter address for this function
+        //       does it save gas to just pass that instead of accessing memory?
         ISushiXSwapV2Adapter(_bridgeParams.adapter).adapterBridge{
             value: address(this).balance
         }(_bridgeParams.adapterData, _swapPayload, _payloadData);
