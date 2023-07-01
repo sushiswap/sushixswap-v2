@@ -245,4 +245,48 @@ contract SushiXSwapV2Test is BaseTest {
             "" // _payloadData
         );
     }
+
+    //todo: we can prob get better than this with LZEndpointMock
+    //      and then switch chains to test the receive
+    // https://github.com/LayerZero-Labs/solidity-examples/blob/8e62ebc886407aafc89dbd2a778e61b7c0a25ca0/contracts/mocks/LZEndpointMock.sol
+    function testSimpleReceiveAndSwap() public {
+      // receive 1 usdc and swap to weth
+      vm.prank(operator);
+      usdc.transfer(address(stargateAdapter), 1000000);
+
+      bytes memory computedRoute = routeProcessorHelper.computeRoute(
+        false,
+        false,
+        address(usdc),
+        address(weth),
+        500,
+        address(operator)
+      );
+
+      IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor.RouteProcessorData({
+          tokenIn: address(usdc),
+          amountIn: 1000000,
+          tokenOut: address(weth),
+          amountOutMin: 0,
+          to: address(operator),
+          route: computedRoute
+      });
+
+      bytes memory rpd_encoded = abi.encode(rpd);
+
+      bytes memory payload = abi.encode(
+        address(operator),  // to
+        rpd_encoded,        // _swapData
+        ""                  // _payloadData 
+      );
+      
+      vm.prank(constants.getAddress("mainnet.stargateRouter"));
+      stargateAdapter.sgReceive(
+        0, "", 0,
+        address(usdc),
+        1000000,
+        payload
+      );
+      
+    }
 }
