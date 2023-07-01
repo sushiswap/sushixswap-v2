@@ -179,9 +179,6 @@ contract SushiXSwapV2Test is BaseTest {
             route: computedRoute
         });
 
-        console2.log("route-swapAndBridge");
-        console2.logBytes(computedRoute);
-
         bytes memory rpd_encoded = abi.encode(rpd);
 
         sushiXswap.swap(
@@ -194,11 +191,6 @@ contract SushiXSwapV2Test is BaseTest {
         // basic swap 1 weth to usdc and bridge
         vm.startPrank(operator);
         ERC20(address(weth)).approve(address(sushiXswap), 1 ether);
-
-        console2.log("addresses");
-        console2.log("xSwap: ", address(sushiXswap));
-        console2.log("stgAdapter: ", address(stargateAdapter));
-        console2.log("rp: ", address(routeProcessor));
 
         (uint256 gasNeeded, ) = stargateAdapter.getFee(
             111, // dstChainId
@@ -227,9 +219,6 @@ contract SushiXSwapV2Test is BaseTest {
             route: computedRoute
         });
 
-        console2.log("route-swapAndBridge");
-        console2.logBytes(computedRoute);
-
        bytes memory rpd_encoded = abi.encode(rpd);
 
         sushiXswap.swapAndBridge{value: gasNeeded}(
@@ -257,48 +246,3 @@ contract SushiXSwapV2Test is BaseTest {
         );
     }
 }
-
-
-/*
-0x02
-0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2
-0x01
-0xffff
-0x00
-0x397ff1542f962076d0bfe58ea045ffa2d347aca0
-0x00
-0x4bb4c1b0745ef7b4642feeccd0740dec417ca0a0
-
-
-
-0x02
-0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2
-0x01
-0xffff
-0x00
-0x397ff1542f962076d0bfe58ea045ffa2d347aca0
-0x00
-0x000000000000000000000000000000000000beef
-*/
-
-/*
-0x02
-0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2
-0x01
-0xffff
-0x01
-0x35644fb61afbc458bf92b15add6abc1996be5014
-0x00
-0x000000000000000000000000000000000000beef
-
-
-0x02
-0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2
-0x01
-0xffff
-0x01
-0x35644fb61afbc458bf92b15add6abc1996be5014
-0x00
-0x26181dded63f6842053886ca0f31ef80d876628b
-*/
-
