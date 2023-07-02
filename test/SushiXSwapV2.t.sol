@@ -382,7 +382,7 @@ contract SushiXSwapV2Test is BaseTest {
         );
     }
 
-    function testSwapToNativeAndBridge() public {
+    function testSwapToWethAndBridge() public {
       // swap 1 usdc to eth and bridge
       vm.startPrank(operator);
       ERC20(address(usdc)).approve(address(sushiXswap), 1000000);
@@ -440,8 +440,65 @@ contract SushiXSwapV2Test is BaseTest {
         "", // _swapPayload
         ""  // _payloadData
       );
+    }
 
-      
+    function testSwapToNativeAndBridgeShouldRevert() public {
+      // swap 1 usdc to eth and bridge
+      vm.startPrank(operator);
+      ERC20(address(usdc)).approve(address(sushiXswap), 1000000);
+
+      (uint256 gasNeeded, ) = stargateAdapter.getFee(
+        111, // dstChainId
+        1, // functionType
+        address(operator), // receiver
+        0, // gas
+        0, // dustAmount
+        "" // payload
+      );
+
+      bytes memory computeRoute = routeProcessorHelper.computeRouteNative(
+        false, // rpHasToken
+        false, // isV2
+        address(usdc), // tokenIn
+        address(weth), // tokenOut
+        500, // fee
+        address(stargateAdapter) // to
+      );
+
+      IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor.RouteProcessorData({
+        tokenIn: address(usdc),
+        amountIn: 1000000,
+        tokenOut: NATIVE_ADDRESS,
+        amountOutMin: 0,
+        to: address(stargateAdapter),
+        route: computeRoute
+      });
+
+      bytes memory rpd_encoded = abi.encode(rpd);
+
+      sushiXswap.swapAndBridge{value: gasNeeded}(
+        ISushiXSwapV2.BridgeParams({
+          adapter: address(stargateAdapter),
+          tokenIn: address(weth), // doesn't matter for bridge params with swapAndBridge
+          amountIn: 1 ether,
+          to: address(0x0),
+          adapterData: abi.encode(
+            111, // dstChainId - op
+            NATIVE_ADDRESS, // token
+            13, // srcPoolId
+            13, // dstPoolId
+            0, // amount
+            0, // amountMin,
+            0, // dustAmount
+            address(operator), // receiver
+            address(0x00), // to
+            0 // gas
+          )
+        }),
+        rpd_encoded,
+        "", // _swapPayload
+        ""  // _payloadData
+      );
     }
 
     //todo: we can prob get better than this with LZEndpointMock

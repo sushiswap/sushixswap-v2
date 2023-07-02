@@ -72,6 +72,8 @@ contract RouteProcessorHelper {
     );
   }
 
+  // stack too deep with coverage
+  // prob need to break up the encodePacked
   function computeRouteNativeOut(bool rpHasToken, bool isV2, address tokenIn, address tokenOut, uint24 fee, address to) public view returns (bytes memory route) {
     address pair;
     address token0;
@@ -102,15 +104,18 @@ contract RouteProcessorHelper {
       uint8(isV2 ? 0x00 : 0x01), // poolType (0 = v2, 1 = v3)
       pair,
       direction,
-      rp,
+      rp
+    );
+
+    route = abi.encodePacked(
+      route, 
       uint8(0x01),
       weth,
       uint8(0x01),
       uint16(0xfff),
       uint8(0x02), // wrapNative pool type
-      uint8(0x00) // directionAndFake (unwrap weth)
+      uint8(0x00), // directionAndFake (unwrap weth)
+      to
     );
-
-    route = abi.encodePacked(route, to);
   }
 }

@@ -174,6 +174,11 @@ contract StargateAdapter is ISushiXSwapV2Adapter {
             payload
         );
 
+        // todo: should we have an invariant check that
+        //       params.token should always have a 0 balance after stargate swap?
+        // if funds get stuck in adapter, there's no way to get them out
+        // also kinda worried funds could get stuck here on sgReceive if swap or something else fails
+
         stargateWidget.partnerSwap(0x0001);
     }
 
