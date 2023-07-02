@@ -9,6 +9,7 @@ import "../interfaces/ISushiXSwapV2Adapter.sol";
 import "../interfaces/stargate/IStargateRouter.sol";
 import "../interfaces/stargate/IStargateReceiver.sol";
 import "../interfaces/stargate/IStargateWidget.sol";
+import "../interfaces/stargate/IStargateEthVault.sol";
 
 contract StargateAdapter is ISushiXSwapV2Adapter {
     using SafeERC20 for IERC20;
@@ -18,6 +19,9 @@ contract StargateAdapter is ISushiXSwapV2Adapter {
     address public immutable sgeth;
     IRouteProcessor public immutable rp;
     IWETH public immutable weth;
+
+    address constant NATIVE_ADDRESS =
+        0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
 
     struct StargateTeleportParams {
         uint16 dstChainId; // stargate dst chain id
@@ -59,6 +63,7 @@ contract StargateAdapter is ISushiXSwapV2Adapter {
             (IRouteProcessor.RouteProcessorData)
         );
         if (_token == sgeth) {
+            //todo: need to figure out if sgETH is token does it come in as native?
             weth.deposit{value: rpd.amountIn}();
         }
         // increase token approval to RP
@@ -123,6 +128,11 @@ contract StargateAdapter is ISushiXSwapV2Adapter {
             (StargateTeleportParams)
         );
 
+        if (params.token == NATIVE_ADDRESS) {
+            IStargateEthVault(sgeth).deposit{value: params.amount}();
+            params.token = sgeth;
+        }
+
         IERC20(params.token).safeApprove(
             address(stargateRouter),
             params.amount != 0
@@ -182,6 +192,8 @@ contract StargateAdapter is ISushiXSwapV2Adapter {
             if (_token != sgeth) {
                 IERC20(_token).safeTransfer(to, amountLD);
             }
+            // todo: I think we need something handle sgETH receives
+
             /// @dev transfer any native token received as dust to the to address
             if (address(this).balance > 0)
                 to.call{value: (address(this).balance)}("");

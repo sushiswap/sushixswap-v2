@@ -116,6 +116,12 @@ contract SushiXSwapV2Test is BaseTest {
         sushiXswap.updateRouteProcessor(address(0x01));
     }
 
+    function testSendMessageStargate() public {
+        // sendMessage not implemented for stargate adapter  
+        vm.expectRevert();
+        sushiXswap.sendMessage(address(stargateAdapter), "");
+    } 
+
     function testBridge() public {
         // basic 1 usdc bridge
         vm.startPrank(operator);
@@ -156,6 +162,44 @@ contract SushiXSwapV2Test is BaseTest {
         // assertions for bridge call
     }
 
+    function testBridgeNative() public {
+      // bridge 1 eth
+      vm.startPrank(operator);
+
+      (uint256 gasNeeded, ) = stargateAdapter.getFee(
+        111,
+        1,
+        address(operator),
+        0,
+        0,
+        ""
+      );
+
+      uint256 valueToSend = gasNeeded + 1 ether;
+      sushiXswap.bridge{value: valueToSend}(
+        ISushiXSwapV2.BridgeParams({
+          adapter: address(stargateAdapter),
+          tokenIn: NATIVE_ADDRESS,
+          amountIn: 1 ether,
+          to: address(0x0),
+          adapterData: abi.encode(
+            111, // dstChainId - op
+            NATIVE_ADDRESS, // token
+            13, // srcPoolId
+            13, // dstPoolId
+            1 ether, // amount
+            0, // amountMin,
+            0, // dustAmount
+            address(operator), // receiver
+            address(0x00), // to
+            0 // gas
+          )
+        }),
+        "", // _swapPayload
+        "" // _payloadData
+      );
+    }
+
     function testSwap() public {
         // basic swap 1 weth to usdc
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
@@ -185,6 +229,34 @@ contract SushiXSwapV2Test is BaseTest {
           rpd_encoded
         );
 
+    }
+
+    function testSwapNative() public {
+      // swap 1 eth to usdc
+      bytes memory computedRoute = routeProcessorHelper.computeRoute(
+        false,
+        false,
+        address(weth),
+        address(usdc),
+        500, 
+        address(operator)
+      );
+
+      IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor.RouteProcessorData({
+          tokenIn: NATIVE_ADDRESS,
+          amountIn: 1 ether,
+          tokenOut: address(usdc),
+          amountOutMin: 0,
+          to: address(operator),
+          route: computedRoute
+      });
+
+      bytes memory rpd_encoded = abi.encode(rpd);
+
+      vm.startPrank(operator);
+      sushiXswap.swap{value: 1 ether} (
+        rpd_encoded
+      );
     }
 
     function testSwapAndBridge() public {
