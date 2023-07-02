@@ -164,6 +164,10 @@ contract SushiXSwapV2Test is BaseTest {
         // assertions for bridge call
     }
 
+    function testBridgeWeth() public {
+      
+    }
+
     function testBridgeNative() public {
       // bridge 1 eth
       vm.startPrank(operator);
