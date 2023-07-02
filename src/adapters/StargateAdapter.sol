@@ -128,9 +128,25 @@ contract StargateAdapter is ISushiXSwapV2Adapter {
             (StargateTeleportParams)
         );
 
+        // todo: can prob remove this native case, and do the wrap in the xSwap contract
         if (params.token == NATIVE_ADDRESS) {
+            // todo: need to figure out this edge case:
+                // swapToNativeAndBridge
+                // rp will swap and send native to this adapter
+                // and then the amount for bridge & value of eth/gas to forward
+                // gets mixed up / the amount to bridge is unknown from here
+                
+                // thinking maybe better to swap to weth send to adapter
+                // then if weth unwrap to eth and wrap to sgETH
+                // or do we do that in sushiXswap.swap and then check balance for amount
+                // we do have weth in here so we could if weth address and amount = 0 check balance for amount
             IStargateEthVault(sgeth).deposit{value: params.amount}();
             params.token = sgeth;
+        } else if (params.token == address(weth)) {
+            params.amount = weth.balanceOf(address(this));
+            weth.withdraw(params.amount);
+            IStargateEthVault(sgeth).deposit{value: params.amount}();
+            params.token = sgeth;    
         }
 
         IERC20(params.token).safeApprove(

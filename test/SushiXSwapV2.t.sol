@@ -46,7 +46,9 @@ contract SushiXSwapV2Test is BaseTest {
         );
         routeProcessorHelper = new RouteProcessorHelper(
             constants.getAddress("mainnet.v2Factory"),
-            constants.getAddress("mainnet.v3Factory")
+            constants.getAddress("mainnet.v3Factory"),
+            address(routeProcessor),
+            address(weth)
         );
 
         vm.startPrank(owner);
@@ -228,7 +230,6 @@ contract SushiXSwapV2Test is BaseTest {
         sushiXswap.swap(
           rpd_encoded
         );
-
     }
 
     function testSwapNative() public {
@@ -318,6 +319,127 @@ contract SushiXSwapV2Test is BaseTest {
         );
     }
 
+    function testSwapFromNativeAndBridge() public {
+        // swap 1 eth to usdc and bridge
+        vm.startPrank(operator);
+        
+        (uint256 gasNeeded , ) = stargateAdapter.getFee(
+          111, // dstChainId
+          1, // functionType
+          address(operator), // receiver
+          0, // gas
+          0, // dustAmount
+          "" // payload
+        );
+
+        bytes memory computeRoute = routeProcessorHelper.computeRoute(
+          false, // rpHasToken
+          false, // isV2
+          address(weth), // tokenIn
+          address(usdc), // tokenOut
+          500, // fee
+          address(stargateAdapter) // to
+        );
+
+        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor.RouteProcessorData({
+          tokenIn: NATIVE_ADDRESS,
+          amountIn: 1 ether,
+          tokenOut: address(usdc),
+          amountOutMin: 0,
+          to: address(stargateAdapter),
+          route: computeRoute
+        });
+
+        bytes memory rpd_encoded = abi.encode(rpd);
+
+        uint256 valueNeeded = gasNeeded + 1 ether;
+        sushiXswap.swapAndBridge{value: valueNeeded}(
+          ISushiXSwapV2.BridgeParams({
+            adapter: address(stargateAdapter),
+            tokenIn: address(weth), // doesn't matter what you put for bridge params when swapping first
+            amountIn: 1 ether,
+            to: address(0x0),
+            adapterData: abi.encode(
+              111, // dstChainId - op
+              address(usdc), // token
+              1, // srcPoolId
+              1, // dstPoolId
+              0, // amount
+              0, // amountMin,
+              0, // dustAmount
+              address(operator), // receiver
+              address(0x00), // to
+              0 // gas
+            )
+          }),
+          rpd_encoded,
+          "", // _swapPayload
+          "" // _payloadData
+        );
+    }
+
+    function testSwapToNativeAndBridge() public {
+      // swap 1 usdc to eth and bridge
+      vm.startPrank(operator);
+      ERC20(address(usdc)).approve(address(sushiXswap), 1000000);
+
+      (uint256 gasNeeded, ) = stargateAdapter.getFee(
+        111, // dstChainId
+        1, // functionType
+        address(operator), // receiver
+        0, // gas
+        0, // dustAmount
+        "" // payload
+      );
+
+      bytes memory computeRoute = routeProcessorHelper.computeRoute(
+        false, // rpHasToken
+        false, // isV2
+        address(usdc), // tokenIn
+        address(weth), // tokenOut
+        500, // fee
+        address(stargateAdapter) // to
+      );
+
+      IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor.RouteProcessorData({
+        tokenIn: address(usdc),
+        amountIn: 1000000,
+        tokenOut: address(weth),
+        amountOutMin: 0,
+        to: address(stargateAdapter),
+        route: computeRoute
+      });
+
+      bytes memory rpd_encoded = abi.encode(rpd);
+
+
+      sushiXswap.swapAndBridge{value: gasNeeded}(
+        ISushiXSwapV2.BridgeParams({
+          adapter: address(stargateAdapter),
+          tokenIn: address(weth), // doesn't matter for bridge params with swapAndBridge
+          amountIn: 1 ether,
+          to: address(0x0),
+          adapterData: abi.encode(
+            111, // dstChainId - op
+            address(weth), // token
+            13, // srcPoolId
+            13, // dstPoolId
+            0, // amount
+            0, // amountMin,
+            0, // dustAmount
+            address(operator), // receiver
+            address(0x00), // to
+            0 // gas
+          )
+        }),
+        rpd_encoded,
+        "", // _swapPayload
+        ""  // _payloadData
+      );
+
+      
+    }
+
     //todo: we can prob get better than this with LZEndpointMock
     //      and then switch chains to test the receive
     // https://github.com/LayerZero-Labs/solidity-examples/blob/8e62ebc886407aafc89dbd2a778e61b7c0a25ca0/contracts/mocks/LZEndpointMock.sol
@@ -362,3 +484,21 @@ contract SushiXSwapV2Test is BaseTest {
       
     }
 }
+
+/*
+0x02 -> commandCode processUserERC20
+0xff970a61a04b1ca14834a43f5de4533ebddb5cc8 -> usdc.e
+0x01 -> 1 route
+0xffff -> full amount in route
+0x01 -> poolType swapUniV3
+0x15e444da5b343c5a0931f5d3e85d158d1efc3d40 -> usdc-weth v3 pool
+0x00 -> zeroForOne
+0xfc506aaa1340b4dedffd88be278bee058952d674 -> recipient (rp address)
+0x01 -> commandCode proccesMyERC20
+0x82af49447d8a07e3bd95bd0d56f35241523fbab1 -> weth
+0x01 -> 1 route
+0xffff -> full amount in route
+0x02 -> wrapNative
+0x00 -> directionAndFake
+0x4bb4c1b0745ef7b4642feeccd0740dec417ca0a0 -> to (user address)
+*/
