@@ -9,7 +9,7 @@ contract SushiXSwapV2 is ISushiXSwapV2, Ownable, Multicall {
     IRouteProcessor public rp;
 
     mapping(address => bool) public approvedAdapters;
-    mapping(address => bool) priviledgedUsers;
+    mapping(address => bool) privilegedUsers;
 
     address constant NATIVE_ADDRESS =
         0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
@@ -29,9 +29,9 @@ contract SushiXSwapV2 is ISushiXSwapV2, Ownable, Multicall {
         _;
     }
 
-    modifier onlyOwnerOrPriviledgedUser() {
+    modifier onlyOwnerOrPrivilegedUser() {
         require(
-            msg.sender == owner() || priviledgedUsers[msg.sender] == true,
+            msg.sender == owner() || privilegedUsers[msg.sender] == true,
             "SushiXSwapV2 not owner or privy user"
         );
         _;
@@ -45,15 +45,15 @@ contract SushiXSwapV2 is ISushiXSwapV2, Ownable, Multicall {
         unlocked = 1;
     }
 
-    function setPriviledge(address user, bool priviledge) external onlyOwner {
-        priviledgedUsers[user] = priviledge;
+    function setPrivileged(address user, bool priviledge) external onlyOwner {
+        privilegedUsers[user] = priviledge;
     }
 
-    function pause() external onlyOwnerOrPriviledgedUser {
+    function pause() external onlyOwnerOrPrivilegedUser {
         paused = 2;
     }
 
-    function resume() external onlyOwnerOrPriviledgedUser {
+    function resume() external onlyOwnerOrPrivilegedUser {
         paused = 1;
     }
 

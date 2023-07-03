@@ -55,7 +55,7 @@ contract SushiXSwapV2Test is BaseTest {
         sushiXswap = new SushiXSwapV2(routeProcessor, address(weth));
 
         // add operator as privileged
-        sushiXswap.setPriviledge(operator, true);
+        sushiXswap.setPrivileged(operator, true);
 
         // setup stargate adapter
         stargateAdapter = new StargateAdapter(
@@ -109,12 +109,17 @@ contract SushiXSwapV2Test is BaseTest {
         vm.startPrank(operator);
 
         vm.expectRevert();
-        sushiXswap.setPriviledge(address(0x01), true);
+        sushiXswap.setPrivileged(address(0x01), true);
 
         vm.expectRevert();
         sushiXswap.updateAdapterStatus(address(0x01), true);
 
         vm.expectRevert();
+        sushiXswap.updateRouteProcessor(address(0x01));
+
+        vm.startPrank(owner);
+        sushiXswap.setPrivileged(address(0x01), true);
+        sushiXswap.updateAdapterStatus(address(0x01), true);
         sushiXswap.updateRouteProcessor(address(0x01));
     }
 
@@ -442,7 +447,7 @@ contract SushiXSwapV2Test is BaseTest {
       );
     }
 
-    function testSwapToNativeAndBridgeShouldRevert() public {
+    function test_RevertWhen_SwapToNativeAndBridge() public {
       // swap 1 usdc to eth and bridge
       vm.startPrank(operator);
       ERC20(address(usdc)).approve(address(sushiXswap), 1000000);
@@ -456,7 +461,7 @@ contract SushiXSwapV2Test is BaseTest {
         "" // payload
       );
 
-      bytes memory computeRoute = routeProcessorHelper.computeRouteNative(
+      bytes memory computeRoute = routeProcessorHelper.computeRouteNativeOut(
         false, // rpHasToken
         false, // isV2
         address(usdc), // tokenIn
@@ -476,6 +481,8 @@ contract SushiXSwapV2Test is BaseTest {
 
       bytes memory rpd_encoded = abi.encode(rpd);
 
+      //vm.expectRevert(stargateAdapter.RpSentNativeIn.selector);
+      vm.expectRevert(bytes4(keccak256("RpSentNativeIn()")));
       sushiXswap.swapAndBridge{value: gasNeeded}(
         ISushiXSwapV2.BridgeParams({
           adapter: address(stargateAdapter),
@@ -544,6 +551,112 @@ contract SushiXSwapV2Test is BaseTest {
       );
       
     }
+
+    function testSwapAndBridgeReceiveAndSwap() public {
+      // swap weth to usdc - bridge usdc - swap usdc to weth
+      vm.startPrank(operator);
+      ERC20(address(weth)).approve(address(sushiXswap), 1 ether);
+
+      // routes for first swap on src
+      bytes memory computedRoute_src = routeProcessorHelper.computeRoute(
+        false,             // rpHasToken
+        false,              // isV2
+        address(weth),     // tokenIn
+        address(usdc),     // tokenOut
+        500,               // fee
+        address(stargateAdapter)  // to
+      );
+
+      IRouteProcessor.RouteProcessorData memory rpd_src = IRouteProcessor.RouteProcessorData({
+          tokenIn: address(weth),
+          amountIn: 1 ether,
+          tokenOut: address(usdc),
+          amountOutMin: 0,
+          to: address(stargateAdapter),
+          route: computedRoute_src
+      });
+
+      bytes memory computedRoute_dst = routeProcessorHelper.computeRoute(
+        false,             // rpHasToken
+        false,              // isV2
+        address(usdc),     // tokenIn
+        address(weth),     // tokenOut
+        500,               // fee
+        address(operator)  // to
+      );
+
+      IRouteProcessor.RouteProcessorData memory rpd_dst = IRouteProcessor.RouteProcessorData({
+          tokenIn: address(usdc),
+          amountIn: 0,  // amountIn doesn't matter on dst since we use amount bridged
+          tokenOut: address(weth),
+          amountOutMin: 0,
+          to: address(operator),
+          route: computedRoute_dst
+      });
+
+      bytes memory rpd_encoded_src = abi.encode(rpd_src);
+      bytes memory rpd_encoded_dst = abi.encode(rpd_dst);
+
+      bytes memory mockPayload = abi.encode(
+        address(operator),  // to
+        rpd_encoded_dst,    // _swapData
+        ""                  // _payloadData 
+      );
+
+      uint256 gasForSwap = 250000;
+
+      // we'll ignore payload data for this test, since we mocking receive
+      (uint256 gasNeeded, ) = stargateAdapter.getFee(
+        111, // dstChainId
+        1, // functionType
+        address(operator), // receiver
+        gasForSwap, // gas
+        0, // dustAmount
+        mockPayload // payload
+      );
+
+      bool test_bool = true;
+      uint256 test_val = test_bool ? 1 : 0;
+
+      sushiXswap.swapAndBridge{value: gasNeeded}(
+        ISushiXSwapV2.BridgeParams({
+          adapter: address(stargateAdapter),
+          tokenIn: address(weth),
+          amountIn: 1 ether,
+          to: address(0x0),
+          adapterData: abi.encode(
+            111, // dstChainId - op
+            address(usdc), // token
+            1, // srcPoolId
+            1, // dstPoolId
+            0, // amount
+            0, // amountMin,
+            0, // dustAmount
+            address(stargateAdapter), // receiver
+            address(operator), // to
+            250000 // gas
+          )
+        }),
+        rpd_encoded_src,
+        rpd_encoded_dst, // _swapPayload
+        "" // _payloadData
+      );
+
+      // mock the sgReceive
+      // using random amount of usdc for the receive
+      // prob should have event for bridges, and then we can use that in this test
+      usdc.transfer(address(stargateAdapter), 1000000);
+      vm.prank(constants.getAddress("mainnet.stargateRouter"));
+      // todo: need a better way to figure out to calculate & send proper gas
+      stargateAdapter.sgReceive{gas: 250000}(
+        0, "", 0,
+        address(usdc),
+        1000000,
+        mockPayload
+      );
+
+    }
+
 }
 
 /*

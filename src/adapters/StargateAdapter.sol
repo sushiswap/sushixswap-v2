@@ -55,24 +55,25 @@ contract StargateAdapter is ISushiXSwapV2Adapter {
     }
 
     function swap(
+        uint256 _amountBridged,
         bytes calldata _swapData,
         address _token,
         bytes calldata _payloadData
-    ) external override {
+    ) external payable override {
         IRouteProcessor.RouteProcessorData memory rpd = abi.decode(
             _swapData,
             (IRouteProcessor.RouteProcessorData)
         );
         if (_token == sgeth) {
-            //todo: need to figure out if sgETH is token does it come in as native?
-            weth.deposit{value: rpd.amountIn}();
+            //todo: need to confirm if sgETH is token does it come in as native?
+            weth.deposit{value: _amountBridged}();
         }
         // increase token approval to RP
-        IERC20(rpd.tokenIn).safeIncreaseAllowance(address(rp), rpd.amountIn);
+        IERC20(rpd.tokenIn).safeIncreaseAllowance(address(rp), _amountBridged);
 
         rp.processRoute(
             rpd.tokenIn,
-            rpd.amountIn,
+            _amountBridged,
             rpd.tokenOut,
             rpd.amountOutMin,
             rpd.to,
@@ -206,7 +207,6 @@ contract StargateAdapter is ISushiXSwapV2Adapter {
             if (_token != sgeth) {
                 IERC20(_token).safeTransfer(to, amountLD);
             }
-            // todo: I think we need something handle sgETH receives
 
             /// @dev transfer any native token received as dust to the to address
             if (address(this).balance > 0)
@@ -220,8 +220,10 @@ contract StargateAdapter is ISushiXSwapV2Adapter {
         uint256 limit = gasleft() - reserveGas;
 
         if (_swapData.length > 0) {
+            uint256 valueToPass = _token == sgeth ? amountLD : 0;
             try
-                ISushiXSwapV2Adapter(address(this)).swap{gas: limit}(
+                ISushiXSwapV2Adapter(address(this)).swap{gas: limit, value: valueToPass}(
+                    amountLD,
                     _swapData,
                     _token,
                     _payloadData

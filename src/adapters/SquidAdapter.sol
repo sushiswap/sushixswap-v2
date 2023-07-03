@@ -17,10 +17,11 @@ contract SquidAdapter is ISushiXSwapV2Adapter {
     }
 
     function swap(
+        uint256 _amountBridged,
         bytes calldata _swapData,
         address _token,
         bytes calldata _payloadData
-    ) external override {
+    ) external payable override {
         revert();
     }
 

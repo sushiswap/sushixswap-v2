@@ -16,5 +16,7 @@ trace:
 	forge test -vvvv
 coverage:
 	forge coverage
+coverage-info:
+	forge coverage --report debug
 
 .PHONY: test
