@@ -623,7 +623,7 @@ contract SushiXSwapV2Test is BaseTest {
       // using 1 eth for the receive (in prod env it will be less due to eqFee)
       address(stargateAdapter).call{value: 1 ether}("");
       vm.stopPrank();
-      
+
       vm.startPrank(constants.getAddress("mainnet.stargateRouter"));
       stargateAdapter.sgReceive{gas: gasForSwap}(
         0, "", 0,
@@ -735,21 +735,3 @@ contract SushiXSwapV2Test is BaseTest {
     }
 
 }
-
-/*
-0x02 -> commandCode processUserERC20
-0xff970a61a04b1ca14834a43f5de4533ebddb5cc8 -> usdc.e
-0x01 -> 1 route
-0xffff -> full amount in route
-0x01 -> poolType swapUniV3
-0x15e444da5b343c5a0931f5d3e85d158d1efc3d40 -> usdc-weth v3 pool
-0x00 -> zeroForOne
-0xfc506aaa1340b4dedffd88be278bee058952d674 -> recipient (rp address)
-0x01 -> commandCode proccesMyERC20
-0x82af49447d8a07e3bd95bd0d56f35241523fbab1 -> weth
-0x01 -> 1 route
-0xffff -> full amount in route
-0x02 -> wrapNative
-0x00 -> directionAndFake
-0x4bb4c1b0745ef7b4642feeccd0740dec417ca0a0 -> to (user address)
-*/
