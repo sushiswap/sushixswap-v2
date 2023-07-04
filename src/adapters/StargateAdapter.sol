@@ -223,6 +223,7 @@ contract StargateAdapter is ISushiXSwapV2Adapter {
 
         if (_swapData.length > 0) {
             uint256 valueToPass = _token == sgeth ? amountLD : 0;
+
             try
                 ISushiXSwapV2Adapter(address(this)).swap{gas: limit}(
                     amountLD,

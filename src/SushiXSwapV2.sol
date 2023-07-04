@@ -157,8 +157,6 @@ contract SushiXSwapV2 is ISushiXSwapV2, Ownable, Multicall {
 
         _swap(_swapData);
 
-        // todo: you only need to pass adapter address for this function
-        //       does it save gas to just pass that instead of accessing memory?
         ISushiXSwapV2Adapter(_bridgeParams.adapter).adapterBridge{
             value: address(this).balance
         }(_bridgeParams.adapterData, _swapPayload, _payloadData);
