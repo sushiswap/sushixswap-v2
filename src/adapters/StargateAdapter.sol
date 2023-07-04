@@ -65,7 +65,9 @@ contract StargateAdapter is ISushiXSwapV2Adapter {
             (IRouteProcessor.RouteProcessorData)
         );
         if (_token == sgeth) {
-            //todo: need to confirm if sgETH is token does it come in as native?
+            //todo: so comes in as native, better to just make the swapData passed include
+            // the unwrap stuff? or handle it as weth?
+            // prob should let RP handle this since it effects gasNeeded
             weth.deposit{value: _amountBridged}();
         }
         // increase token approval to RP
@@ -222,7 +224,7 @@ contract StargateAdapter is ISushiXSwapV2Adapter {
         if (_swapData.length > 0) {
             uint256 valueToPass = _token == sgeth ? amountLD : 0;
             try
-                ISushiXSwapV2Adapter(address(this)).swap{gas: limit, value: valueToPass}(
+                ISushiXSwapV2Adapter(address(this)).swap{gas: limit}(
                     amountLD,
                     _swapData,
                     _token,

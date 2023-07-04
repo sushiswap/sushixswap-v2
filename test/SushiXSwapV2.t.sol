@@ -552,7 +552,86 @@ contract SushiXSwapV2Test is BaseTest {
       
     }
 
-    // todo: 
+    function testNativeBridgeReceiveAndSwap() public {
+      // bridge 1 eth - swap weth to usdc
+      vm.startPrank(operator);
+
+      bytes memory computedRoute_dst = routeProcessorHelper.computeRoute(
+        false,
+        false,
+        address(weth),
+        address(usdc),
+        500,
+        address(operator)
+      );
+
+      IRouteProcessor.RouteProcessorData memory rpd_dst = IRouteProcessor.RouteProcessorData({
+          tokenIn: address(weth),
+          amountIn: 0,  // amountIn doesn't matter on dst since we use amount bridged
+          tokenOut: address(usdc),
+          amountOutMin: 0,
+          to: address(operator),
+          route: computedRoute_dst
+      });
+
+      bytes memory rpd_encoded_dst = abi.encode(rpd_dst);
+
+      bytes memory mockPayload = abi.encode(
+        address(operator),  // to
+        rpd_encoded_dst,    // _swapData
+        ""                  // _payloadData 
+      );
+
+      uint256 gasForSwap = 500000;
+
+      (uint256 gasNeeded, ) = stargateAdapter.getFee(
+        111, // dstChainId
+        1, // functionType
+        address(operator), // receiver
+        gasForSwap, // gas
+        0, // dustAmount
+        mockPayload // payload
+      );
+
+      // todo: need to figure out how to get EqFee or mock it
+      // assumption that 0.1 eth will be taken for fee so amountIn is 0.9eth
+      uint256 valueToSend = gasNeeded + 1 ether;
+      sushiXswap.bridge{value: valueToSend}(
+        ISushiXSwapV2.BridgeParams({
+          adapter: address(stargateAdapter),
+          tokenIn: NATIVE_ADDRESS,
+          amountIn: 1 ether,
+          to: address(0x0),
+          adapterData: abi.encode(
+            111, // dstChainId - op
+            NATIVE_ADDRESS, // token
+            13, // srcPoolId
+            13, // dstPoolId
+            900000000000000000, // amount
+            0, // amountMin,
+            0, // dustAmount
+            address(stargateAdapter), // receiver
+            address(operator), // to
+            500000 // gas
+          )
+        }),
+        "", // _swapPayload
+        mockPayload // _payloadData
+      );
+
+      // mock the sgReceive
+      // using 1 eth for the receive (in prod env it will be less due to eqFee)
+      address(stargateAdapter).call{value: 1 ether}("");
+      vm.stopPrank();
+      
+      vm.startPrank(constants.getAddress("mainnet.stargateRouter"));
+      stargateAdapter.sgReceive{gas: gasForSwap}(
+        0, "", 0,
+        constants.getAddress("mainnet.sgeth"),
+        1 ether,
+        mockPayload
+      );
+    }
 
     function testSwapAndBridgeReceiveAndSwap() public {
       // swap weth to usdc - bridge usdc - swap usdc to weth
@@ -607,7 +686,6 @@ contract SushiXSwapV2Test is BaseTest {
 
       uint256 gasForSwap = 250000;
 
-      // we'll ignore payload data for this test, since we mocking receive
       (uint256 gasNeeded, ) = stargateAdapter.getFee(
         111, // dstChainId
         1, // functionType
@@ -616,9 +694,6 @@ contract SushiXSwapV2Test is BaseTest {
         0, // dustAmount
         mockPayload // payload
       );
-
-      bool test_bool = true;
-      uint256 test_val = test_bool ? 1 : 0;
 
       sushiXswap.swapAndBridge{value: gasNeeded}(
         ISushiXSwapV2.BridgeParams({
@@ -636,7 +711,7 @@ contract SushiXSwapV2Test is BaseTest {
             0, // dustAmount
             address(stargateAdapter), // receiver
             address(operator), // to
-            250000 // gas
+            gasForSwap // gas
           )
         }),
         rpd_encoded_src,
@@ -650,7 +725,7 @@ contract SushiXSwapV2Test is BaseTest {
       usdc.transfer(address(stargateAdapter), 1000000);
       vm.prank(constants.getAddress("mainnet.stargateRouter"));
       // todo: need a better way to figure out to calculate & send proper gas
-      stargateAdapter.sgReceive{gas: 250000}(
+      stargateAdapter.sgReceive{gas: gasForSwap}(
         0, "", 0,
         address(usdc),
         1000000,
