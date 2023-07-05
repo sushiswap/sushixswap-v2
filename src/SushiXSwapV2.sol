@@ -70,7 +70,7 @@ contract SushiXSwapV2 is ISushiXSwapV2, Ownable, Multicall {
         rp = IRouteProcessor(newRouteProcessor);
     }
 
-    function swap(bytes memory _swapData) external payable override {
+    function swap(bytes memory _swapData) external payable override lock {
         // just swap
         _swap(_swapData);
     }
