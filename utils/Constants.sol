@@ -22,7 +22,11 @@ contract Constants {
 
     setAddress("mainnet.stargateRouter", 0x8731d54E9D02c286767d56ac03e8037C07e01e98);
     setAddress("mainnet.stargateWidget", 0x76d4d68966728894961AA3DDC1d5B0e45668a5A6);
+    setAddress("mainnet.stargateFactory", 0x06D538690AF257Da524f25D0CD52fD85b1c2173E);
+    setAddress("mainnet.stargateFeeLibrary", 0x8C3085D9a554884124C998CDB7f6d7219E9C1e6F);
     setAddress("mainnet.sgeth", 0x72E2F4830b9E45d52F80aC08CB2bEC0FeF72eD9c);
+    setAddress("mainnet.stargateUSDCPool", 0xdf0770dF86a8034b3EFEf0A1Bb3c889B8332FF56);
+    setAddress("mainnet.stargateETHPool", 0x101816545F6bd2b1076434B54383a1E633390A2E);
   }
 
   function initAddressLabels(Vm vm) public {

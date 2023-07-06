@@ -8,8 +8,9 @@ import {IWETH} from "../src/interfaces/IWETH.sol";
 import {ERC20} from "openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
 import "../utils/BaseTest.sol";
 import "../utils/RouteProcessorHelper.sol";
-
 import {StdUtils} from "forge-std/StdUtils.sol";
+
+import {console2} from "forge-std/console2.sol";
 
 contract SushiXSwapBaseTest is BaseTest {
     SushiXSwapV2 public sushiXswap;
@@ -25,6 +26,7 @@ contract SushiXSwapBaseTest is BaseTest {
         0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
     address public operator = address(0xbeef);
     address public owner = address(0x420);
+    address public user = address(0x4201);
 
     function setUp() public override {
         forkMainnet();
@@ -68,8 +70,8 @@ contract SushiXSwapBaseTest is BaseTest {
         vm.stopPrank();
     }
 
-    function testPause() public {
-        vm.startPrank(owner);
+    function test_Pause() public {
+        vm.prank(owner);
         sushiXswap.pause();
 
         vm.startPrank(operator);
@@ -82,28 +84,29 @@ contract SushiXSwapBaseTest is BaseTest {
 
         vm.stopPrank();
     }
+    
+    // uint64 keeps it max amount to ~18 weth
+    function test_RescueTokens(uint64 amountToRescue) public {
+        vm.assume(amountToRescue > 0.1 ether);
 
-    function testRescueTokens() public {
-        vm.deal(address(sushiXswap), 1 ether);
-        deal(address(sushi), address(sushiXswap), 1 ether);
+        vm.deal(address(sushiXswap), amountToRescue);
+        deal(address(sushi), address(sushiXswap), amountToRescue);
 
         // reverts if not owner
         vm.prank(operator);
         vm.expectRevert();
-        sushiXswap.rescueTokens(NATIVE_ADDRESS, address(owner));
+        sushiXswap.rescueTokens(NATIVE_ADDRESS, user);
 
         vm.startPrank(owner);
+        sushiXswap.rescueTokens(NATIVE_ADDRESS, user);
+        sushiXswap.rescueTokens(address(sushi), user);
+        vm.stopPrank();
 
-        // native rescue
-        sushiXswap.rescueTokens(NATIVE_ADDRESS, address(owner));
-        assertEq(address(owner).balance, 1 ether);
-
-        // erc20 rescue
-        sushiXswap.rescueTokens(address(sushi), address(owner));
-        assertEq(sushi.balanceOf(address(owner)), 1 ether);
+        assertEq(user.balance, amountToRescue);
+        assertEq(sushi.balanceOf(user), amountToRescue);
     }
 
-    function testOwnerGuard() public {
+    function test_OwnerGuard() public {
         vm.startPrank(operator);
 
         vm.expectRevert();
@@ -121,32 +124,36 @@ contract SushiXSwapBaseTest is BaseTest {
         sushiXswap.updateRouteProcessor(address(0x01));
     }
 
-    function testSendMessageStargate() public {
+    function test_RevertWhenSendMessageStargate() public {
         // sendMessage not implemented for stargate adapter  
         vm.expectRevert();
         sushiXswap.sendMessage(address(stargateAdapter), "");
     }
 
-    function testSwapERC20ToERC20() public {
-        // basic swap 1 weth to usdc
+    function testFuzz_SwapERC20ToERC20(uint64 amount) public {
+        vm.assume(amount > 0.1 ether);
+
+        deal(address(weth), user, amount);
+        
+        // basic swap weth to usdc
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
           false,             // rpHasToken
           false,              // isV2
           address(weth),     // tokenIn
           address(usdc),     // tokenOut
           500,               // fee
-          address(operator)  // to
+          user  // to
         );
 
-        vm.startPrank(operator);
-        ERC20(address(weth)).approve(address(sushiXswap), 1 ether);
+        vm.startPrank(user);
+        ERC20(address(weth)).approve(address(sushiXswap), amount);
 
         IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor.RouteProcessorData({
             tokenIn: address(weth),
-            amountIn: 1 ether,
+            amountIn: amount,
             tokenOut: address(usdc),
             amountOutMin: 0,
-            to: address(operator),
+            to: user,
             route: computedRoute
         });
 
@@ -155,33 +162,45 @@ contract SushiXSwapBaseTest is BaseTest {
         sushiXswap.swap(
           rpd_encoded
         );
+
+        vm.stopPrank();
+
+        assertEq(weth.balanceOf(user), 0);
+        assertGt(usdc.balanceOf(user), 0);
     }
 
-    function testSwapNativeToERC20() public {
-      // swap 1 eth to usdc
+    function testFuzz_SwapNativeToERC20(uint64 amount) public {
+      vm.assume(amount > 0.1 ether);
+
+      vm.deal(user, amount);
+
+      // swap eth to usdc
       bytes memory computedRoute = routeProcessorHelper.computeRoute(
         false,
         false,
         address(weth),
         address(usdc),
         500, 
-        address(operator)
+        user
       );
 
       IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor.RouteProcessorData({
           tokenIn: NATIVE_ADDRESS,
-          amountIn: 1 ether,
+          amountIn: amount,
           tokenOut: address(usdc),
           amountOutMin: 0,
-          to: address(operator),
+          to: user,
           route: computedRoute
       });
 
       bytes memory rpd_encoded = abi.encode(rpd);
 
-      vm.startPrank(operator);
-      sushiXswap.swap{value: 1 ether} (
+      vm.prank(user);
+      sushiXswap.swap{value: amount} (
         rpd_encoded
       );
+
+      assertEq(user.balance, 0);
+      assertGt(usdc.balanceOf(user), 0);
     }
 }
