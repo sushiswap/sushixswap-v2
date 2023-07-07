@@ -11,8 +11,6 @@ import "../interfaces/stargate/IStargateReceiver.sol";
 import "../interfaces/stargate/IStargateWidget.sol";
 import "../interfaces/stargate/IStargateEthVault.sol";
 
-import {console2} from "forge-std/console2.sol";
-
 contract StargateAdapter is ISushiXSwapV2Adapter {
     using SafeERC20 for IERC20;
 
@@ -67,9 +65,10 @@ contract StargateAdapter is ISushiXSwapV2Adapter {
             (IRouteProcessor.RouteProcessorData)
         );
         if (_token == sgeth) {
-            //todo: so comes in as native, better to just make the swapData passed include
-            // the unwrap stuff? or handle it as weth?
-            // prob should let RP handle this since it effects gasNeeded
+            //todo: we should probably change this to let the RP handle wrapping eth
+            //      for better gas estimation
+            //      though estimations should prob be done with this swap() call rather 
+            //      than on RP itself (since future we will have payloads that do additional things)
             weth.deposit{value: _amountBridged}();
         }
         // increase token approval to RP
@@ -179,11 +178,6 @@ contract StargateAdapter is ISushiXSwapV2Adapter {
             payload
         );
 
-        // todo: should we have an invariant check that
-        //       params.token should always have a 0 balance after stargate swap?
-        // if funds get stuck in adapter, there's no way to get them out
-        // also kinda worried funds could get stuck here on sgReceive if swap or something else fails
-
         stargateWidget.partnerSwap(0x0001);
     }
 
@@ -201,10 +195,6 @@ contract StargateAdapter is ISushiXSwapV2Adapter {
     ) external payable {
         if (msg.sender != address(stargateRouter)) revert NotStargateRouter();
 
-        console2.log("Gas Coming in");
-        console2.log("--------------");
-        console2.log(gasleft());
-
         (address to, bytes memory _swapData, bytes memory _payloadData) = abi
             .decode(payload, (address, bytes, bytes));
 
@@ -212,7 +202,6 @@ contract StargateAdapter is ISushiXSwapV2Adapter {
         bool failed;
 
         if (gasleft() < reserveGas || _swapData.length == 0) {
-            console2.log("Ran out of gas!!!");
             if (_token != sgeth) {
                 IERC20(_token).safeTransfer(to, amountLD);
             }
@@ -239,7 +228,6 @@ contract StargateAdapter is ISushiXSwapV2Adapter {
                     _payloadData
                 )
             {} catch (bytes memory) {
-                console2.log("failed swap");
                 if (_token != sgeth) {
                     IERC20(_token).safeTransfer(to, amountLD);
                 }

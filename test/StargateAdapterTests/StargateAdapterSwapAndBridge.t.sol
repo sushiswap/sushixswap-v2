@@ -68,7 +68,7 @@ contract SushiXSwapBaseTest is BaseTest {
 
         vm.stopPrank();
     }
-
+    
     function test_SwapFromERC20ToERC20AndBridge() public {
         // basic swap 1 weth to usdc and bridge
         vm.startPrank(operator);

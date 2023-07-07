@@ -88,7 +88,7 @@ contract StargateAdapterReceives is BaseTest {
 
         vm.stopPrank();
     }
-
+    
     // uint32 keeps max amount to ~4294 usdc
     function test_ReceiveERC20AndSwapToERC20(uint32 amount) public {
       vm.assume(amount > 1000000); // > 1 usdc
@@ -140,7 +140,54 @@ contract StargateAdapterReceives is BaseTest {
 
     // uint64 keeps max amount to ~18 eth
     function test_ReceiveNativeAndSwapToERC20(uint64 amount) public {
+      vm.assume(amount > 0.1 ether);
+
+      vm.deal(stargateRouter, 1 ether); // for gas
+      vm.deal(stargateRouter, amount); // amount for sgReceive
       
+      // receive 1 usdc and swap to weth
+      bytes memory computedRoute = routeProcessorHelper.computeRoute(
+        false,
+        false,
+        address(weth),
+        address(usdc),
+        500,
+        user
+      );
+
+      IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor.RouteProcessorData({
+          tokenIn: address(weth),
+          amountIn: amount,
+          tokenOut: address(usdc),
+          amountOutMin: 0,
+          to: user,
+          route: computedRoute
+      });
+
+      bytes memory rpd_encoded = abi.encode(rpd);
+
+      bytes memory payload = abi.encode(
+        address(user),  // to
+        rpd_encoded,    // _swapData
+        ""              // _payloadData 
+      );
+      
+      vm.startPrank(constants.getAddress("mainnet.stargateRouter"));
+      address(stargateAdapter).call{value: amount}("");
+      // auto sends enough gas, so no need to calculate gasNeeded & send here
+      stargateAdapter.sgReceive(
+        0, "", 0,
+        constants.getAddress("mainnet.sgeth"),
+        amount,
+        payload
+      );
+
+      assertEq(usdc.balanceOf(address(stargateAdapter)), 0, "stargateAdapter should have 0 usdc");
+      assertGt(usdc.balanceOf(user), 0, "user should have > 0 usdc");
+      assertEq(weth.balanceOf(address(stargateAdapter)), 0, "stargateAdapter should have 0 weth");
+      assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
+      assertEq(address(stargateAdapter).balance, 0, "stargateAdapter should have 0 eth");
+      assertEq(user.balance, 0, "user should have 0 eth");
     }
 
     function test_ReceiveERC20AndDustSwaptoERC20() public {
@@ -300,12 +347,7 @@ contract StargateAdapterReceives is BaseTest {
       assertEq(user.balance, dustAmount, "user should have all the dust");
     }
 
-    function test_ReceiveERC20EnoughForGasNoSwapData() public {
-      // think this is one of the cases that will break
-      // all of the erc20 should be sent to user
-
-      uint32 amount = 1000001; // 1 usdc
-
+    function test_ReceiveERC20EnoughForGasNoSwapData(uint32 amount) public {
       vm.assume(amount > 1000000); // > 1 usdc
 
       vm.deal(stargateRouter, 1 ether); // for gas
@@ -330,29 +372,301 @@ contract StargateAdapterReceives is BaseTest {
       assertEq(usdc.balanceOf(user), amount, "user should have all the usdc");
     }
 
-    function test_ReceiveNativeEnoughForGasNoSwapData() public {
-      // all the native should be sent to user
+    function test_ReceiveNativeEnoughForGasNoSwapData(uint64 amount) public {
+      vm.assume(amount > 0.1 ether);
+
+      vm.deal(stargateRouter, 1 ether); // for gas
+      vm.deal(stargateRouter, amount); // amount for sgReceive
+
+      // no swap data, payload empty
+      bytes memory payload = abi.encode(
+        user,               // to
+        "",                 // _swapData
+        ""                  // _payloadData 
+      );
+
+      vm.startPrank(constants.getAddress("mainnet.stargateRouter"));
+      address(stargateAdapter).call{value: amount}("");
+      stargateAdapter.sgReceive{gas: 200000}(
+        0, "", 0,
+        constants.getAddress("mainnet.sgeth"),
+        amount,
+        payload
+      );
+
+      assertEq(address(stargateAdapter).balance, 0, "stargateAdapter should have 0 eth");
+      assertEq(user.balance, amount, "user should have all the eth");      
     }
 
-    function test_ReceiveERC20AndDustEnoughForGasNoSwapData() public {
-      // all of the erc20 should be sent to user
-      // all of the dust should be sent to use
+    function test_ReceiveERC20AndDustEnoughForGasNoSwapData(uint32 amount, uint64 dustAmount) public {
+      vm.assume(amount > 1000000); // > 1 usdc
+      vm.assume(dustAmount > 0.1 ether);
+
+      vm.deal(stargateRouter, 1 ether); // for gas
+      vm.deal(stargateRouter, dustAmount); // dust for sgReceive
+      deal(address(usdc), address(stargateAdapter), amount); // amount adapter receives
+
+      // no swap data, payload empty
+      bytes memory payload = abi.encode(
+        user,               // to
+        "",                 // _swapData
+        ""                  // _payloadData 
+      );
+
+      vm.startPrank(constants.getAddress("mainnet.stargateRouter"));
+      address(stargateAdapter).call{value: dustAmount}("");
+      stargateAdapter.sgReceive{gas: 200000}(
+        0, "", 0,
+        address(usdc),
+        amount,
+        payload
+      );
+
+      assertEq(usdc.balanceOf(address(stargateAdapter)), 0, "stargateAdapter should have 0 usdc");
+      assertEq(usdc.balanceOf(user), amount, "user should have all the usdc");
+      assertEq(address(stargateAdapter).balance, 0, "stargateAdapter should have 0 eth");
+      assertEq(user.balance, dustAmount, "user should have all the dust");
     }
 
-    function test_ReceiveERC20FailedSwap() public {
+    function test_ReceiveERC20FailedSwap(uint32 amount) public {
+      vm.assume(amount > 1000000); // > 1 usdc
 
+      vm.deal(stargateRouter, 1 ether); // for gas
+      deal(address(usdc), address(stargateAdapter), amount); // amount adapter receives
+
+      // receive usdc and attempt swap to weth
+      bytes memory computedRoute = routeProcessorHelper.computeRoute(
+        false,
+        false,
+        address(usdc),
+        address(weth),
+        500,
+        user
+      );
+
+      // switched tokenIn to weth, and tokenOut to usdc - should fail now on swap
+      IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor.RouteProcessorData({
+          tokenIn: address(weth),
+          amountIn: amount,
+          tokenOut: address(usdc),
+          amountOutMin: 0,
+          to: user,
+          route: computedRoute
+      });
+
+      bytes memory rpd_encoded = abi.encode(rpd);
+
+      bytes memory payload = abi.encode(
+        user,               // to
+        rpd_encoded,        // _swapData
+        ""                  // _payloadData 
+      );
+
+      vm.prank(constants.getAddress("mainnet.stargateRouter"));
+      stargateAdapter.sgReceive{gas: 200000}(
+        0, "", 0,
+        address(usdc),
+        amount,
+        payload
+      );
+
+      assertEq(usdc.balanceOf(address(stargateAdapter)), 0, "stargateAdapter should have 0 usdc");
+      assertEq(usdc.balanceOf(user), amount, "user should have all the usdc");
+      assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
     }
 
-    function test_ReceiveNativeFailedSwap() public {
+    function test_ReceiveERC20AndDustFailedSwap(uint32 amount, uint64 dustAmount) public {
+      vm.assume(amount > 1000000); // > 1 usdc
+      vm.assume(dustAmount > 0.1 ether);
 
+      vm.deal(stargateRouter, 1 ether); // for gas
+      vm.deal(stargateRouter, dustAmount); // dust for sgReceive
+      deal(address(usdc), address(stargateAdapter), amount); // amount adapter receives
+
+      // receive usdc and attempt swap to weth
+      bytes memory computedRoute = routeProcessorHelper.computeRoute(
+        false,
+        false,
+        address(usdc),
+        address(weth),
+        500,
+        user
+      );
+
+      // switched tokenIn to weth, and tokenOut to usdc - should fail now on swap
+      IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor.RouteProcessorData({
+          tokenIn: address(weth),
+          amountIn: amount,
+          tokenOut: address(usdc),
+          amountOutMin: 0,
+          to: user,
+          route: computedRoute
+      });
+
+      bytes memory rpd_encoded = abi.encode(rpd);
+
+      bytes memory payload = abi.encode(
+        user,               // to
+        rpd_encoded,        // _swapData
+        ""                  // _payloadData 
+      );
+
+      vm.startPrank(constants.getAddress("mainnet.stargateRouter"));
+      address(stargateAdapter).call{value: dustAmount}("");
+      stargateAdapter.sgReceive{gas: 200000}(
+        0, "", 0,
+        address(usdc),
+        amount,
+        payload
+      );
+
+      assertEq(usdc.balanceOf(address(stargateAdapter)), 0, "stargateAdapter should have 0 usdc");
+      assertEq(usdc.balanceOf(user), amount, "user should have all the usdc");
+      assertEq(address(stargateAdapter).balance, 0, "stargateAdapter should have 0 eth");
+      assertEq(user.balance, dustAmount, "user should have all the dust");
     }
 
-    function test_ReceiveERC20FailSwapSlippageCheck() public {
+    function test_ReceiveNativeFailedSwap(uint64 amount) public {
+      vm.assume(amount > 0.1 ether);
 
+      vm.deal(stargateRouter, 1 ether); // for gas
+      vm.deal(stargateRouter, amount); // amount for sgReceive
+
+      // receive native (sgETH) and attempt swap to usdc
+      bytes memory computedRoute = routeProcessorHelper.computeRoute(
+        false,
+        false,
+        address(weth),
+        address(usdc),
+        500,
+        user
+      );
+
+      // switched tokenIn to usdc, and tokenOut to weth - should fail now on swap
+      IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor.RouteProcessorData({
+        tokenIn: address(usdc),
+        amountIn: amount,
+        tokenOut: address(weth),
+        amountOutMin: 0,
+        to: user,
+        route: computedRoute
+      });
+
+      bytes memory rpd_encoded = abi.encode(rpd);
+
+      bytes memory payload = abi.encode(
+        user, // to
+        rpd_encoded, // _swapData
+        "" // _payloadData
+      );
+
+      vm.startPrank(constants.getAddress("mainnet.stargateRouter"));
+      address(stargateAdapter).call{value: amount}("");
+      stargateAdapter.sgReceive{gas: 200000}(
+        0, "", 0,
+        constants.getAddress("mainnet.sgeth"),
+        amount,
+        payload
+      );
+
+      assertEq(address(stargateAdapter).balance, 0, "stargateAdapter should have 0 eth");
+      assertEq(user.balance, amount, "user should have all the eth");
+      assertEq(usdc.balanceOf(user), 0, "user should have 0 usdc");
     }
 
-    function test_ReceiveNativeFailSwapSlippageCheck() public {
+    function test_ReceiveERC20FailSwapSlippageCheck(uint32 amount) public {
+      vm.assume(amount > 1000000); // > 1 usdc
 
+      vm.deal(stargateRouter, 1 ether); // for gas
+      deal(address(usdc), address(stargateAdapter), amount); // amount adapter receives
+
+      // receive usdc and attempt swap to weth
+      bytes memory computedRoute = routeProcessorHelper.computeRoute(
+        false,
+        false,
+        address(usdc),
+        address(weth),
+        500,
+        user
+      );
+
+      // attempt to swap usdc to weth with max amountOutMin
+      IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor.RouteProcessorData({
+          tokenIn: address(usdc),
+          amountIn: amount,
+          tokenOut: address(weth),
+          amountOutMin: type(uint256).max, // abnormally high amountOutMin 
+          to: user,
+          route: computedRoute
+      });
+
+      bytes memory rpd_encoded = abi.encode(rpd);
+
+      bytes memory payload = abi.encode(
+        user,               // to
+        rpd_encoded,        // _swapData
+        ""                  // _payloadData 
+      );
+
+      vm.prank(constants.getAddress("mainnet.stargateRouter"));
+      stargateAdapter.sgReceive{gas: 200000}(
+        0, "", 0,
+        address(usdc),
+        amount,
+        payload
+      );
+
+      assertEq(usdc.balanceOf(address(stargateAdapter)), 0, "stargateAdapter should have 0 usdc");
+      assertEq(usdc.balanceOf(user), amount, "user should have all the usdc");
+      assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
+    }
+
+    function test_ReceiveNativeFailSwapSlippageCheck(uint64 amount) public {
+      vm.assume(amount > 0.1 ether);
+
+      vm.deal(stargateRouter, 1 ether); // for gas
+      vm.deal(stargateRouter, amount); // amount for sgReceive
+
+      // receive native (sgETH) and attempt swap to usdc
+      bytes memory computedRoute = routeProcessorHelper.computeRoute(
+        false,
+        false,
+        address(weth),
+        address(usdc),
+        500,
+        user
+      );
+
+      // attempt to swap weth to usdc with max amount of amountOutMin
+      IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor.RouteProcessorData({
+        tokenIn: address(weth),
+        amountIn: amount,
+        tokenOut: address(usdc),
+        amountOutMin: type(uint256).max,
+        to: user,
+        route: computedRoute
+      });
+
+      bytes memory rpd_encoded = abi.encode(rpd);
+
+      bytes memory payload = abi.encode(
+        user, // to
+        rpd_encoded, // _swapData
+        "" // _payloadData
+      );
+
+      vm.startPrank(constants.getAddress("mainnet.stargateRouter"));
+      address(stargateAdapter).call{value: amount}("");
+      stargateAdapter.sgReceive{gas: 200000}(
+        0, "", 0,
+        constants.getAddress("mainnet.sgeth"),
+        amount,
+        payload
+      );
+
+      assertEq(address(stargateAdapter).balance, 0, "stargateAdapter should have 0 eth");
+      assertEq(user.balance, amount, "user should have all the eth");
+      assertEq(usdc.balanceOf(user), 0, "user should have 0 usdc");
     }
 
     // todo: more so integration-eque test, goes better with LayerZero mock probably
