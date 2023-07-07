@@ -11,6 +11,8 @@ import "../interfaces/stargate/IStargateReceiver.sol";
 import "../interfaces/stargate/IStargateWidget.sol";
 import "../interfaces/stargate/IStargateEthVault.sol";
 
+import {console2} from "forge-std/console2.sol";
+
 contract StargateAdapter is ISushiXSwapV2Adapter {
     using SafeERC20 for IERC20;
 
@@ -199,13 +201,18 @@ contract StargateAdapter is ISushiXSwapV2Adapter {
     ) external payable {
         if (msg.sender != address(stargateRouter)) revert NotStargateRouter();
 
+        console2.log("Gas Coming in");
+        console2.log("--------------");
+        console2.log(gasleft());
+
         (address to, bytes memory _swapData, bytes memory _payloadData) = abi
             .decode(payload, (address, bytes, bytes));
 
         uint256 reserveGas = 100000;
         bool failed;
 
-        if (gasleft() < reserveGas) {
+        if (gasleft() < reserveGas || _swapData.length == 0) {
+            console2.log("Ran out of gas!!!");
             if (_token != sgeth) {
                 IERC20(_token).safeTransfer(to, amountLD);
             }
@@ -232,6 +239,7 @@ contract StargateAdapter is ISushiXSwapV2Adapter {
                     _payloadData
                 )
             {} catch (bytes memory) {
+                console2.log("failed swap");
                 if (_token != sgeth) {
                     IERC20(_token).safeTransfer(to, amountLD);
                 }

@@ -3,6 +3,8 @@ pragma solidity 0.8.10;
 
 import "./interfaces/ISushiXSwapV2.sol";
 
+import {console2} from "forge-std/console2.sol";
+
 contract SushiXSwapV2 is ISushiXSwapV2, Ownable, Multicall {
     using SafeERC20 for IERC20;
 
@@ -163,12 +165,15 @@ contract SushiXSwapV2 is ISushiXSwapV2, Ownable, Multicall {
     }
 
     function rescueTokens(address _token, address _to) external onlyOwner {
+        console2.log("hit rescue!!!");
         if (_token != NATIVE_ADDRESS) {
+            console2.log("hit rescue ERC20 branch!!!");
             IERC20(_token).safeTransfer(
                 _to,
                 IERC20(_token).balanceOf(address(this))
             );
         } else {
+            console2.log("hit rescue NATIVE branch!!!");
             payable(_to).transfer(address(this).balance);
         }
     }

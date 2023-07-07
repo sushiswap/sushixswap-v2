@@ -91,6 +91,7 @@ contract SushiXSwapBaseTest is BaseTest {
 
         vm.deal(address(sushiXswap), amountToRescue);
         deal(address(sushi), address(sushiXswap), amountToRescue);
+        deal(address(weth), address(sushiXswap), amountToRescue);
 
         // reverts if not owner
         vm.prank(operator);
@@ -100,6 +101,7 @@ contract SushiXSwapBaseTest is BaseTest {
         vm.startPrank(owner);
         sushiXswap.rescueTokens(NATIVE_ADDRESS, user);
         sushiXswap.rescueTokens(address(sushi), user);
+        sushiXswap.rescueTokens(address(weth), user);
         vm.stopPrank();
 
         assertEq(user.balance, amountToRescue);

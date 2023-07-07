@@ -69,7 +69,7 @@ contract SushiXSwapBaseTest is BaseTest {
         vm.stopPrank();
     }
 
-    function testSwapFromERC20ToERC20AndBridge() public {
+    function test_SwapFromERC20ToERC20AndBridge() public {
         // basic swap 1 weth to usdc and bridge
         vm.startPrank(operator);
         ERC20(address(weth)).approve(address(sushiXswap), 1 ether);
@@ -128,7 +128,7 @@ contract SushiXSwapBaseTest is BaseTest {
         );
     }
 
-    function testSwapFromNativeToERC20AndBridge() public {
+    function test_SwapFromNativeToERC20AndBridge() public {
         // swap 1 eth to usdc and bridge
         vm.startPrank(operator);
         
@@ -187,7 +187,7 @@ contract SushiXSwapBaseTest is BaseTest {
         );
     }
 
-    function testSwapFromERC20ToWethAndBridge() public {
+    function test_SwapFromERC20ToWethAndBridge() public {
       // swap 1 usdc to eth and bridge
       vm.startPrank(operator);
       ERC20(address(usdc)).approve(address(sushiXswap), 1000000);

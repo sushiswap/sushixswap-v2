@@ -110,8 +110,8 @@ contract SushiXSwapBaseTest is BaseTest {
         (uint256 gasNeeded, ) = stargateAdapter.getFee(
             111, // dstChainId
             1, // functionType
-            user, // receiver
-            0, // gas
+            address(stargateAdapter), // receiver
+            0, // gas -todo: need to figure out what proper gas input is
             0, // dustAmount
             "" // payload
         );
@@ -142,8 +142,8 @@ contract SushiXSwapBaseTest is BaseTest {
                     amount, // amount
                     amountMin, // amountMin,
                     0, // dustAmount
-                    user, // receiver
-                    address(0x00), // to
+                    address(stargateAdapter), // receiver
+                    user, // to
                     0 // gas
                 )
             }),
@@ -193,6 +193,9 @@ contract SushiXSwapBaseTest is BaseTest {
             }
         }
     }
+
+    // todo: need to fix all the `to`s this should be who funds are sent to
+    //       receiver is then the stargateAdapter
 
     // uint64 keeps it max amount to ~18 weth
     function testFuzz_BridgeWETH(uint64 amount) public {
@@ -291,8 +294,9 @@ contract SushiXSwapBaseTest is BaseTest {
             }
         }
     }
-
-    function testBridgeNative() public {
+    
+    // todo: need to fuzz this
+    function test_BridgeNative() public {
         // bridge 1 eth
         vm.startPrank(operator);
 
