@@ -152,8 +152,8 @@ contract SushiXSwapBaseTest is BaseTest {
         );
 
         // check balances post call
-        assertEq(usdc.balanceOf(address(sushiXswap)), 0);
-        assertEq(usdc.balanceOf(user), 0);
+        assertEq(usdc.balanceOf(address(sushiXswap)), 0, "xswasp usdc balance should be 0");
+        assertEq(usdc.balanceOf(user), 0, "user usdc balance should be 0");
 
         Vm.Log[] memory entries = vm.getRecordedLogs();
         // first event from the stargate pool will be Swap
@@ -183,12 +183,12 @@ contract SushiXSwapBaseTest is BaseTest {
                         )
                     );
 
-                assertEq(chainId, 111);
-                assertEq(dstPoolId, 1);
-                assertEq(from, address(stargateAdapter));
-                assertEq(amountSD, amountMin);
-                assertEq(_eqFeeEvent, eqFee);
-                assertEq(_protocolFeeEvent, _protocolFeeEvent);
+                assertEq(chainId, 111, "Swap event chainId should be 111");
+                assertEq(dstPoolId, 1, "Swap event dstPoolId should be 1");
+                assertEq(from, address(stargateAdapter), "Swap event from should be stargateAdapter");
+                assertEq(amountSD, amountMin, "Swap event amountSD should be amount bridged");
+                assertEq(_eqFeeEvent, eqFee, "Swap event eqFee should be polled eqFee before bridge");
+                assertEq(_protocolFeeEvent, _protocolFeeEvent, "Swap event protocolFee should be polled protocolFee before bridge");
                 break;
             }
         }
@@ -253,8 +253,8 @@ contract SushiXSwapBaseTest is BaseTest {
         );
 
         // check balances post call
-        assertEq(weth.balanceOf(address(sushiXswap)), 0);
-        assertEq(weth.balanceOf(user), 0);
+        assertEq(weth.balanceOf(address(sushiXswap)), 0, "xswasp weth balance should be 0");
+        assertEq(weth.balanceOf(user), 0, "user weth balance should be 0");
 
         Vm.Log[] memory entries = vm.getRecordedLogs();
         // first event from the stargate pool will be Swap
@@ -284,12 +284,12 @@ contract SushiXSwapBaseTest is BaseTest {
                         )
                     );
 
-                assertEq(chainId, 111);
-                assertEq(dstPoolId, 13);
-                assertEq(from, address(stargateAdapter));
-                assertEq(amountSD, amountMin);
-                assertEq(_eqFeeEvent, eqFee);
-                assertEq(_protocolFeeEvent, _protocolFeeEvent);
+                assertEq(chainId, 111, "Swap event chainId should be 111");
+                assertEq(dstPoolId, 13, "Swap event dstPoolId should be 13");
+                assertEq(from, address(stargateAdapter), "Swap event from should be stargateAdapter");
+                assertEq(amountSD, amountMin, "Swap event amountSD should be amount bridged");
+                assertEq(_eqFeeEvent, eqFee, "Swap event eqFee should be polled eqFee before bridge");
+                assertEq(_protocolFeeEvent, _protocolFeeEvent, "Swap event protocolFee should be polled protocolFee before bridge");
                 break;
             }
         }

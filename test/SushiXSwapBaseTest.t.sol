@@ -167,8 +167,8 @@ contract SushiXSwapBaseTest is BaseTest {
 
         vm.stopPrank();
 
-        assertEq(weth.balanceOf(user), 0);
-        assertGt(usdc.balanceOf(user), 0);
+        assertEq(weth.balanceOf(user), 0, "weth balance should be 0");
+        assertGt(usdc.balanceOf(user), 0, "usdc balance should be greater than 0");
     }
 
     function testFuzz_SwapNativeToERC20(uint64 amount) public {
@@ -202,7 +202,7 @@ contract SushiXSwapBaseTest is BaseTest {
         rpd_encoded
       );
 
-      assertEq(user.balance, 0);
-      assertGt(usdc.balanceOf(user), 0);
+      assertEq(user.balance, 0, "eth balance should be 0");
+      assertGt(usdc.balanceOf(user), 0, "usdc balance should be greater than 0");
     }
 }
