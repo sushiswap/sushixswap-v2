@@ -65,10 +65,6 @@ contract StargateAdapter is ISushiXSwapV2Adapter {
             (IRouteProcessor.RouteProcessorData)
         );
         if (_token == sgeth) {
-            //todo: we should probably change this to let the RP handle wrapping eth
-            //      for better gas estimation
-            //      though estimations should prob be done with this swap() call rather 
-            //      than on RP itself (since future we will have payloads that do additional things)
             weth.deposit{value: _amountBridged}();
         }
         // increase token approval to RP
@@ -76,7 +72,7 @@ contract StargateAdapter is ISushiXSwapV2Adapter {
 
         rp.processRoute(
             rpd.tokenIn,
-            _amountBridged,
+            _amountBridged != 0 ? _amountBridged: rpd.amountIn,
             rpd.tokenOut,
             rpd.amountOutMin,
             rpd.to,
@@ -216,10 +212,9 @@ contract StargateAdapter is ISushiXSwapV2Adapter {
 
         // 100000 -> exit gas
         uint256 limit = gasleft() - reserveGas;
-
+        
+        //todo: what if you had payload data for another adapter, but no swapData?
         if (_swapData.length > 0) {
-            uint256 valueToPass = _token == sgeth ? amountLD : 0;
-
             try
                 ISushiXSwapV2Adapter(address(this)).swap{gas: limit}(
                     amountLD,
