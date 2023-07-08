@@ -24,10 +24,10 @@ interface IUniswapV3Pool {
 }
 
 contract RouteProcessorHelper {
-  IUniswapV2Factory public v2Factory;
-  IUniswapV3Factory public v3Factory;
-  address public rp;
-  address public weth;
+  IUniswapV2Factory public immutable v2Factory;
+  IUniswapV3Factory public immutable v3Factory;
+  address public immutable rp;
+  address public immutable weth;
 
   constructor (address _v2Factory, address _v3Factory, address _rp, address _weth) {
     v2Factory = IUniswapV2Factory(_v2Factory);

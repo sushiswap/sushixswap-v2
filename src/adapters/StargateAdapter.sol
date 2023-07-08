@@ -11,7 +11,7 @@ import "../interfaces/stargate/IStargateReceiver.sol";
 import "../interfaces/stargate/IStargateWidget.sol";
 import "../interfaces/stargate/IStargateEthVault.sol";
 
-contract StargateAdapter is ISushiXSwapV2Adapter {
+contract StargateAdapter is ISushiXSwapV2Adapter, IStargateReceiver {
     using SafeERC20 for IERC20;
 
     IStargateRouter public immutable stargateRouter;
@@ -188,7 +188,7 @@ contract StargateAdapter is ISushiXSwapV2Adapter {
         address _token,
         uint256 amountLD,
         bytes memory payload
-    ) external payable {
+    ) external {
         if (msg.sender != address(stargateRouter)) revert NotStargateRouter();
 
         (address to, bytes memory _swapData, bytes memory _payloadData) = abi
