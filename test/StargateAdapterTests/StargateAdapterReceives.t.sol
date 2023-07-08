@@ -90,10 +90,9 @@ contract StargateAdapterReceives is BaseTest {
     }
     
     // uint32 keeps max amount to ~4294 usdc
-    function test_ReceiveERC20AndSwapToERC20(uint32 amount) public {
+    function test_FuzzReceiveERC20AndSwapToERC20(uint32 amount) public {
       vm.assume(amount > 1000000); // > 1 usdc
 
-      vm.deal(stargateRouter, 1 ether); // for gas
       deal(address(usdc), address(stargateAdapter), amount); // amount adapter receives
       
       // receive 1 usdc and swap to weth
@@ -139,10 +138,9 @@ contract StargateAdapterReceives is BaseTest {
     }
 
     // uint64 keeps max amount to ~18 eth
-    function test_ReceiveNativeAndSwapToERC20(uint64 amount) public {
+    function test_FuzzReceiveNativeAndSwapToERC20(uint64 amount) public {
       vm.assume(amount > 0.1 ether);
 
-      vm.deal(stargateRouter, 1 ether); // for gas
       vm.deal(stargateRouter, amount); // amount for sgReceive
       
       // receive 1 usdc and swap to weth
@@ -190,21 +188,113 @@ contract StargateAdapterReceives is BaseTest {
       assertEq(user.balance, 0, "user should have 0 eth");
     }
 
-    function test_ReceiveERC20AndDustSwaptoERC20() public {
-      // user should receive erc20 outputed from swap
-      // user should receive dust
+    function test_FuzzReceiveERC20AndDustSwaptoERC20(uint32 amount, uint64 dustAmount) public {
+      vm.assume(amount > 1000000); // > 1 usdc
+      vm.assume(dustAmount > 0.001 ether);
+
+      deal(address(usdc), address(stargateAdapter), amount); // amount adapter receives
+      vm.deal(stargateRouter, dustAmount); // dust for sgReceive
+
+      // receive 1 usdc and swap to weth
+      bytes memory computedRoute = routeProcessorHelper.computeRoute(
+        false,
+        false,
+        address(usdc),
+        address(weth),
+        500,
+        user
+      );
+
+      IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor.RouteProcessorData({
+          tokenIn: address(usdc),
+          amountIn: amount,
+          tokenOut: address(weth),
+          amountOutMin: 0,
+          to: user,
+          route: computedRoute
+      });
+
+      bytes memory rpd_encoded = abi.encode(rpd);
+
+      bytes memory payload = abi.encode(
+        address(user),  // to
+        rpd_encoded,    // _swapData
+        ""              // _payloadData 
+      );
+      
+      vm.startPrank(constants.getAddress("mainnet.stargateRouter"));
+      address(stargateAdapter).call{value: dustAmount}("");
+      // auto sends enough gas, so no need to calculate gasNeeded & send here
+      stargateAdapter.sgReceive(
+        0, "", 0,
+        address(usdc),
+        amount,
+        payload
+      );
+
+      assertEq(usdc.balanceOf(address(stargateAdapter)), 0, "stargateAdapter should have 0 usdc");
+      assertEq(usdc.balanceOf(user), 0, "user should have 0 usdc");
+      assertEq(weth.balanceOf(address(stargateAdapter)), 0, "stargateAdapter should have 0 weth");
+      assertGt(weth.balanceOf(user), 0, "user should have > 0 weth");
+      assertEq(address(stargateAdapter).balance, 0, "stargateAdapter should have 0 eth");
+      assertEq(user.balance, dustAmount, "user should have all the dust");
     }
 
-    function test_ReceiveNativeAndDustSwaptoERC20() public {
-      // user should receive erc20 outputed from swap
-      // user should receive dust
+    function test_FuzzReceiveNativeAndDustSwaptoERC20(uint64 amount, uint64 dustAmount) public {
+      amount = uint64(bound(amount, 0.1 ether, 10 ether));
+      dustAmount = uint64(bound(dustAmount, 0.001 ether, 0.1 ether));
+
+      vm.deal(stargateRouter, amount + dustAmount); // amount for sgReceive
+      
+      // receive 1 usdc and swap to weth
+      bytes memory computedRoute = routeProcessorHelper.computeRoute(
+        false,
+        false,
+        address(weth),
+        address(usdc),
+        500,
+        user
+      );
+
+      IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor.RouteProcessorData({
+          tokenIn: address(weth),
+          amountIn: amount,
+          tokenOut: address(usdc),
+          amountOutMin: 0,
+          to: user,
+          route: computedRoute
+      });
+
+      bytes memory rpd_encoded = abi.encode(rpd);
+
+      bytes memory payload = abi.encode(
+        address(user),  // to
+        rpd_encoded,    // _swapData
+        ""              // _payloadData 
+      );
+      
+      vm.startPrank(constants.getAddress("mainnet.stargateRouter"));
+      address(stargateAdapter).call{value: (amount + dustAmount)}("");
+      // auto sends enough gas, so no need to calculate gasNeeded & send here
+      stargateAdapter.sgReceive(
+        0, "", 0,
+        constants.getAddress("mainnet.sgeth"),
+        amount,
+        payload
+      );
+
+      assertEq(usdc.balanceOf(address(stargateAdapter)), 0, "stargateAdapter should have 0 usdc");
+      assertGt(usdc.balanceOf(user), 0, "user should have > 0 usdc");
+      assertEq(weth.balanceOf(address(stargateAdapter)), 0, "stargateAdapter should have 0 weth");
+      assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
+      assertEq(address(stargateAdapter).balance, 0, "stargateAdapter should have 0 eth");
+      assertEq(user.balance, dustAmount, "user should have dustAmount or greater of eth");
     }
 
     // uint32 keeps max amount to ~4294 usdc
-    function test_ReceiveERC20NotEnoughGasForSwap(uint32 amount) public {
+    function test_FuzzReceiveERC20NotEnoughGasForSwap(uint32 amount) public {
       vm.assume(amount > 1000000); // > 1 usdc
 
-      vm.deal(stargateRouter, 1 ether); // for gas
       deal(address(usdc), address(stargateAdapter), amount); // amount adapter receives
 
       // receive usdc and attempt swap to weth
@@ -248,10 +338,9 @@ contract StargateAdapterReceives is BaseTest {
       assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
     }
 
-    function test_ReceiveNativeNotEnoughGasForSwap(uint64 amount) public {
+    function test_FuzzReceiveNativeNotEnoughGasForSwap(uint64 amount) public {
       vm.assume(amount > 0.1 ether);
 
-      vm.deal(stargateRouter, 1 ether); // for gas
       vm.deal(stargateRouter, amount); // amount for sgReceive
 
       // receive native (sgETH) and attempt swap to usdc
@@ -297,11 +386,10 @@ contract StargateAdapterReceives is BaseTest {
 
     }
 
-    function test_ReceiveERC20AndDustNotEnoughForGasNoSwapData(uint32 amount, uint64 dustAmount) public {
+    function test_FuzzReceiveERC20AndDustNotEnoughForGasNoSwapData(uint32 amount, uint64 dustAmount) public {
       vm.assume(amount > 1000000); // > 1 usdc
       vm.assume(dustAmount > 0.001 ether);
 
-      vm.deal(stargateRouter, 1 ether); // for gas
       deal(address(usdc), address(stargateAdapter), amount); // amount adapter receives
       vm.deal(stargateRouter, dustAmount); // dust for sgReceive
 
@@ -347,10 +435,9 @@ contract StargateAdapterReceives is BaseTest {
       assertEq(user.balance, dustAmount, "user should have all the dust");
     }
 
-    function test_ReceiveERC20EnoughForGasNoSwapData(uint32 amount) public {
+    function test_FuzzReceiveERC20EnoughForGasNoSwapData(uint32 amount) public {
       vm.assume(amount > 1000000); // > 1 usdc
 
-      vm.deal(stargateRouter, 1 ether); // for gas
       deal(address(usdc), address(stargateAdapter), amount); // amount adapter receives
 
       // no swap data, payload empty
@@ -372,10 +459,9 @@ contract StargateAdapterReceives is BaseTest {
       assertEq(usdc.balanceOf(user), amount, "user should have all the usdc");
     }
 
-    function test_ReceiveNativeEnoughForGasNoSwapData(uint64 amount) public {
+    function test_FuzzReceiveNativeEnoughForGasNoSwapData(uint64 amount) public {
       vm.assume(amount > 0.1 ether);
 
-      vm.deal(stargateRouter, 1 ether); // for gas
       vm.deal(stargateRouter, amount); // amount for sgReceive
 
       // no swap data, payload empty
@@ -398,11 +484,10 @@ contract StargateAdapterReceives is BaseTest {
       assertEq(user.balance, amount, "user should have all the eth");      
     }
 
-    function test_ReceiveERC20AndDustEnoughForGasNoSwapData(uint32 amount, uint64 dustAmount) public {
+    function test_FuzzReceiveERC20AndDustEnoughForGasNoSwapData(uint32 amount, uint64 dustAmount) public {
       vm.assume(amount > 1000000); // > 1 usdc
       vm.assume(dustAmount > 0.1 ether);
 
-      vm.deal(stargateRouter, 1 ether); // for gas
       vm.deal(stargateRouter, dustAmount); // dust for sgReceive
       deal(address(usdc), address(stargateAdapter), amount); // amount adapter receives
 
@@ -428,10 +513,9 @@ contract StargateAdapterReceives is BaseTest {
       assertEq(user.balance, dustAmount, "user should have all the dust");
     }
 
-    function test_ReceiveERC20FailedSwap(uint32 amount) public {
+    function test_FuzzReceiveERC20FailedSwap(uint32 amount) public {
       vm.assume(amount > 1000000); // > 1 usdc
 
-      vm.deal(stargateRouter, 1 ether); // for gas
       deal(address(usdc), address(stargateAdapter), amount); // amount adapter receives
 
       // receive usdc and attempt swap to weth
@@ -475,11 +559,56 @@ contract StargateAdapterReceives is BaseTest {
       assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
     }
 
-    function test_ReceiveERC20AndDustFailedSwap(uint32 amount, uint64 dustAmount) public {
+    function test_FuzzReceiveERC20FailedSwapFromOutOfGas(uint32 amount) public {
+      vm.assume(amount > 1000000); // > 1 usdc
+
+      deal(address(usdc), address(stargateAdapter), amount); // amount adapter receives
+
+      // receive usdc and attempt swap to weth
+      bytes memory computedRoute = routeProcessorHelper.computeRoute(
+        false,
+        false,
+        address(usdc),
+        address(weth),
+        500,
+        user
+      );
+
+      // attempt swap from usdc to weth
+      IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor.RouteProcessorData({
+          tokenIn: address(usdc),
+          amountIn: amount,
+          tokenOut: address(weth),
+          amountOutMin: 0,
+          to: user,
+          route: computedRoute
+      });
+
+      bytes memory rpd_encoded = abi.encode(rpd);
+
+      bytes memory payload = abi.encode(
+        user,               // to
+        rpd_encoded,        // _swapData
+        ""                  // _payloadData 
+      );
+
+      vm.prank(constants.getAddress("mainnet.stargateRouter"));
+      stargateAdapter.sgReceive{gas: 100005}(
+        0, "", 0,
+        address(usdc),
+        amount,
+        payload
+      );
+
+      assertEq(usdc.balanceOf(address(stargateAdapter)), 0, "stargateAdapter should have 0 usdc");
+      assertEq(usdc.balanceOf(user), amount, "user should have all the usdc");
+      assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
+    }
+
+    function test_FuzzReceiveERC20AndDustFailedSwap(uint32 amount, uint64 dustAmount) public {
       vm.assume(amount > 1000000); // > 1 usdc
       vm.assume(dustAmount > 0.1 ether);
 
-      vm.deal(stargateRouter, 1 ether); // for gas
       vm.deal(stargateRouter, dustAmount); // dust for sgReceive
       deal(address(usdc), address(stargateAdapter), amount); // amount adapter receives
 
@@ -526,10 +655,9 @@ contract StargateAdapterReceives is BaseTest {
       assertEq(user.balance, dustAmount, "user should have all the dust");
     }
 
-    function test_ReceiveNativeFailedSwap(uint64 amount) public {
+    function test_FuzzReceiveNativeFailedSwap(uint64 amount) public {
       vm.assume(amount > 0.1 ether);
 
-      vm.deal(stargateRouter, 1 ether); // for gas
       vm.deal(stargateRouter, amount); // amount for sgReceive
 
       // receive native (sgETH) and attempt swap to usdc
@@ -574,10 +702,9 @@ contract StargateAdapterReceives is BaseTest {
       assertEq(usdc.balanceOf(user), 0, "user should have 0 usdc");
     }
 
-    function test_ReceiveERC20FailSwapSlippageCheck(uint32 amount) public {
+    function test_FuzzReceiveERC20FailSwapSlippageCheck(uint32 amount) public {
       vm.assume(amount > 1000000); // > 1 usdc
 
-      vm.deal(stargateRouter, 1 ether); // for gas
       deal(address(usdc), address(stargateAdapter), amount); // amount adapter receives
 
       // receive usdc and attempt swap to weth
@@ -621,10 +748,9 @@ contract StargateAdapterReceives is BaseTest {
       assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
     }
 
-    function test_ReceiveNativeFailSwapSlippageCheck(uint64 amount) public {
+    function test_FuzzReceiveNativeFailSwapSlippageCheck(uint64 amount) public {
       vm.assume(amount > 0.1 ether);
 
-      vm.deal(stargateRouter, 1 ether); // for gas
       vm.deal(stargateRouter, amount); // amount for sgReceive
 
       // receive native (sgETH) and attempt swap to usdc

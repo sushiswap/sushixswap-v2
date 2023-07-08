@@ -130,7 +130,7 @@ contract StargateAdapter is ISushiXSwapV2Adapter {
         );
 
         if (params.token == NATIVE_ADDRESS) {
-            // RP should not send native in, since we won't know the amount
+            // RP should not send native in, since we won't know the amount from dust
             if (params.amount == 0) revert RpSentNativeIn();
             IStargateEthVault(sgeth).deposit{value: params.amount}();
             params.token = sgeth;
