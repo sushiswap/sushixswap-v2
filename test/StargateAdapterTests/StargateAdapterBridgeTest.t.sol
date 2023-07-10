@@ -131,6 +131,7 @@ contract StargateAdapterBridgeTest is BaseTest {
         //todo: don't think we should be passing gasNeeded as value
         sushiXswap.bridge{value: gasNeeded}(
             ISushiXSwapV2.BridgeParams({
+                refId: 0x0000,
                 adapter: address(stargateAdapter),
                 tokenIn: address(usdc),
                 amountIn: amount,
@@ -253,6 +254,7 @@ contract StargateAdapterBridgeTest is BaseTest {
         //todo: don't think we should be passing gasNeeded as value
         sushiXswap.bridge{value: gasNeeded}(
             ISushiXSwapV2.BridgeParams({
+                refId: 0x0000,
                 adapter: address(stargateAdapter),
                 tokenIn: address(weth),
                 amountIn: amount,
@@ -354,6 +356,7 @@ contract StargateAdapterBridgeTest is BaseTest {
         uint256 valueToSend = gasNeeded + 1 ether;
         sushiXswap.bridge{value: valueToSend}(
             ISushiXSwapV2.BridgeParams({
+                refId: 0x0000,
                 adapter: address(stargateAdapter),
                 tokenIn: NATIVE_ADDRESS,
                 amountIn: 1 ether,
@@ -426,6 +429,7 @@ contract StargateAdapterBridgeTest is BaseTest {
 
         sushiXswap.bridge{value: gasNeeded}(
             ISushiXSwapV2.BridgeParams({
+                refId: 0x0000,
                 adapter: address(stargateAdapter),
                 tokenIn: address(usdc),
                 amountIn: amount,
@@ -498,6 +502,7 @@ contract StargateAdapterBridgeTest is BaseTest {
         vm.expectRevert(bytes4(keccak256("InsufficientGas()")));
         sushiXswap.bridge{value: gasNeeded}(
             ISushiXSwapV2.BridgeParams({
+                refId: 0x0000,
                 adapter: address(stargateAdapter),
                 tokenIn: address(usdc),
                 amountIn: amount,

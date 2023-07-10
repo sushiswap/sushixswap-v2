@@ -11,6 +11,7 @@ import "openzeppelin-contracts/contracts/access/Ownable.sol";
 
 interface ISushiXSwapV2 {
     struct BridgeParams {
+        bytes2 refId;
         address adapter;
         address tokenIn;
         uint256 amountIn;
@@ -19,7 +20,7 @@ interface ISushiXSwapV2 {
     }
 
     event SushiXSwapOnSrc(
-        uint256 indexed refId,
+        bytes2 indexed refId,
         address indexed sender,
         address adapter,
         address tokenIn,

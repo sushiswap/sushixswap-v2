@@ -106,6 +106,7 @@ contract StargateAdapterSwapAndBridgeTest is BaseTest {
 
         sushiXswap.swapAndBridge{value: gasNeeded}(
             ISushiXSwapV2.BridgeParams({
+                refId: 0x0000,
                 adapter: address(stargateAdapter),
                 tokenIn: address(weth),
                 amountIn: 1 ether,
@@ -166,6 +167,7 @@ contract StargateAdapterSwapAndBridgeTest is BaseTest {
         uint256 valueNeeded = gasNeeded + 1 ether;
         sushiXswap.swapAndBridge{value: valueNeeded}(
             ISushiXSwapV2.BridgeParams({
+                refId: 0x0000,
                 adapter: address(stargateAdapter),
                 tokenIn: address(weth), // doesn't matter what you put for bridge params when swapping first
                 amountIn: 1 ether,
@@ -226,6 +228,7 @@ contract StargateAdapterSwapAndBridgeTest is BaseTest {
 
         sushiXswap.swapAndBridge{value: gasNeeded}(
             ISushiXSwapV2.BridgeParams({
+                refId: 0x0000,
                 adapter: address(stargateAdapter),
                 tokenIn: address(weth), // doesn't matter for bridge params with swapAndBridge
                 amountIn: 1 ether,
@@ -287,6 +290,7 @@ contract StargateAdapterSwapAndBridgeTest is BaseTest {
         vm.expectRevert(bytes4(keccak256("RpSentNativeIn()")));
         sushiXswap.swapAndBridge{value: gasNeeded}(
             ISushiXSwapV2.BridgeParams({
+                refId: 0x0000,
                 adapter: address(stargateAdapter),
                 tokenIn: address(weth), // doesn't matter for bridge params with swapAndBridge
                 amountIn: 1 ether,

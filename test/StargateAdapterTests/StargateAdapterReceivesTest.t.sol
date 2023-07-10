@@ -1020,6 +1020,7 @@ contract StargateAdapterReceivesTest is BaseTest {
         uint256 valueToSend = gasNeeded + 1 ether;
         sushiXswap.bridge{value: valueToSend}(
             ISushiXSwapV2.BridgeParams({
+                refId: 0x0000,
                 adapter: address(stargateAdapter),
                 tokenIn: NATIVE_ADDRESS,
                 amountIn: 1 ether,
@@ -1126,6 +1127,7 @@ contract StargateAdapterReceivesTest is BaseTest {
 
         sushiXswap.swapAndBridge{value: gasNeeded}(
             ISushiXSwapV2.BridgeParams({
+                refId: 0x0000,
                 adapter: address(stargateAdapter),
                 tokenIn: address(weth),
                 amountIn: 1 ether,

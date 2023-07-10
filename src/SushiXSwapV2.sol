@@ -141,7 +141,7 @@ contract SushiXSwapV2 is ISushiXSwapV2, Ownable, Multicall {
         }(_bridgeParams.adapterData, _swapPayload, _payloadData);
 
         emit SushiXSwapOnSrc(
-            0x00,
+            _bridgeParams.refId,
             msg.sender,
             _bridgeParams.adapter,
             _bridgeParams.tokenIn,
@@ -171,7 +171,7 @@ contract SushiXSwapV2 is ISushiXSwapV2, Ownable, Multicall {
         }(_bridgeParams.adapterData, _swapPayload, _payloadData);
 
         emit SushiXSwapOnSrc(
-            0x00,
+            _bridgeParams.refId,
             msg.sender,
             _bridgeParams.adapter,
             _bridgeParams.tokenIn,
