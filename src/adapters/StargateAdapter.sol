@@ -9,8 +9,9 @@ import "../interfaces/ISushiXSwapV2Adapter.sol";
 import "../interfaces/stargate/IStargateRouter.sol";
 import "../interfaces/stargate/IStargateReceiver.sol";
 import "../interfaces/stargate/IStargateWidget.sol";
+import "../interfaces/stargate/IStargateEthVault.sol";
 
-contract StargateAdapter is ISushiXSwapV2Adapter {
+contract StargateAdapter is ISushiXSwapV2Adapter, IStargateReceiver {
     using SafeERC20 for IERC20;
 
     IStargateRouter public immutable stargateRouter;
@@ -18,6 +19,9 @@ contract StargateAdapter is ISushiXSwapV2Adapter {
     address public immutable sgeth;
     IRouteProcessor public immutable rp;
     IWETH public immutable weth;
+
+    address constant NATIVE_ADDRESS =
+        0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
 
     struct StargateTeleportParams {
         uint16 dstChainId; // stargate dst chain id
@@ -34,6 +38,7 @@ contract StargateAdapter is ISushiXSwapV2Adapter {
 
     error InsufficientGas();
     error NotStargateRouter();
+    error RpSentNativeIn();
 
     constructor(
         address _stargateRouter,
@@ -50,23 +55,24 @@ contract StargateAdapter is ISushiXSwapV2Adapter {
     }
 
     function swap(
+        uint256 _amountBridged,
         bytes calldata _swapData,
         address _token,
         bytes calldata _payloadData
-    ) external override {
+    ) external payable override {
         IRouteProcessor.RouteProcessorData memory rpd = abi.decode(
             _swapData,
             (IRouteProcessor.RouteProcessorData)
         );
         if (_token == sgeth) {
-            weth.deposit{value: rpd.amountIn}();
+            weth.deposit{value: _amountBridged}();
         }
         // increase token approval to RP
-        IERC20(rpd.tokenIn).safeIncreaseAllowance(address(rp), rpd.amountIn);
+        IERC20(rpd.tokenIn).safeIncreaseAllowance(address(rp), _amountBridged);
 
         rp.processRoute(
             rpd.tokenIn,
-            rpd.amountIn,
+            _amountBridged != 0 ? _amountBridged: rpd.amountIn,
             rpd.tokenOut,
             rpd.amountOutMin,
             rpd.to,
@@ -123,6 +129,19 @@ contract StargateAdapter is ISushiXSwapV2Adapter {
             (StargateTeleportParams)
         );
 
+        if (params.token == NATIVE_ADDRESS) {
+            // RP should not send native in, since we won't know the amount from dust
+            if (params.amount == 0) revert RpSentNativeIn();
+            IStargateEthVault(sgeth).deposit{value: params.amount}();
+            params.token = sgeth;
+        } else if (params.token == address(weth)) {
+            // this case is for when rp sends weth in
+            if (params.amount == 0) params.amount = weth.balanceOf(address(this));
+            weth.withdraw(params.amount);
+            IStargateEthVault(sgeth).deposit{value: params.amount}();
+            params.token = sgeth;    
+        }
+
         IERC20(params.token).safeApprove(
             address(stargateRouter),
             params.amount != 0
@@ -169,7 +188,7 @@ contract StargateAdapter is ISushiXSwapV2Adapter {
         address _token,
         uint256 amountLD,
         bytes memory payload
-    ) external payable {
+    ) external {
         if (msg.sender != address(stargateRouter)) revert NotStargateRouter();
 
         (address to, bytes memory _swapData, bytes memory _payloadData) = abi
@@ -178,10 +197,11 @@ contract StargateAdapter is ISushiXSwapV2Adapter {
         uint256 reserveGas = 100000;
         bool failed;
 
-        if (gasleft() < reserveGas) {
+        if (gasleft() < reserveGas || _swapData.length == 0) {
             if (_token != sgeth) {
                 IERC20(_token).safeTransfer(to, amountLD);
             }
+
             /// @dev transfer any native token received as dust to the to address
             if (address(this).balance > 0)
                 to.call{value: (address(this).balance)}("");
@@ -192,10 +212,12 @@ contract StargateAdapter is ISushiXSwapV2Adapter {
 
         // 100000 -> exit gas
         uint256 limit = gasleft() - reserveGas;
-
+        
+        //todo: what if you had payload data for another adapter, but no swapData?
         if (_swapData.length > 0) {
             try
                 ISushiXSwapV2Adapter(address(this)).swap{gas: limit}(
+                    amountLD,
                     _swapData,
                     _token,
                     _payloadData

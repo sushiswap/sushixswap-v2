@@ -11,12 +11,22 @@ import "openzeppelin-contracts/contracts/access/Ownable.sol";
 
 interface ISushiXSwapV2 {
     struct BridgeParams {
+        bytes2 refId;
         address adapter;
         address tokenIn;
         uint256 amountIn;
         address to;
         bytes adapterData;
     }
+
+    event SushiXSwapOnSrc(
+        bytes2 indexed refId,
+        address indexed sender,
+        address adapter,
+        address tokenIn,
+        uint256 amountIn,
+        address to
+    );
 
     function updateAdapterStatus(address _adapter, bool _status) external;
 

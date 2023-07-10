@@ -9,7 +9,7 @@ contract SushiXSwapV2 is ISushiXSwapV2, Ownable, Multicall {
     IRouteProcessor public rp;
 
     mapping(address => bool) public approvedAdapters;
-    mapping(address => bool) priviledgedUsers;
+    mapping(address => bool) privilegedUsers;
 
     address constant NATIVE_ADDRESS =
         0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
@@ -29,9 +29,9 @@ contract SushiXSwapV2 is ISushiXSwapV2, Ownable, Multicall {
         _;
     }
 
-    modifier onlyOwnerOrPriviledgedUser() {
+    modifier onlyOwnerOrPrivilegedUser() {
         require(
-            msg.sender == owner() || priviledgedUsers[msg.sender] == true,
+            msg.sender == owner() || privilegedUsers[msg.sender] == true,
             "SushiXSwapV2 not owner or privy user"
         );
         _;
@@ -45,15 +45,15 @@ contract SushiXSwapV2 is ISushiXSwapV2, Ownable, Multicall {
         unlocked = 1;
     }
 
-    function setPriviledge(address user, bool priviledge) external onlyOwner {
-        priviledgedUsers[user] = priviledge;
+    function setPrivileged(address user, bool priviledge) external onlyOwner {
+        privilegedUsers[user] = priviledge;
     }
 
-    function pause() external onlyOwnerOrPriviledgedUser {
+    function pause() external onlyOwnerOrPrivilegedUser {
         paused = 2;
     }
 
-    function resume() external onlyOwnerOrPriviledgedUser {
+    function resume() external onlyOwnerOrPrivilegedUser {
         paused = 1;
     }
 
@@ -70,7 +70,7 @@ contract SushiXSwapV2 is ISushiXSwapV2, Ownable, Multicall {
         rp = IRouteProcessor(newRouteProcessor);
     }
 
-    function swap(bytes memory _swapData) external payable override {
+    function swap(bytes memory _swapData) external payable override lock {
         // just swap
         _swap(_swapData);
     }
@@ -83,11 +83,16 @@ contract SushiXSwapV2 is ISushiXSwapV2, Ownable, Multicall {
             (IRouteProcessor.RouteProcessorData)
         );
 
-        IERC20(rpd.tokenIn).safeTransferFrom(
-            msg.sender,
-            address(this),
-            rpd.amountIn
-        );
+        if (rpd.tokenIn != NATIVE_ADDRESS) {
+            IERC20(rpd.tokenIn).safeTransferFrom(
+                msg.sender,
+                address(this),
+                rpd.amountIn
+            );
+        } else {
+            weth.deposit{value: rpd.amountIn}();
+            rpd.tokenIn = address(weth);
+        }
 
         // increase token approval to RP
         IERC20(rpd.tokenIn).safeIncreaseAllowance(address(rp), rpd.amountIn);
@@ -134,6 +139,15 @@ contract SushiXSwapV2 is ISushiXSwapV2, Ownable, Multicall {
         ISushiXSwapV2Adapter(_bridgeParams.adapter).adapterBridge{
             value: address(this).balance
         }(_bridgeParams.adapterData, _swapPayload, _payloadData);
+
+        emit SushiXSwapOnSrc(
+            _bridgeParams.refId,
+            msg.sender,
+            _bridgeParams.adapter,
+            _bridgeParams.tokenIn,
+            _bridgeParams.amountIn,
+            _bridgeParams.to
+        );
     }
 
     function swapAndBridge(
@@ -150,21 +164,20 @@ contract SushiXSwapV2 is ISushiXSwapV2, Ownable, Multicall {
     {
         // swap and bridge
 
-        if (_bridgeParams.tokenIn != NATIVE_ADDRESS) {
-            IERC20(_bridgeParams.tokenIn).safeTransferFrom(
-                msg.sender,
-                address(this),
-                _bridgeParams.amountIn
-            );
-        } else {
-            weth.deposit{value: _bridgeParams.amountIn}();
-        }
-
         _swap(_swapData);
 
         ISushiXSwapV2Adapter(_bridgeParams.adapter).adapterBridge{
             value: address(this).balance
         }(_bridgeParams.adapterData, _swapPayload, _payloadData);
+
+        emit SushiXSwapOnSrc(
+            _bridgeParams.refId,
+            msg.sender,
+            _bridgeParams.adapter,
+            _bridgeParams.tokenIn,
+            _bridgeParams.amountIn,
+            _bridgeParams.to
+        );
     }
 
     function rescueTokens(address _token, address _to) external onlyOwner {
