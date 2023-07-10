@@ -35,7 +35,7 @@ contract StargateAdapterBridgeTest is BaseTest {
 
     function setUp() public override {
         forkMainnet();
-        super.setUp(); 
+        super.setUp();
 
         weth = IWETH(constants.getAddress("mainnet.weth"));
         sushi = ERC20(constants.getAddress("mainnet.sushi"));
@@ -116,13 +116,14 @@ contract StargateAdapterBridgeTest is BaseTest {
             "" // payload
         );
 
-        (, uint256 eqFee, , , uint256 protocolFee, ) = stargateFeeLibrary.getFees(
-            1, // srcPoolId
-            1, // dstPoolId
-            111, // dstChainId
-            address(stargateAdapter), // from
-            amount // amountSD
-        );
+        (, uint256 eqFee, , , uint256 protocolFee, ) = stargateFeeLibrary
+            .getFees(
+                1, // srcPoolId
+                1, // dstPoolId
+                111, // dstChainId
+                address(stargateAdapter), // from
+                amount // amountSD
+            );
 
         uint256 amountMin = amount - eqFee - protocolFee;
 
@@ -152,7 +153,11 @@ contract StargateAdapterBridgeTest is BaseTest {
         );
 
         // check balances post call
-        assertEq(usdc.balanceOf(address(sushiXswap)), 0, "xswasp usdc balance should be 0");
+        assertEq(
+            usdc.balanceOf(address(sushiXswap)),
+            0,
+            "xswasp usdc balance should be 0"
+        );
         assertEq(usdc.balanceOf(user), 0, "user usdc balance should be 0");
 
         Vm.Log[] memory entries = vm.getRecordedLogs();
@@ -185,10 +190,26 @@ contract StargateAdapterBridgeTest is BaseTest {
 
                 assertEq(chainId, 111, "Swap event chainId should be 111");
                 assertEq(dstPoolId, 1, "Swap event dstPoolId should be 1");
-                assertEq(from, address(stargateAdapter), "Swap event from should be stargateAdapter");
-                assertEq(amountSD, amountMin, "Swap event amountSD should be amount bridged");
-                assertEq(_eqFeeEvent, eqFee, "Swap event eqFee should be polled eqFee before bridge");
-                assertEq(_protocolFeeEvent, _protocolFeeEvent, "Swap event protocolFee should be polled protocolFee before bridge");
+                assertEq(
+                    from,
+                    address(stargateAdapter),
+                    "Swap event from should be stargateAdapter"
+                );
+                assertEq(
+                    amountSD,
+                    amountMin,
+                    "Swap event amountSD should be amount bridged"
+                );
+                assertEq(
+                    _eqFeeEvent,
+                    eqFee,
+                    "Swap event eqFee should be polled eqFee before bridge"
+                );
+                assertEq(
+                    _protocolFeeEvent,
+                    _protocolFeeEvent,
+                    "Swap event protocolFee should be polled protocolFee before bridge"
+                );
                 break;
             }
         }
@@ -217,13 +238,14 @@ contract StargateAdapterBridgeTest is BaseTest {
             "" // payload
         );
 
-        (, uint256 eqFee, , , uint256 protocolFee, ) = stargateFeeLibrary.getFees(
-            13, // srcPoolId
-            13, // dstPoolId
-            111, // dstChainId
-            address(stargateAdapter), // from
-            amount // amountSD
-        );
+        (, uint256 eqFee, , , uint256 protocolFee, ) = stargateFeeLibrary
+            .getFees(
+                13, // srcPoolId
+                13, // dstPoolId
+                111, // dstChainId
+                address(stargateAdapter), // from
+                amount // amountSD
+            );
 
         uint256 amountMin = amount - eqFee - protocolFee;
 
@@ -253,7 +275,11 @@ contract StargateAdapterBridgeTest is BaseTest {
         );
 
         // check balances post call
-        assertEq(weth.balanceOf(address(sushiXswap)), 0, "xswasp weth balance should be 0");
+        assertEq(
+            weth.balanceOf(address(sushiXswap)),
+            0,
+            "xswasp weth balance should be 0"
+        );
         assertEq(weth.balanceOf(user), 0, "user weth balance should be 0");
 
         Vm.Log[] memory entries = vm.getRecordedLogs();
@@ -286,15 +312,31 @@ contract StargateAdapterBridgeTest is BaseTest {
 
                 assertEq(chainId, 111, "Swap event chainId should be 111");
                 assertEq(dstPoolId, 13, "Swap event dstPoolId should be 13");
-                assertEq(from, address(stargateAdapter), "Swap event from should be stargateAdapter");
-                assertEq(amountSD, amountMin, "Swap event amountSD should be amount bridged");
-                assertEq(_eqFeeEvent, eqFee, "Swap event eqFee should be polled eqFee before bridge");
-                assertEq(_protocolFeeEvent, _protocolFeeEvent, "Swap event protocolFee should be polled protocolFee before bridge");
+                assertEq(
+                    from,
+                    address(stargateAdapter),
+                    "Swap event from should be stargateAdapter"
+                );
+                assertEq(
+                    amountSD,
+                    amountMin,
+                    "Swap event amountSD should be amount bridged"
+                );
+                assertEq(
+                    _eqFeeEvent,
+                    eqFee,
+                    "Swap event eqFee should be polled eqFee before bridge"
+                );
+                assertEq(
+                    _protocolFeeEvent,
+                    _protocolFeeEvent,
+                    "Swap event protocolFee should be polled protocolFee before bridge"
+                );
                 break;
             }
         }
     }
-    
+
     // todo: need to fuzz this
     function test_BridgeNative() public {
         // bridge 1 eth
@@ -334,9 +376,7 @@ contract StargateAdapterBridgeTest is BaseTest {
         );
     }
 
-    function test_BridgeWithSwapData() public {
-        
-    }
+    function test_BridgeWithSwapData() public {}
 
     function test_RevertWhen_BridgeWithSwapDataInsufficientGasPassed() public {
         uint64 amount = 1 ether;
@@ -356,21 +396,22 @@ contract StargateAdapterBridgeTest is BaseTest {
             address(operator)
         );
 
-        IRouteProcessor.RouteProcessorData memory rpd_dst = IRouteProcessor.RouteProcessorData({
-            tokenIn: address(weth),
-            amountIn: 0,  // amountIn doesn't matter on dst since we use amount bridged
-            tokenOut: address(usdc),
-            amountOutMin: 0,
-            to: address(operator),
-            route: computedRoute_dst
-        });
+        IRouteProcessor.RouteProcessorData memory rpd_dst = IRouteProcessor
+            .RouteProcessorData({
+                tokenIn: address(weth),
+                amountIn: 0, // amountIn doesn't matter on dst since we use amount bridged
+                tokenOut: address(usdc),
+                amountOutMin: 0,
+                to: address(operator),
+                route: computedRoute_dst
+            });
 
         bytes memory rpd_encoded_dst = abi.encode(rpd_dst);
 
         bytes memory mockPayload = abi.encode(
-            user,               // to
-            rpd_encoded_dst,        // _swapData
-            ""                  // _payloadData 
+            user, // to
+            rpd_encoded_dst, // _swapData
+            "" // _payloadData
         );
 
         uint256 insufficientGasForDst = 90000;
@@ -383,7 +424,7 @@ contract StargateAdapterBridgeTest is BaseTest {
             0, // dustAmount
             mockPayload // payload
         );
-        
+
         vm.expectRevert(bytes4(keccak256("InsufficientGas()")));
         sushiXswap.bridge{value: gasNeeded}(
             ISushiXSwapV2.BridgeParams({

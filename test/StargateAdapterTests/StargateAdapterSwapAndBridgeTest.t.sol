@@ -21,7 +21,7 @@ contract StargateAdapterSwapAndBridgeTest is BaseTest {
     IWETH public weth;
     ERC20 public sushi;
     ERC20 public usdc;
-    
+
     address constant NATIVE_ADDRESS =
         0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
     address public operator = address(0xbeef);
@@ -68,7 +68,7 @@ contract StargateAdapterSwapAndBridgeTest is BaseTest {
 
         vm.stopPrank();
     }
-    
+
     function test_SwapFromERC20ToERC20AndBridge() public {
         // basic swap 1 weth to usdc and bridge
         vm.startPrank(operator);
@@ -84,24 +84,25 @@ contract StargateAdapterSwapAndBridgeTest is BaseTest {
         );
 
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
-          false,             // rpHasToken
-          false,              // isV2
-          address(weth),     // tokenIn
-          address(usdc),     // tokenOut
-          500,               // fee
-          address(stargateAdapter)  // to
+            false, // rpHasToken
+            false, // isV2
+            address(weth), // tokenIn
+            address(usdc), // tokenOut
+            500, // fee
+            address(stargateAdapter) // to
         );
 
-        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor.RouteProcessorData({
-            tokenIn: address(weth),
-            amountIn: 1 ether,
-            tokenOut: address(usdc),
-            amountOutMin: 0,
-            to: address(stargateAdapter),
-            route: computedRoute
-        });
+        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor
+            .RouteProcessorData({
+                tokenIn: address(weth),
+                amountIn: 1 ether,
+                tokenOut: address(usdc),
+                amountOutMin: 0,
+                to: address(stargateAdapter),
+                route: computedRoute
+            });
 
-       bytes memory rpd_encoded = abi.encode(rpd);
+        bytes memory rpd_encoded = abi.encode(rpd);
 
         sushiXswap.swapAndBridge{value: gasNeeded}(
             ISushiXSwapV2.BridgeParams({
@@ -131,180 +132,181 @@ contract StargateAdapterSwapAndBridgeTest is BaseTest {
     function test_SwapFromNativeToERC20AndBridge() public {
         // swap 1 eth to usdc and bridge
         vm.startPrank(operator);
-        
-        (uint256 gasNeeded , ) = stargateAdapter.getFee(
-          111, // dstChainId
-          1, // functionType
-          address(operator), // receiver
-          0, // gas
-          0, // dustAmount
-          "" // payload
+
+        (uint256 gasNeeded, ) = stargateAdapter.getFee(
+            111, // dstChainId
+            1, // functionType
+            address(operator), // receiver
+            0, // gas
+            0, // dustAmount
+            "" // payload
         );
 
         bytes memory computeRoute = routeProcessorHelper.computeRoute(
-          false, // rpHasToken
-          false, // isV2
-          address(weth), // tokenIn
-          address(usdc), // tokenOut
-          500, // fee
-          address(stargateAdapter) // to
+            false, // rpHasToken
+            false, // isV2
+            address(weth), // tokenIn
+            address(usdc), // tokenOut
+            500, // fee
+            address(stargateAdapter) // to
         );
 
-        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor.RouteProcessorData({
-          tokenIn: NATIVE_ADDRESS,
-          amountIn: 1 ether,
-          tokenOut: address(usdc),
-          amountOutMin: 0,
-          to: address(stargateAdapter),
-          route: computeRoute
-        });
+        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor
+            .RouteProcessorData({
+                tokenIn: NATIVE_ADDRESS,
+                amountIn: 1 ether,
+                tokenOut: address(usdc),
+                amountOutMin: 0,
+                to: address(stargateAdapter),
+                route: computeRoute
+            });
 
         bytes memory rpd_encoded = abi.encode(rpd);
 
         uint256 valueNeeded = gasNeeded + 1 ether;
         sushiXswap.swapAndBridge{value: valueNeeded}(
-          ISushiXSwapV2.BridgeParams({
-            adapter: address(stargateAdapter),
-            tokenIn: address(weth), // doesn't matter what you put for bridge params when swapping first
-            amountIn: 1 ether,
-            to: address(0x0),
-            adapterData: abi.encode(
-              111, // dstChainId - op
-              address(usdc), // token
-              1, // srcPoolId
-              1, // dstPoolId
-              0, // amount
-              0, // amountMin,
-              0, // dustAmount
-              address(operator), // receiver
-              address(0x00), // to
-              0 // gas
-            )
-          }),
-          rpd_encoded,
-          "", // _swapPayload
-          "" // _payloadData
+            ISushiXSwapV2.BridgeParams({
+                adapter: address(stargateAdapter),
+                tokenIn: address(weth), // doesn't matter what you put for bridge params when swapping first
+                amountIn: 1 ether,
+                to: address(0x0),
+                adapterData: abi.encode(
+                    111, // dstChainId - op
+                    address(usdc), // token
+                    1, // srcPoolId
+                    1, // dstPoolId
+                    0, // amount
+                    0, // amountMin,
+                    0, // dustAmount
+                    address(operator), // receiver
+                    address(0x00), // to
+                    0 // gas
+                )
+            }),
+            rpd_encoded,
+            "", // _swapPayload
+            "" // _payloadData
         );
     }
 
     function test_SwapFromERC20ToWethAndBridge() public {
-      // swap 1 usdc to eth and bridge
-      vm.startPrank(operator);
-      ERC20(address(usdc)).approve(address(sushiXswap), 1000000);
+        // swap 1 usdc to eth and bridge
+        vm.startPrank(operator);
+        ERC20(address(usdc)).approve(address(sushiXswap), 1000000);
 
-      (uint256 gasNeeded, ) = stargateAdapter.getFee(
-        111, // dstChainId
-        1, // functionType
-        address(operator), // receiver
-        0, // gas
-        0, // dustAmount
-        "" // payload
-      );
-
-      bytes memory computeRoute = routeProcessorHelper.computeRoute(
-        false, // rpHasToken
-        false, // isV2
-        address(usdc), // tokenIn
-        address(weth), // tokenOut
-        500, // fee
-        address(stargateAdapter) // to
-      );
-
-      IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor.RouteProcessorData({
-        tokenIn: address(usdc),
-        amountIn: 1000000,
-        tokenOut: address(weth),
-        amountOutMin: 0,
-        to: address(stargateAdapter),
-        route: computeRoute
-      });
-
-      bytes memory rpd_encoded = abi.encode(rpd);
-
-
-      sushiXswap.swapAndBridge{value: gasNeeded}(
-        ISushiXSwapV2.BridgeParams({
-          adapter: address(stargateAdapter),
-          tokenIn: address(weth), // doesn't matter for bridge params with swapAndBridge
-          amountIn: 1 ether,
-          to: address(0x0),
-          adapterData: abi.encode(
-            111, // dstChainId - op
-            address(weth), // token
-            13, // srcPoolId
-            13, // dstPoolId
-            0, // amount
-            0, // amountMin,
-            0, // dustAmount
+        (uint256 gasNeeded, ) = stargateAdapter.getFee(
+            111, // dstChainId
+            1, // functionType
             address(operator), // receiver
-            address(0x00), // to
-            0 // gas
-          )
-        }),
-        rpd_encoded,
-        "", // _swapPayload
-        ""  // _payloadData
-      );
+            0, // gas
+            0, // dustAmount
+            "" // payload
+        );
+
+        bytes memory computeRoute = routeProcessorHelper.computeRoute(
+            false, // rpHasToken
+            false, // isV2
+            address(usdc), // tokenIn
+            address(weth), // tokenOut
+            500, // fee
+            address(stargateAdapter) // to
+        );
+
+        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor
+            .RouteProcessorData({
+                tokenIn: address(usdc),
+                amountIn: 1000000,
+                tokenOut: address(weth),
+                amountOutMin: 0,
+                to: address(stargateAdapter),
+                route: computeRoute
+            });
+
+        bytes memory rpd_encoded = abi.encode(rpd);
+
+        sushiXswap.swapAndBridge{value: gasNeeded}(
+            ISushiXSwapV2.BridgeParams({
+                adapter: address(stargateAdapter),
+                tokenIn: address(weth), // doesn't matter for bridge params with swapAndBridge
+                amountIn: 1 ether,
+                to: address(0x0),
+                adapterData: abi.encode(
+                    111, // dstChainId - op
+                    address(weth), // token
+                    13, // srcPoolId
+                    13, // dstPoolId
+                    0, // amount
+                    0, // amountMin,
+                    0, // dustAmount
+                    address(operator), // receiver
+                    address(0x00), // to
+                    0 // gas
+                )
+            }),
+            rpd_encoded,
+            "", // _swapPayload
+            "" // _payloadData
+        );
     }
 
     function test_RevertWhen_SwapToNativeAndBridge() public {
-      // swap 1 usdc to eth and bridge
-      vm.startPrank(operator);
-      ERC20(address(usdc)).approve(address(sushiXswap), 1000000);
+        // swap 1 usdc to eth and bridge
+        vm.startPrank(operator);
+        ERC20(address(usdc)).approve(address(sushiXswap), 1000000);
 
-      (uint256 gasNeeded, ) = stargateAdapter.getFee(
-        111, // dstChainId
-        1, // functionType
-        address(operator), // receiver
-        0, // gas
-        0, // dustAmount
-        "" // payload
-      );
-
-      bytes memory computeRoute = routeProcessorHelper.computeRouteNativeOut(
-        false, // rpHasToken
-        false, // isV2
-        address(usdc), // tokenIn
-        address(weth), // tokenOut
-        500, // fee
-        address(stargateAdapter) // to
-      );
-
-      IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor.RouteProcessorData({
-        tokenIn: address(usdc),
-        amountIn: 1000000,
-        tokenOut: NATIVE_ADDRESS,
-        amountOutMin: 0,
-        to: address(stargateAdapter),
-        route: computeRoute
-      });
-
-      bytes memory rpd_encoded = abi.encode(rpd);
-
-      vm.expectRevert(bytes4(keccak256("RpSentNativeIn()")));
-      sushiXswap.swapAndBridge{value: gasNeeded}(
-        ISushiXSwapV2.BridgeParams({
-          adapter: address(stargateAdapter),
-          tokenIn: address(weth), // doesn't matter for bridge params with swapAndBridge
-          amountIn: 1 ether,
-          to: address(0x0),
-          adapterData: abi.encode(
-            111, // dstChainId - op
-            NATIVE_ADDRESS, // token
-            13, // srcPoolId
-            13, // dstPoolId
-            0, // amount
-            0, // amountMin,
-            0, // dustAmount
+        (uint256 gasNeeded, ) = stargateAdapter.getFee(
+            111, // dstChainId
+            1, // functionType
             address(operator), // receiver
-            address(0x00), // to
-            0 // gas
-          )
-        }),
-        rpd_encoded,
-        "", // _swapPayload
-        ""  // _payloadData
-      );
-    }
+            0, // gas
+            0, // dustAmount
+            "" // payload
+        );
 
+        bytes memory computeRoute = routeProcessorHelper.computeRouteNativeOut(
+            false, // rpHasToken
+            false, // isV2
+            address(usdc), // tokenIn
+            address(weth), // tokenOut
+            500, // fee
+            address(stargateAdapter) // to
+        );
+
+        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor
+            .RouteProcessorData({
+                tokenIn: address(usdc),
+                amountIn: 1000000,
+                tokenOut: NATIVE_ADDRESS,
+                amountOutMin: 0,
+                to: address(stargateAdapter),
+                route: computeRoute
+            });
+
+        bytes memory rpd_encoded = abi.encode(rpd);
+
+        vm.expectRevert(bytes4(keccak256("RpSentNativeIn()")));
+        sushiXswap.swapAndBridge{value: gasNeeded}(
+            ISushiXSwapV2.BridgeParams({
+                adapter: address(stargateAdapter),
+                tokenIn: address(weth), // doesn't matter for bridge params with swapAndBridge
+                amountIn: 1 ether,
+                to: address(0x0),
+                adapterData: abi.encode(
+                    111, // dstChainId - op
+                    NATIVE_ADDRESS, // token
+                    13, // srcPoolId
+                    13, // dstPoolId
+                    0, // amount
+                    0, // amountMin,
+                    0, // dustAmount
+                    address(operator), // receiver
+                    address(0x00), // to
+                    0 // gas
+                )
+            }),
+            rpd_encoded,
+            "", // _swapPayload
+            "" // _payloadData
+        );
+    }
 }
