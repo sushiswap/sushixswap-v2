@@ -98,9 +98,6 @@ contract SushiXSwapBaseTest is BaseTest {
         vm.expectRevert();
         sushiXswap.rescueTokens(NATIVE_ADDRESS, user);
 
-        vm.prank(operator);
-        vm.expectRevert();
-
         vm.startPrank(owner);
         sushiXswap.rescueTokens(NATIVE_ADDRESS, user);
         sushiXswap.rescueTokens(address(sushi), user);

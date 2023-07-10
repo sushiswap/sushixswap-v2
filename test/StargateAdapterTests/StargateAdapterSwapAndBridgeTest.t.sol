@@ -12,7 +12,7 @@ import "../../utils/RouteProcessorHelper.sol";
 
 import {StdUtils} from "forge-std/StdUtils.sol";
 
-contract SushiXSwapBaseTest is BaseTest {
+contract StargateAdapterSwapAndBridgeTest is BaseTest {
     SushiXSwapV2 public sushiXswap;
     StargateAdapter public stargateAdapter;
     IRouteProcessor public routeProcessor;
@@ -281,7 +281,6 @@ contract SushiXSwapBaseTest is BaseTest {
 
       bytes memory rpd_encoded = abi.encode(rpd);
 
-      //vm.expectRevert(stargateAdapter.RpSentNativeIn.selector);
       vm.expectRevert(bytes4(keccak256("RpSentNativeIn()")));
       sushiXswap.swapAndBridge{value: gasNeeded}(
         ISushiXSwapV2.BridgeParams({

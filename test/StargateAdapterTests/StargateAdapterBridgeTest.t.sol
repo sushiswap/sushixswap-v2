@@ -13,7 +13,7 @@ import "../../utils/RouteProcessorHelper.sol";
 
 import {StdUtils} from "forge-std/StdUtils.sol";
 
-contract SushiXSwapBaseTest is BaseTest {
+contract StargateAdapterBridgeTest is BaseTest {
     SushiXSwapV2 public sushiXswap;
     StargateAdapter public stargateAdapter;
     IRouteProcessor public routeProcessor;
@@ -339,6 +339,73 @@ contract SushiXSwapBaseTest is BaseTest {
     }
 
     function test_RevertWhen_BridgeWithSwapDataInsufficientGasPassed() public {
+        uint64 amount = 1 ether;
 
+        deal(address(weth), user, amount); // amount adapter receives
+
+        vm.startPrank(operator);
+
+        ERC20(address(weth)).approve(address(sushiXswap), amount);
+
+        bytes memory computedRoute_dst = routeProcessorHelper.computeRoute(
+            false,
+            false,
+            address(weth),
+            address(usdc),
+            500,
+            address(operator)
+        );
+
+        IRouteProcessor.RouteProcessorData memory rpd_dst = IRouteProcessor.RouteProcessorData({
+            tokenIn: address(weth),
+            amountIn: 0,  // amountIn doesn't matter on dst since we use amount bridged
+            tokenOut: address(usdc),
+            amountOutMin: 0,
+            to: address(operator),
+            route: computedRoute_dst
+        });
+
+        bytes memory rpd_encoded_dst = abi.encode(rpd_dst);
+
+        bytes memory mockPayload = abi.encode(
+            user,               // to
+            rpd_encoded_dst,        // _swapData
+            ""                  // _payloadData 
+        );
+
+        uint256 insufficientGasForDst = 90000;
+
+        (uint256 gasNeeded, ) = stargateAdapter.getFee(
+            111, // dstChainId
+            1, // functionType
+            address(operator), // receiver
+            insufficientGasForDst, // gas
+            0, // dustAmount
+            mockPayload // payload
+        );
+        
+        vm.expectRevert(bytes4(keccak256("InsufficientGas()")));
+        sushiXswap.bridge{value: gasNeeded}(
+            ISushiXSwapV2.BridgeParams({
+                adapter: address(stargateAdapter),
+                tokenIn: address(weth),
+                amountIn: 1 ether,
+                to: address(0x0),
+                adapterData: abi.encode(
+                    111, // dstChainId - op
+                    address(usdc), // token
+                    1, // srcPoolId
+                    1, // dstPoolId
+                    0, // amount
+                    0, // amountMin,
+                    0, // dustAmount
+                    address(stargateAdapter), // receiver
+                    address(operator), // to
+                    insufficientGasForDst // gas
+                )
+            }),
+            rpd_encoded_dst, // _swapPayload
+            "" // _payloadData
+        );
     }
 }
