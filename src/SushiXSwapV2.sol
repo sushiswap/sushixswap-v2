@@ -139,6 +139,15 @@ contract SushiXSwapV2 is ISushiXSwapV2, Ownable, Multicall {
         ISushiXSwapV2Adapter(_bridgeParams.adapter).adapterBridge{
             value: address(this).balance
         }(_bridgeParams.adapterData, _swapPayload, _payloadData);
+
+        emit SushiXSwapOnSrc(
+            0x00,
+            msg.sender,
+            _bridgeParams.adapter,
+            _bridgeParams.tokenIn,
+            _bridgeParams.amountIn,
+            _bridgeParams.to
+        );
     }
 
     function swapAndBridge(
@@ -160,6 +169,15 @@ contract SushiXSwapV2 is ISushiXSwapV2, Ownable, Multicall {
         ISushiXSwapV2Adapter(_bridgeParams.adapter).adapterBridge{
             value: address(this).balance
         }(_bridgeParams.adapterData, _swapPayload, _payloadData);
+
+        emit SushiXSwapOnSrc(
+            0x00,
+            msg.sender,
+            _bridgeParams.adapter,
+            _bridgeParams.tokenIn,
+            _bridgeParams.amountIn,
+            _bridgeParams.to
+        );
     }
 
     function rescueTokens(address _token, address _to) external onlyOwner {

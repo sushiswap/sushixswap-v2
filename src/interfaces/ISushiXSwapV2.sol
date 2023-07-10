@@ -21,8 +21,10 @@ interface ISushiXSwapV2 {
     event SushiXSwapOnSrc(
         uint256 indexed refId,
         address indexed sender,
-        address indexed tokenBridged,
-        uint256 amountBridged
+        address adapter,
+        address tokenIn,
+        uint256 amountIn,
+        address to
     );
 
     function updateAdapterStatus(address _adapter, bool _status) external;
