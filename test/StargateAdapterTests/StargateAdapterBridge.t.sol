@@ -333,4 +333,12 @@ contract SushiXSwapBaseTest is BaseTest {
             "" // _payloadData
         );
     }
+
+    function test_BridgeWithSwapData() public {
+        
+    }
+
+    function test_RevertWhen_BridgeWithSwapDataInsufficientGasPassed() public {
+
+    }
 }

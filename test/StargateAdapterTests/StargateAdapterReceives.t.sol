@@ -88,6 +88,17 @@ contract StargateAdapterReceives is BaseTest {
 
         vm.stopPrank();
     }
+
+    function test_RevertWhen_ReceivedCallFromNonStargateRouter() public {
+        vm.prank(owner);
+        vm.expectRevert();
+        stargateAdapter.sgReceive{gas: 200000}(
+            0, "", 0,
+            address(usdc),
+            1000000,
+            ""
+        );
+    }
     
     // uint32 keeps max amount to ~4294 usdc
     function test_FuzzReceiveERC20AndSwapToERC20(uint32 amount) public {

@@ -18,6 +18,13 @@ interface ISushiXSwapV2 {
         bytes adapterData;
     }
 
+    event SushiXSwapOnSrc(
+        uint256 indexed refId,
+        address indexed sender,
+        address indexed tokenBridged,
+        uint256 amountBridged
+    );
+
     function updateAdapterStatus(address _adapter, bool _status) external;
 
     function updateRouteProcessor(address newRouteProcessor) external;
