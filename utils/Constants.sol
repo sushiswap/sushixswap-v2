@@ -27,6 +27,7 @@ contract Constants {
     setAddress("mainnet.sgeth", 0x72E2F4830b9E45d52F80aC08CB2bEC0FeF72eD9c);
     setAddress("mainnet.stargateUSDCPool", 0xdf0770dF86a8034b3EFEf0A1Bb3c889B8332FF56);
     setAddress("mainnet.stargateETHPool", 0x101816545F6bd2b1076434B54383a1E633390A2E);
+    setAddress("mainnet.synapseBridge", 0x2796317b0fF8538F253012862c06787Adfb8cEb6);
   }
 
   function initAddressLabels(Vm vm) public {

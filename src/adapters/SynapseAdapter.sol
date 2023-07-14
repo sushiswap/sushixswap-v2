@@ -2,25 +2,37 @@
 pragma solidity 0.8.10;
 
 import "../interfaces/ISushiXSwapV2Adapter.sol";
+import "../interfaces/synapse/ISynapseBridge.sol";
+import "../interfaces/IWETH.sol";
 import "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 
 contract SynapseAdapter is ISushiXSwapV2Adapter {
     using SafeERC20 for IERC20;
 
-    address public immutable synapseRouter;
+    ISynapseBridge public synapseBridge;
+    IWETH public weth;
 
     address constant NATIVE_ADDRESS =
         0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
 
-    constructor(address _synapseRouter) {
-        synapseRouter = _synapseRouter;
+    struct SynapseBridgeParams {
+        uint16 chainId;
+        address token;
+        uint256 amount;
+        address to;
+    }
+
+    constructor (address _synapseBridge, address _weth) {
+        synapseBridge = ISynapseBridge(_synapseBridge);
+        weth = IWETH(_weth);
     }
 
     function swap(
+        uint256 _amountBridged,
         bytes calldata _swapData,
         address _token,
         bytes calldata _payloadData
-    ) external override {
+    ) external payable override {
         revert();
     }
 
@@ -29,19 +41,19 @@ contract SynapseAdapter is ISushiXSwapV2Adapter {
         bytes calldata,
         bytes calldata
     ) external payable override {
-        (address token, bytes memory synapseRouterData) = abi.decode(
+        SynapseBridgeParams memory params = abi.decode(
             _adapterData,
-            (address, bytes)
+            (SynapseBridgeParams)
         );
 
-        if (token != NATIVE_ADDRESS) {
-            IERC20(token).safeApprove(
-                synapseRouter,
-                IERC20(token).balanceOf(address(this))
+        if (params.token != NATIVE_ADDRESS) {
+            IERC20(params.token).safeApprove(
+                address(synapseBridge),
+                IERC20(params.token).balanceOf(address(this))
             );
-        }
 
-        synapseRouter.call{value: address(this).balance}(synapseRouterData);
+            synapseBridge.deposit(params.to, params.chainId, IERC20(params.token), params.amount);
+        }
     }
 
     function sendMessage(bytes calldata _adapterData) external override {
