@@ -2,12 +2,11 @@
 pragma solidity >=0.8.0;
 
 import {SushiXSwapV2} from "../../src/SushiXSwapV2.sol";
-import {AxelarAdapter} from "../../src/adapters/AxelarAdapter.sol";
+import {SquidAdapter} from "../../src/adapters/SquidAdapter.sol";
 import {ISushiXSwapV2} from "../../src/interfaces/ISushiXSwapV2.sol";
 import {IRouteProcessor} from "../../src/interfaces/IRouteProcessor.sol";
 import {IWETH} from "../../src/interfaces/IWETH.sol";
 import {ERC20} from "openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
-import {Strings} from "openzeppelin-contracts/contracts/utils/Strings.sol";
 import "../../utils/BaseTest.sol";
 
 import {StringToBytes32, Bytes32ToString} from "../../src/utils/Bytes32String.sol";
@@ -15,11 +14,11 @@ import {StringToAddress, AddressToString} from "../../src/utils/AddressString.so
 
 import {console2} from "forge-std/console2.sol";
 
-contract AxelarAdapterBridgeTest is BaseTest {
+contract SquidBridgeTest is BaseTest {
   SushiXSwapV2 public sushiXswap;
-  AxelarAdapter public axelarAdapter;
+  SquidAdapter public squidAdapter;
   IRouteProcessor public routeProcessor;
-  
+
   IWETH public weth;
   ERC20 public sushi;
   ERC20 public usdc;
@@ -48,46 +47,17 @@ contract AxelarAdapterBridgeTest is BaseTest {
     // add operator as privileged
     sushiXswap.setPrivileged(operator, true);
 
-    // setup axelar adapter
-    axelarAdapter = new AxelarAdapter(
-      constants.getAddress("mainnet.axelarGateway"),
-      constants.getAddress("mainnet.axelarGasService"),
-      constants.getAddress("mainnet.routeProcessor"),
-      constants.getAddress("mainnet.weth")
+    // setup squid adapter
+    squidAdapter = new SquidAdapter(
+      constants.getAddress("mainnet.squidRouter")
     );
-    sushiXswap.updateAdapterStatus(address(axelarAdapter), true);
+
+    sushiXswap.updateAdapterStatus(address(squidAdapter), true);
 
     vm.stopPrank();
   }
 
-  /*function test_BridgeERC20() public {
-    uint32 amount = 1000000; // 1 usdc
-
-    deal(address(usdc), user, amount);
-
-    // basic usdc bridge, mint axlUSDC on otherside
-    vm.startPrank(user);
-    usdc.approve(address(sushiXswap), amount);
-
-    sushiXswap.bridge(
-      ISushiXSwapV2.BridgeParams({
-        refId: 0x0000,
-        adapter: address(axelarAdapter),
-        tokenIn: address(usdc),
-        amountIn: amount,
-        to: address(0x0),
-        adapterData: abi.encode(
-          user,           // sender
-          address(usdc),  // token
-          StringToBytes32.toBytes32("arbitrum"),     // destinationChain
-          user, // destinationAddress
-          StringToBytes32.toBytes32("USDC"),      // symbol
-          amount,         // amount
-          user            // refundAddress
-        )
-      }),
-      "", // swap payload
-      ""  // payload data
-    );
-  }*/
+  function test_BridgeERC20() public {
+    
+  }
 }

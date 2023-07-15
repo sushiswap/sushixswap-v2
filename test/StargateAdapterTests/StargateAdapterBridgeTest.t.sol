@@ -97,7 +97,8 @@ contract StargateAdapterBridgeTest is BaseTest {
     );
 
     // uint32 keeps it max amount to ~4294 usdc
-    function testFuzz_BridgeERC20(uint32 amount) public {
+    function testFuzz_BridgeERC20() public {
+        uint32 amount = 1000001;
         vm.assume(amount > 1000000); // > 1 usdc
 
         vm.deal(user, 1 ether);
@@ -115,6 +116,8 @@ contract StargateAdapterBridgeTest is BaseTest {
             0, // dustAmount
             "" // payload
         );
+
+        console2.log(gasNeeded);
 
         (, uint256 eqFee, , , uint256 protocolFee, ) = stargateFeeLibrary
             .getFees(

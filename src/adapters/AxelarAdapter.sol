@@ -22,6 +22,8 @@ contract AxelarAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
   IRouteProcessor public immutable rp;
   IWETH public immutable weth;
 
+  // todo: add sibling map by network
+
   address constant NATIVE_ADDRESS =
         0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
 
@@ -68,30 +70,30 @@ contract AxelarAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
     bytes calldata _swapData,
     bytes calldata _payloadData
   ) external payable override {
-    console2.log("getting in adapter");
-
-
       AxelarBridgeParams memory params = abi.decode(
         _adapterData,
         (AxelarBridgeParams)
       );
 
-      console2.log("getting past 2nd decode");
+      // convert native to weth if necessary
+      // prob should check if rp sent native in and revert
 
-      console2.log(params.sender);
-      console2.log(params.token);
-      console2.log(Bytes32ToString.toTrimmedString(params.destinationChain));
-      console2.log(params.destinationAddress);
-      console2.log(Bytes32ToString.toTrimmedString(params.symbol));
-      console2.log(params.amount);
-      console2.log(params.refundAddress);
+      // pay native gas to gasService (do we want to implement gas express?)
+      // do check for 100k min gas first
 
+      // approve token to gateway
       IERC20(params.token).safeApprove(
         address(gateway),
         params.amount != 0
           ? params.amount
           : IERC20(params.token).balanceOf(address(this))
       );
+
+      // build payload from _swapData and _payloadData
+
+      // sendToken and message w/ payload to the gateway contract
+
+
 
       if (_swapData.length == 0 && _payloadData.length == 0) {
         // send token
@@ -108,11 +110,12 @@ contract AxelarAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
   // receive for axelar
   function executeWithToken(
 
-  ) external {
+  ) internal override {
     
   }
 
   function sendMessage(bytes calldata _adapterData) external override {
+    // actually could prob implement this if we want to utilize it
     revert();
   }
 }
