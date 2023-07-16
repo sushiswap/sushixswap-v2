@@ -34,7 +34,8 @@ contract AxelarAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
     address destinationAddress;
     bytes32 symbol;
     uint256 amount;
-    address refundAddress;  
+    address refundAddress;
+    // express gas bool  
   }
 
   error InsufficientGas();
@@ -58,7 +59,30 @@ contract AxelarAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
     address _token,
     bytes calldata _payloadData
   ) external payable override {
-    
+      IRouteProcessor.RouteProcessorData memory rpd = abi.decode(
+        _swapData,
+        (IRouteProcessor.RouteProcessorData)
+      );
+      // increase token approval to RP
+      IERC20(rpd.tokenIn).safeIncreaseAllowance(address(rp), _amountBridged);
+
+      rp.processRoute(
+        rpd.tokenIn,
+        _amountbridged,
+        rpd.tokenOut,
+        rpd.to,
+        rpd.route
+      );
+
+      // tokens should be sent via rp
+      if (_payloadData.length > 0) {
+        PayloadData memory pd = abi.decode(_payloadData, (PayloadData));
+        try
+          IPayloadExecutor(pd.target).onPayloadReceive(pd.targetData)
+        {} catch (bytes memory) {
+          revert();
+        }
+      }
   }
 
   /*function getFee() external view override returns (uint256) {
@@ -77,9 +101,13 @@ contract AxelarAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
 
       // convert native to weth if necessary
       // prob should check if rp sent native in and revert
-
-      // pay native gas to gasService (do we want to implement gas express?)
-      // do check for 100k min gas first
+      // think you can only transfer erc20 (preferablly needs to be usdc)
+      if (params.token == NATIVE_ADDRESS) {
+        // RP should not send native in, since we won't know the amount from gas passed
+        if (params.amount == 0) revert RPSentNativeIn();
+        weth.deposit{value: _amountBridged}();
+        params.token = address(weth);
+      }
 
       // approve token to gateway
       IERC20(params.token).safeApprove(
@@ -89,33 +117,89 @@ contract AxelarAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
           : IERC20(params.token).balanceOf(address(this))
       );
 
+      // pay native gas to gasService (do we want to implement gas express?)
+      // do check for 100k min gas first
+      //if (params.gas < 100000) revert InsufficientGas();
+      axelarGasService.payNativeGasForContractCallWithToken{value: address(this).balance}(
+        params.sender,
+        Bytes32ToString.toTrimmedString(params.destinationChain), 
+        AddressToString.toString(params.destinationAddress), 
+        payload,
+        Bytes32ToString.toTrimmedString(params.symbol),
+        params.amount,
+        params.refundAddress
+      );
+
       // build payload from _swapData and _payloadData
-
-      // sendToken and message w/ payload to the gateway contract
-
-
-
-      if (_swapData.length == 0 && _payloadData.length == 0) {
-        // send token
-        gateway.sendToken(
-          Bytes32ToString.toTrimmedString(params.destinationChain),
-          AddressToString.toString(params.destinationAddress),
-          Bytes32ToString.toTrimmedString(params.symbol),
-          params.amount
-        );
+      bytes memory payload = bytes("");
+      if (_swapData.length > 0 || _payloadData.length > 0) {
+        paylod = abi.encode(params.refundAddress, _swapData, _payloadData);
       }
 
+      // sendToken and message w/ payload to the gateway contract
+      gateway.callContractWithToken(
+        Bytes32ToString.toTrimmedString(params.destinationChain),
+        AddressToString.toString(params.destinationAddress),
+        payload, 
+        Bytes32ToString.toTrimmedString(params.symbol),
+        params.amount
+      );
   }
 
   // receive for axelar
-  function executeWithToken(
-
+  function _executeWithToken(
+    string memory sourceChain,
+    string memory sourceAddress,
+    bytes calldata payload,
+    string memory tokenSymbol,
+    uint256 amount
   ) internal override {
-    
+      // either check if msg.sender is gateway
+      // or check sourceAddress is from sibling contract according to mapping by sourceChain
+      
+      (address refundAddress, bytes memory _swapData, bytes memory _payloadData) = abi
+        .decode(payload, (address, bytes, bytes));
+      address _token = gateway.tokenAddresses(tokenSymbol);
+
+      uint2566 reserveGas = 100000;
+
+      if (gasLeft() < reserveGas || _swapData.length == 0) {
+        IERC20(_token).safeTransfer(refundAddress, amount);
+
+        /// @dev transfer any natvie token
+        if (address(this).balance > 0)
+          to.call{value: (address(this).balance)}("");
+        
+        return;
+      }
+
+      // 100000 -> exit gas
+      uint256 limit = gasleft() - reserveGas;
+
+      // todo: what if no swapData but there is payload data?
+      if (_swapData.length > 0) {
+        try
+          ISushiXSwapV2Adapter(address(this)).swap{gas: limit}(
+            amount,
+            _swapData,
+            _token,
+            _payloadData
+          )
+        {} catch (bytes memory) {
+          IERC20(_token).safeTransfer(refundAddress, amount);
+        }
+      }
+
+      /// @dev transfer any native token received as dust to the to address
+      if (address(this).balance > 0)
+        to.call{value: (address(this).balance)}("");
+
   }
 
   function sendMessage(bytes calldata _adapterData) external override {
-    // actually could prob implement this if we want to utilize it
+    (_adapterData);
     revert();
   }
+
+  receive() external payable {}
 }
