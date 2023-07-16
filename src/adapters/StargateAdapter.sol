@@ -142,11 +142,12 @@ contract StargateAdapter is ISushiXSwapV2Adapter, IStargateReceiver {
             params.token = sgeth;    
         }
 
+        if (params.amount == 0)
+            params.amount = IERC20(params.token).balanceOf(address(this));
+
         IERC20(params.token).safeApprove(
             address(stargateRouter),
-            params.amount != 0
-                ? params.amount
-                : IERC20(params.token).balanceOf(address(this))
+            params.amount
         );
 
         bytes memory payload = bytes("");
@@ -161,9 +162,7 @@ contract StargateAdapter is ISushiXSwapV2Adapter, IStargateReceiver {
             params.srcPoolId,
             params.dstPoolId,
             payable(tx.origin), // refund address
-            params.amount != 0
-                ? params.amount
-                : IERC20(params.token).balanceOf(address(this)),
+            params.amount,
             params.amountMin,
             IStargateRouter.lzTxObj(
                 params.gas,

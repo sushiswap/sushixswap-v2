@@ -2,56 +2,62 @@
 pragma solidity 0.8.10;
 
 import "../interfaces/IRouteProcessor.sol";
-import "../interfaces/IWeth.sol";
 import "axelar-gmp-sdk-solidity/executable/AxelarExecutable.sol";
 import "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
-
 import "../interfaces/ISushiXSwapV2Adapter.sol";
 import "axelar-gmp-sdk-solidity/interfaces/IAxelarGasService.sol";
 import "axelar-gmp-sdk-solidity/interfaces/IAxelarGateway.sol";
+
+import {ITokenMessenger} from "../interfaces/cctp/ITokenMessenger.sol";
 
 import { AddressToString } from "../utils/AddressString.sol";
 import { Bytes32ToString } from "../utils/Bytes32String.sol";
 
 import {console2} from "forge-std/console2.sol";
 
-contract AxelarAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
+contract CTTPAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
   using SafeERC20 for IERC20;
 
   IAxelarGasService public immutable axelarGasService;
+  ITokenMessenger public immutable tokenMessenger;
   IRouteProcessor public immutable rp;
-  IWETH public immutable weth;
+  IERC20 public immutable nativeUSDC;
 
   // todo: add sibling map by network
-  // can swap out destinationAddress stuff if we add siblings
+  // can swap out destinationAddress stuff if we do siblings
+  
+  // not a ownable contract, and adapters are swapable
+  // so we hardcode the circle supported chains
+  mapping(string => uint32) public circleDestinationDomains;
+  circleDestinationDomains["ethereum"] = 0;
+  circleDestinationDomains["avalanche"] = 1;
+  circleDestinationDomains["arbitrum"] = 2;
 
-  address constant NATIVE_ADDRESS =
-        0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
 
-  struct AxelarBridgeParams {
-    address token;
+  struct CTTPBridgeParams {
     bytes32 destinationChain;
     address destinationAddress;
-    bytes32 symbol;
     uint256 amount;
     address refundAddress;
     // express gas bool
-    // uint256 gas (we don't need for axelar call, but maybe good habit to make sure caller is accounting for gas)  
+    // uint256 gas
   }
 
   error InsufficientGas();
   error NotAxelarSibiling();
-  error RpSentNativeIn();
+  error NoUSDCToBridge();
 
   constructor(
     address _axelarGateway,
     address _gasService,
+    address _tokenMessenger,
     address _rp,
-    address _weth
+    address _nativeUSDC
   ) AxelarExecutable(_axelarGateway) {
     axelarGasService = IAxelarGasService(_gasService);
+    tokenMessenger = ITokenMessenger(_tokenMessenger);
     rp = IRouteProcessor(_rp);
-    weth = IWETH(_weth);
+    nativeUSDC = IERC20(_nativeUSDC);
   }
 
   function swap(
@@ -65,10 +71,10 @@ contract AxelarAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
         (IRouteProcessor.RouteProcessorData)
       );
       // increase token approval to RP
-      IERC20(rpd.tokenIn).safeIncreaseAllowance(address(rp), _amountBridged);
+      nativeUSDC.safeIncreaseAllowance(address(rp), _amountBridged);
 
       rp.processRoute(
-        rpd.tokenIn,
+        address(nativeUSDC),
         _amountbridged,
         rpd.tokenOut,
         rpd.to,
@@ -86,86 +92,73 @@ contract AxelarAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
       }
   }
 
-  /*function getFee() external view override returns (uint256) {
-    return 0;
-  }*/
 
   function adapterBridge(
     bytes calldata _adapterData,
-    bytes calldata _swapData,
-    bytes calldata _payloadData
+    bytes calldata,
+    bytes calldata
   ) external payable override {
-      AxelarBridgeParams memory params = abi.decode(
+      CTTPBridgeParams memory params = abi.decode(
         _adapterData,
-        (AxelarBridgeParams)
+        (CTTPBridgeParams)
       );
 
-      // convert native to weth if necessary
-      // prob should check if rp sent native in and revert
-      // think you can only transfer erc20 (preferablly needs to be usdc)
-      if (params.token == NATIVE_ADDRESS) {
-        // RP should not send native in, since we won't know the amount from gas passed
-        if (params.amount == 0) revert RPSentNativeIn();
-        weth.deposit{value: _amountBridged}();
-        params.token = address(weth);
-      }
+      if (nativeUSDC.balanceOf(address(this)) <= 0) 
+        revert NoUSDCToBridge();
 
       if (params.amount == 0)
-        params.amount = IERC20(params.token).balanceOf(address(this));
+        params.amount = nativeUSDC.balanceOf(address(this));
+      
+      // burn params.amount of USDC tokens
+      nativeUSDC.safeApprove(address(tokenMessenger), params.amount);
 
-      // approve token to gateway
-      IERC20(params.token).safeApprove(
-        address(gateway),
-        params.amount
+      tokenMessenger.depositForBurn(
+        params.amount,
+        this.circleDestinationDomains(Bytes32ToString.toTrimmedString(params.destinationChain)),
+        bytes32(uint256(uint160(params.destinationAddress))),
+        address(nativeUSDC)
       );
 
       // build payload from _swapData and _payloadData
       bytes memory payload = bytes("");
       if (_swapData.length > 0 || _payloadData.length > 0) {
-        paylod = abi.encode(params.refundAddress, _swapData, _payloadData);
+        paylod = abi.encode(params.refundAddress, params.amount, _swapData, _payloadData);
       }
 
-      // pay native gas to gasService (do we want to implement gas express?)
-      // do check for 100k min gas first
-      //if (params.gas < 100000) revert InsufficientGas();
-      axelarGasService.payNativeGasForContractCallWithToken{value: address(this).balance}(
+      // pay native gas to gasService
+      axelarGasService.payNativeGasForContractCall{value: address(this).balance}(
         address(this),
-        Bytes32ToString.toTrimmedString(params.destinationChain), 
-        AddressToString.toString(params.destinationAddress), 
+        Bytes32ToString.toTrimmedString(params.destinationChain),
+        AddressToString.toString(params.destinationAddress),
         payload,
-        Bytes32ToString.toTrimmedString(params.symbol),
-        params.amount,
         params.refundAddress
       );
 
-      // sendToken and message w/ payload to the gateway contract
-      gateway.callContractWithToken(
+      // send message w/ paylod to the gateway contract
+      gateway.callContract(
         Bytes32ToString.toTrimmedString(params.destinationChain),
         AddressToString.toString(params.destinationAddress),
-        payload, 
-        Bytes32ToString.toTrimmedString(params.symbol),
-        params.amount
+        payload
       );
   }
 
   // receive for axelar
-  function _executeWithToken(
-    string memory sourceChain,
-    string memory sourceAddress,
-    bytes calldata payload,
-    string memory tokenSymbol,
-    uint256 amount
-  ) internal override {      
-      (address refundAddress, bytes memory _swapData, bytes memory _payloadData) = abi
-        .decode(payload, (address, bytes, bytes));
-      address _token = gateway.tokenAddresses(tokenSymbol);
+  function _execute(
+    string memory /*sourceChain*/,
+    string memory /*sourceAddress*/,
+    bytes calldata payload
+  ) internal override {
+      (address refundAddress, uint256 amount, bytes memory _swapData, bytes memory _payloadData) = abi.decode(
+        payload,
+        (address, uint256, bytes, bytes)
+      );
 
-      uint2566 reserveGas = 100000;
+      uint256 reserveGas = 100000;
 
       if (gasLeft() < reserveGas || _swapData.length == 0) {
-        IERC20(_token).safeTransfer(refundAddress, amount);
+        nativeUSDC.safeTransfer(refundAddress, amount);
 
-        /// @dev transfer any natvie token
+        /// @dev transfer any native token
         if (address(this).balance > 0)
           to.call{value: (address(this).balance)}("");
         
@@ -173,7 +166,7 @@ contract AxelarAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
       }
 
       // 100000 -> exit gas
-      uint256 limit = gasleft() - reserveGas;
+      uint256 limit = gasLeft() - reserveGas;
 
       // todo: what if no swapData but there is payload data?
       if (_swapData.length > 0) {
@@ -181,11 +174,11 @@ contract AxelarAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
           ISushiXSwapV2Adapter(address(this)).swap{gas: limit}(
             amount,
             _swapData,
-            _token,
+            address(nativeUSDC),
             _payloadData
           )
         {} catch (bytes memory) {
-          IERC20(_token).safeTransfer(refundAddress, amount);
+          nativeUSDC.safeTransfer(refundAddress, amount);
         }
       }
 
@@ -202,3 +195,6 @@ contract AxelarAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
 
   receive() external payable {}
 }
+
+
+
