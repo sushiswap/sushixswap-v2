@@ -26,13 +26,7 @@ contract CTTPAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
   // todo: add sibling map by network
   // can swap out destinationAddress stuff if we do siblings
   
-  // not a ownable contract, and adapters are swapable
-  // so we hardcode the circle supported chains
   mapping(string => uint32) public circleDestinationDomains;
-  circleDestinationDomains["ethereum"] = 0;
-  circleDestinationDomains["avalanche"] = 1;
-  circleDestinationDomains["arbitrum"] = 2;
-
 
   struct CTTPBridgeParams {
     bytes32 destinationChain;
@@ -58,6 +52,12 @@ contract CTTPAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
     tokenMessenger = ITokenMessenger(_tokenMessenger);
     rp = IRouteProcessor(_rp);
     nativeUSDC = IERC20(_nativeUSDC);
+    
+    // not a ownable contract, and adapters are swapable
+    // so we hardcode the circle supported chains
+    circleDestinationDomains["ethereum"] = 0;
+    circleDestinationDomains["avalanche"] = 1;
+    circleDestinationDomains["arbitrum"] = 2;
   }
 
   function swap(
@@ -71,12 +71,13 @@ contract CTTPAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
         (IRouteProcessor.RouteProcessorData)
       );
       // increase token approval to RP
-      nativeUSDC.safeIncreaseAllowance(address(rp), _amountBridged);
+      IERC20(rpd.tokenIn).safeIncreaseAllowance(address(rp), _amountBridged);
 
       rp.processRoute(
-        address(nativeUSDC),
-        _amountbridged,
+        rpd.tokenIn,
+        _amountBridged != 0 ? _amountBridged: rpd.amountIn,
         rpd.tokenOut,
+        rpd.amountOutMin,
         rpd.to,
         rpd.route
       );
@@ -95,8 +96,8 @@ contract CTTPAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
 
   function adapterBridge(
     bytes calldata _adapterData,
-    bytes calldata,
-    bytes calldata
+    bytes calldata _swapData,
+    bytes calldata _payloadData
   ) external payable override {
       CTTPBridgeParams memory params = abi.decode(
         _adapterData,
@@ -122,7 +123,7 @@ contract CTTPAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
       // build payload from _swapData and _payloadData
       bytes memory payload = bytes("");
       if (_swapData.length > 0 || _payloadData.length > 0) {
-        paylod = abi.encode(params.refundAddress, params.amount, _swapData, _payloadData);
+        payload = abi.encode(params.refundAddress, params.amount, _swapData, _payloadData);
       }
 
       // pay native gas to gasService
@@ -155,18 +156,18 @@ contract CTTPAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
 
       uint256 reserveGas = 100000;
 
-      if (gasLeft() < reserveGas || _swapData.length == 0) {
+      if (gasleft() < reserveGas || _swapData.length == 0) {
         nativeUSDC.safeTransfer(refundAddress, amount);
 
         /// @dev transfer any native token
         if (address(this).balance > 0)
-          to.call{value: (address(this).balance)}("");
+          refundAddress.call{value: (address(this).balance)}("");
         
         return;
       }
 
       // 100000 -> exit gas
-      uint256 limit = gasLeft() - reserveGas;
+      uint256 limit = gasleft() - reserveGas;
 
       // todo: what if no swapData but there is payload data?
       if (_swapData.length > 0) {
@@ -184,7 +185,7 @@ contract CTTPAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
 
       /// @dev transfer any native token received as dust to the to address
       if (address(this).balance > 0)
-        to.call{value: (address(this).balance)}("");
+        refundAddress.call{value: (address(this).balance)}("");
 
   }
 

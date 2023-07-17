@@ -60,8 +60,10 @@ contract AxelarAdapterBridgeTest is BaseTest {
     vm.stopPrank();
   }
 
-  /*function test_BridgeERC20() public {
-    uint32 amount = 1000000; // 1 usdc
+  function test_BridgeERC20() public {
+    
+    
+    /*uint32 amount = 1000000; // 1 usdc
 
     deal(address(usdc), user, amount);
 
@@ -88,6 +90,6 @@ contract AxelarAdapterBridgeTest is BaseTest {
       }),
       "", // swap payload
       ""  // payload data
-    );
-  }*/
+    );*/
+  }
 }

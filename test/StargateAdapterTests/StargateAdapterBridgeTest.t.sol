@@ -117,8 +117,6 @@ contract StargateAdapterBridgeTest is BaseTest {
             "" // payload
         );
 
-        console2.log(gasNeeded);
-
         (, uint256 eqFee, , , uint256 protocolFee, ) = stargateFeeLibrary
             .getFees(
                 1, // srcPoolId

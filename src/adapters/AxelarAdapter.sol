@@ -69,8 +69,9 @@ contract AxelarAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
 
       rp.processRoute(
         rpd.tokenIn,
-        _amountbridged,
+        _amountBridged != 0 ? _amountBridged: rpd.amountIn,
         rpd.tokenOut,
+        rpd.amountOutMin,
         rpd.to,
         rpd.route
       );
@@ -105,8 +106,8 @@ contract AxelarAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
       // think you can only transfer erc20 (preferablly needs to be usdc)
       if (params.token == NATIVE_ADDRESS) {
         // RP should not send native in, since we won't know the amount from gas passed
-        if (params.amount == 0) revert RPSentNativeIn();
-        weth.deposit{value: _amountBridged}();
+        if (params.amount == 0) revert RpSentNativeIn();
+        weth.deposit{value: params.amount}();
         params.token = address(weth);
       }
 
@@ -122,7 +123,7 @@ contract AxelarAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
       // build payload from _swapData and _payloadData
       bytes memory payload = bytes("");
       if (_swapData.length > 0 || _payloadData.length > 0) {
-        paylod = abi.encode(params.refundAddress, _swapData, _payloadData);
+        payload = abi.encode(params.refundAddress, _swapData, _payloadData);
       }
 
       // pay native gas to gasService (do we want to implement gas express?)
@@ -160,14 +161,14 @@ contract AxelarAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
         .decode(payload, (address, bytes, bytes));
       address _token = gateway.tokenAddresses(tokenSymbol);
 
-      uint2566 reserveGas = 100000;
+      uint256 reserveGas = 100000;
 
-      if (gasLeft() < reserveGas || _swapData.length == 0) {
+      if (gasleft() < reserveGas || _swapData.length == 0) {
         IERC20(_token).safeTransfer(refundAddress, amount);
 
         /// @dev transfer any natvie token
         if (address(this).balance > 0)
-          to.call{value: (address(this).balance)}("");
+          refundAddress.call{value: (address(this).balance)}("");
         
         return;
       }
@@ -191,7 +192,7 @@ contract AxelarAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
 
       /// @dev transfer any native token received as dust to the to address
       if (address(this).balance > 0)
-        to.call{value: (address(this).balance)}("");
+        refundAddress.call{value: (address(this).balance)}("");
 
   }
 
