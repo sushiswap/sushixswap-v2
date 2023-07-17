@@ -51,6 +51,11 @@ contract SynapseAdapterBridgeTest is BaseTest {
         vm.stopPrank();
     }
 
+    /* test_BridgeERC20 */
+    /* test_BridgeNative */
+    /* testFailWhen */
+    /* test_swapERC20ToNativeBridgeNative */
+
     function test_BridgeERC20() public {
         uint32 amount = 1000000; // 1 usdc
 
@@ -77,7 +82,30 @@ contract SynapseAdapterBridgeTest is BaseTest {
             "", // swap payload
             ""  // payload data
         );
+    }
 
-        console.log('bridge() called');
+    function test_BridgeNative() public {
+        uint256 amount = 1 ether;
+
+        deal(user, amount);
+
+        vm.startPrank(user);
+        sushiXswap.bridge{value: amount}(
+            ISushiXSwapV2.BridgeParams({
+                refId: 0x000,
+                adapter: address(synapseAdapter),
+                tokenIn: NATIVE_ADDRESS,
+                amountIn: amount,
+                to: address(0x0),
+                adapterData: abi.encode(
+                    42161,
+                    NATIVE_ADDRESS,
+                    amount,
+                    user
+                )
+            }),
+            "", // swap payload
+            "" // payload data
+        );
     }
 }

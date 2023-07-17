@@ -22,6 +22,8 @@ contract SynapseAdapter is ISushiXSwapV2Adapter {
         address to;
     }
 
+    error RpSentNativeIn();
+
     constructor (address _synapseBridge, address _weth) {
         synapseBridge = ISynapseBridge(_synapseBridge);
         weth = IWETH(_weth);
@@ -46,14 +48,20 @@ contract SynapseAdapter is ISushiXSwapV2Adapter {
             (SynapseBridgeParams)
         );
 
-        if (params.token != NATIVE_ADDRESS) {
-            IERC20(params.token).safeApprove(
-                address(synapseBridge),
-                IERC20(params.token).balanceOf(address(this))
-            );
-
-            synapseBridge.deposit(params.to, params.chainId, IERC20(params.token), params.amount);
+        // Wrap native token if needed
+        if (params.token == NATIVE_ADDRESS) {
+            // RP should not send native in, since we won't know the amount from dust
+            if (params.amount == 0) revert RpSentNativeIn();
+            weth.deposit{value: params.amount}();
+            params.token = address(weth);
         }
+
+        IERC20(params.token).safeApprove(
+            address(synapseBridge),
+            params.amount
+        );
+
+        synapseBridge.deposit(params.to, params.chainId, IERC20(params.token), params.amount);
     }
 
     function sendMessage(bytes calldata _adapterData) external override {
