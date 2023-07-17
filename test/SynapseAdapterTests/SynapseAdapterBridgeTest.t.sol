@@ -7,6 +7,8 @@ import {SynapseAdapter} from "../../src/adapters/SynapseAdapter.sol";
 import {IRouteProcessor} from "../../src/interfaces/IRouteProcessor.sol";
 import {IWETH} from "../../src/interfaces/IWETH.sol";
 import {ERC20} from "openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
+import {Strings} from "openzeppelin-contracts/contracts/utils/Strings.sol";
+
 import "../../utils/BaseTest.sol";
 
 contract SynapseAdapterBridgeTest is BaseTest {
@@ -82,6 +84,71 @@ contract SynapseAdapterBridgeTest is BaseTest {
             "", // swap payload
             ""  // payload data
         );
+    }
+
+    // uint32 keeps it max amount to ~4294 usdc
+    function testFuzz_BridgeERC20(uint32 amount) public {
+        vm.assume(amount > 1000000); // > 1 usdc
+
+        vm.deal(user, 1 ether);
+        deal(address(usdc), user, amount);
+
+        // basic usdc bridge
+        vm.startPrank(user);
+        usdc.approve(address(sushiXswap), amount);
+
+        vm.recordLogs();
+        sushiXswap.bridge(
+            ISushiXSwapV2.BridgeParams({
+                refId: 0x0000,
+                adapter: address(synapseAdapter),
+                tokenIn: address(usdc),
+                amountIn: amount,
+                to: address(0x0),
+                adapterData: abi.encode(
+                    42161, // chainId - arbitrum one
+                    address(usdc), // token
+                    amount, // amount
+                    user // to
+                )
+            }),
+            "", // _swapPayload
+            "" // _payloadData
+        );
+
+        // check balances post call
+        assertEq(
+            usdc.balanceOf(address(sushiXswap)),
+            0,
+            "xswasp usdc balance should be 0"
+        );
+        assertEq(usdc.balanceOf(user), 0, "user usdc balance should be 0");
+
+        // Check tokenDeposit event on SynapseBridge
+        Vm.Log[] memory entries = vm.getRecordedLogs();
+        for (uint i = 0; i < entries.length; i++) {
+            if (entries[i].emitter == address(synapseAdapter.synapseBridge())) {
+                address _to = address(uint160(uint256(entries[i].topics[1]))); // indexed param
+                (
+                    uint256 _chainId,
+                    address _token,
+                    uint256 _amount
+                ) = abi.decode(
+                        entries[i].data,
+                        (
+                            uint256,
+                            address,
+                            uint256
+                        )
+                    );
+
+                assertEq(_to, user, string(abi.encodePacked("TokenDeposit event to should be ", Strings.toHexString(address(user)))));
+                assertEq(_chainId, 42161, "TokenDeposit event chainId should be 42161");
+                assertEq(_token, address(usdc), string(abi.encodePacked("TokenDeposit event token should be ", Strings.toHexString(address(usdc)))));
+                assertEq(_amount, amount, string(abi.encodePacked("TokenDeposit event amount should be ", Strings.toString(amount))));
+                break;
+            }
+        }
     }
 
     function test_BridgeNative() public {
