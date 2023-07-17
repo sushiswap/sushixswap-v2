@@ -53,11 +53,6 @@ contract SynapseAdapterBridgeTest is BaseTest {
         vm.stopPrank();
     }
 
-    /* test_BridgeERC20 */
-    /* test_BridgeNative */
-    /* testFailWhen */
-    /* test_swapERC20ToNativeBridgeNative */
-
     function test_BridgeERC20() public {
         uint32 amount = 1000000; // 1 usdc
 
@@ -83,6 +78,31 @@ contract SynapseAdapterBridgeTest is BaseTest {
             }),
             "", // swap payload
             ""  // payload data
+        );
+    }
+
+    function test_BridgeNative() public {
+        uint256 amount = 1 ether;
+
+        deal(user, amount);
+
+        vm.startPrank(user);
+        sushiXswap.bridge{value: amount}(
+            ISushiXSwapV2.BridgeParams({
+                refId: 0x000,
+                adapter: address(synapseAdapter),
+                tokenIn: NATIVE_ADDRESS,
+                amountIn: amount,
+                to: address(0x0),
+                adapterData: abi.encode(
+                    42161,
+                    NATIVE_ADDRESS,
+                    amount,
+                    user
+                )
+            }),
+            "", // swap payload
+            "" // payload data
         );
     }
 
@@ -151,28 +171,87 @@ contract SynapseAdapterBridgeTest is BaseTest {
         }
     }
 
-    function test_BridgeNative() public {
-        uint256 amount = 1 ether;
+    // uint64 keeps it max amount to ~18 eth
+    function testFuzz_BridgeNative(uint64 amount) public {
+        vm.assume(amount > 0.1 ether);
 
-        deal(user, amount);
+        deal(user, amount + 1 ether);
+
+        uint256 balanceBefore = user.balance;
+
+        vm.recordLogs();
 
         vm.startPrank(user);
+
+        uint256 gas_start = gasleft();
+
         sushiXswap.bridge{value: amount}(
             ISushiXSwapV2.BridgeParams({
-                refId: 0x000,
+                refId: 0x0000,
                 adapter: address(synapseAdapter),
                 tokenIn: NATIVE_ADDRESS,
                 amountIn: amount,
                 to: address(0x0),
                 adapterData: abi.encode(
-                    42161,
-                    NATIVE_ADDRESS,
-                    amount,
-                    user
+                    42161, // chainId - arbitrum one
+                    NATIVE_ADDRESS, // token
+                    amount, // amount
+                    user // to
                 )
             }),
-            "", // swap payload
-            "" // payload data
+            "", // _swapPayload
+            "" // _payloadData
         );
+
+        uint256 gas_used = gas_start - gasleft();
+
+        vm.stopPrank();
+
+        // check balances post call
+        assertEq(
+            address(sushiXswap).balance,
+            0,
+            "xswap eth balance should be 0"
+        );
+        assertLe(
+            user.balance,
+            balanceBefore - gas_used,
+            string(abi.encodePacked("user eth balance should be lte ", Strings.toString(balanceBefore - gas_used)))
+        );
+        assertGe(
+            user.balance,
+            balanceBefore - amount - gas_used,
+            string(abi.encodePacked("user eth balance should be gte ", Strings.toString(balanceBefore - amount - gas_used)))
+        );
+
+        // Check tokenDeposit event on SynapseBridge
+        Vm.Log[] memory entries = vm.getRecordedLogs();
+        for (uint i = 0; i < entries.length; i++) {
+            if (entries[i].emitter == address(synapseAdapter.synapseBridge())) {
+                address _to = address(uint160(uint256(entries[i].topics[1]))); // indexed param
+                (
+                    uint256 _chainId,
+                    address _token,
+                    uint256 _amount
+                ) = abi.decode(
+                        entries[i].data,
+                        (
+                            uint256,
+                            address,
+                            uint256
+                        )
+                    );
+
+                assertEq(_to, user, string(abi.encodePacked("TokenDeposit event to should be ", Strings.toHexString(address(user)))));
+                assertEq(_chainId, 42161, "TokenDeposit event chainId should be 42161");
+                assertEq(_token, address(weth), string(abi.encodePacked("TokenDeposit event token should be ", Strings.toHexString(address(usdc)))));
+                assertEq(_amount, amount, string(abi.encodePacked("TokenDeposit event amount should be ", Strings.toString(amount))));
+                break;
+            }
+        }
     }
+
+
+    /* testFailWhen */
+    /* test_swapERC20ToNativeBridgeNative */
 }
