@@ -61,17 +61,17 @@ contract AxelarAdapterBridgeTest is BaseTest {
   }
 
   function test_BridgeERC20() public {
-    
-    
-    /*uint32 amount = 1000000; // 1 usdc
+    uint32 amount = 1000000; // 1 usdc
+    uint64 gasNeeded = 0.1 ether; // eth for gas to pass
 
     deal(address(usdc), user, amount);
+    vm.deal(user, gasNeeded);
 
     // basic usdc bridge, mint axlUSDC on otherside
     vm.startPrank(user);
     usdc.approve(address(sushiXswap), amount);
 
-    sushiXswap.bridge(
+    sushiXswap.bridge{value: gasNeeded}(
       ISushiXSwapV2.BridgeParams({
         refId: 0x0000,
         adapter: address(axelarAdapter),
@@ -79,10 +79,9 @@ contract AxelarAdapterBridgeTest is BaseTest {
         amountIn: amount,
         to: address(0x0),
         adapterData: abi.encode(
-          user,           // sender
           address(usdc),  // token
           StringToBytes32.toBytes32("arbitrum"),     // destinationChain
-          user, // destinationAddress
+          address(axelarAdapter), // destinationAddress
           StringToBytes32.toBytes32("USDC"),      // symbol
           amount,         // amount
           user            // refundAddress
@@ -90,6 +89,6 @@ contract AxelarAdapterBridgeTest is BaseTest {
       }),
       "", // swap payload
       ""  // payload data
-    );*/
+    );
   }
 }

@@ -15,7 +15,7 @@ import { Bytes32ToString } from "../utils/Bytes32String.sol";
 
 import {console2} from "forge-std/console2.sol";
 
-contract CTTPAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
+contract CCTPAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
   using SafeERC20 for IERC20;
 
   IAxelarGasService public immutable axelarGasService;
@@ -28,7 +28,7 @@ contract CTTPAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
   
   mapping(string => uint32) public circleDestinationDomains;
 
-  struct CTTPBridgeParams {
+  struct CCTPBridgeParams {
     bytes32 destinationChain;
     address destinationAddress;
     uint256 amount;
@@ -53,11 +53,11 @@ contract CTTPAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
     rp = IRouteProcessor(_rp);
     nativeUSDC = IERC20(_nativeUSDC);
     
-    // not a ownable contract, and adapters are swapable
+    // not an ownable contract, and adapters are swapable
     // so we hardcode the circle supported chains
     circleDestinationDomains["ethereum"] = 0;
     circleDestinationDomains["avalanche"] = 1;
-    circleDestinationDomains["arbitrum"] = 2;
+    circleDestinationDomains["arbitrum"] = 3;
   }
 
   function swap(
@@ -99,9 +99,9 @@ contract CTTPAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
     bytes calldata _swapData,
     bytes calldata _payloadData
   ) external payable override {
-      CTTPBridgeParams memory params = abi.decode(
+      CCTPBridgeParams memory params = abi.decode(
         _adapterData,
-        (CTTPBridgeParams)
+        (CCTPBridgeParams)
       );
 
       if (nativeUSDC.balanceOf(address(this)) <= 0) 
@@ -121,10 +121,7 @@ contract CTTPAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
       );
 
       // build payload from _swapData and _payloadData
-      bytes memory payload = bytes("");
-      if (_swapData.length > 0 || _payloadData.length > 0) {
-        payload = abi.encode(params.refundAddress, params.amount, _swapData, _payloadData);
-      }
+      bytes memory payload = abi.encode(params.refundAddress, params.amount, _swapData, _payloadData);
 
       // pay native gas to gasService
       axelarGasService.payNativeGasForContractCall{value: address(this).balance}(

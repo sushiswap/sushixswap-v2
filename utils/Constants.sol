@@ -31,6 +31,8 @@ contract Constants {
     setAddress("mainnet.axelarGateway", 0x4F4495243837681061C4743b74B3eEdf548D56A5);
     setAddress("mainnet.axelarGasService", 0x2d5d7d31F671F86C782533cc367F14109a082712);
 
+    setAddress("mainnet.cctpTokenMessenger", 0xBd3fa81B58Ba92a82136038B25aDec7066af3155);
+
     setAddress("mainnet.squidRouter", 0xce16F69375520ab01377ce7B88f5BA8C48F8D666);
   } 
 

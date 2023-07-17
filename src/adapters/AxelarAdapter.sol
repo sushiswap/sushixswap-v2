@@ -121,14 +121,13 @@ contract AxelarAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
       );
 
       // build payload from _swapData and _payloadData
-      bytes memory payload = bytes("");
-      if (_swapData.length > 0 || _payloadData.length > 0) {
-        payload = abi.encode(params.refundAddress, _swapData, _payloadData);
-      }
+      // refundAddress will receive bridged funds from fallback if no swap or payload data
+      bytes memory payload = abi.encode(params.refundAddress, _swapData, _payloadData);
 
       // pay native gas to gasService (do we want to implement gas express?)
       // do check for 100k min gas first
       //if (params.gas < 100000) revert InsufficientGas();
+      console2.log("testing eth balance in adapter");
       axelarGasService.payNativeGasForContractCallWithToken{value: address(this).balance}(
         address(this),
         Bytes32ToString.toTrimmedString(params.destinationChain), 
