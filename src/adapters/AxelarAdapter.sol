@@ -127,7 +127,6 @@ contract AxelarAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
       // pay native gas to gasService (do we want to implement gas express?)
       // do check for 100k min gas first
       //if (params.gas < 100000) revert InsufficientGas();
-      console2.log("testing eth balance in adapter");
       axelarGasService.payNativeGasForContractCallWithToken{value: address(this).balance}(
         address(this),
         Bytes32ToString.toTrimmedString(params.destinationChain), 

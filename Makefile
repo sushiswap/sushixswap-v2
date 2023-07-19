@@ -9,7 +9,7 @@ init:
 	git submodule update --init --recursive
 	forge install
 test:
-	forge test -vv --match-contract CCTPBridgeTest
+	forge test -vv --match-contract AxelarAdapterSwapAndBridgeTest
 test-gas-report:
 	forge test -vv --gas-report
 trace:
