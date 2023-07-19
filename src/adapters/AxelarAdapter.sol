@@ -40,7 +40,6 @@ contract AxelarAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
   }
 
   error InsufficientGas();
-  error NotAxelarSibiling();
   error RpSentNativeIn();
 
   constructor(

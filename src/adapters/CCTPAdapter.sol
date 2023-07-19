@@ -38,7 +38,6 @@ contract CCTPAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
   }
 
   error InsufficientGas();
-  error NotAxelarSibiling();
   error NoUSDCToBridge();
 
   constructor(
