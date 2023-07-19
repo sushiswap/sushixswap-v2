@@ -99,6 +99,9 @@ contract AxelarAdapterBridgeTest is BaseTest {
             "", // swap payload
             "" // payload data
         );
+
+        assertEq(usdc.balanceOf(address(axelarAdapter)), 0, "axelarAdapter should have 0 usdc");
+        assertEq(usdc.balanceOf(user), 0, "user should have 0 usdc");
     }
 
     function test_BridgeNative() public {
@@ -130,6 +133,9 @@ contract AxelarAdapterBridgeTest is BaseTest {
             "", // swap payload
             "" // payload data
         );
+
+        assertEq(address(axelarAdapter).balance, 0, "axelarAdapter should have 0 usdc");
+        assertEq(user.balance, 0, "user should have 0 usdc");
     }
 
     function test_RevertWhen_BridgeUnsupportedERC20() public {
@@ -217,6 +223,9 @@ contract AxelarAdapterBridgeTest is BaseTest {
             rpd_encoded_dst, // swap payload
             "" // payload data
         );
+
+        assertEq(usdc.balanceOf(address(axelarAdapter)), 0, "axelarAdapter should have 0 usdc");
+        assertEq(usdc.balanceOf(user), 0, "user should have 0 usdc");
     }
 
     function test_BridgeNativeWithSwapData() public {
@@ -269,6 +278,9 @@ contract AxelarAdapterBridgeTest is BaseTest {
             rpd_encoded_dst, // swap payload
             "" // payload data
         );
+
+        assertEq(address(axelarAdapter).balance, 0, "axelarAdapter should have 0 usdc");
+        assertEq(user.balance, 0, "user should have 0 usdc");
     }
 
     function test_RevertWhen_BridgeERC20WithNoGasPassed() public {

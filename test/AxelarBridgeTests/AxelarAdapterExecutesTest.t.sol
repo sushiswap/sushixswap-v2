@@ -142,6 +142,19 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
             "USDC",
             amount
         );
+
+        assertEq(
+            usdc.balanceOf(address(axelarAdapter)),
+            0,
+            "axelarAdapter should have 0 usdc"
+        );
+        assertEq(usdc.balanceOf(user), 0, "user should have 0 usdc");
+        assertEq(
+            weth.balanceOf(address(axelarAdapter)),
+            0,
+            "axelarAdapter should have 0 weth"
+        );
+        assertGt(weth.balanceOf(user), 0, "user should have > 0 weth");
     }
 
     function test_ReceiveERC20AndSwapToNative() public {
@@ -185,6 +198,18 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
             "USDC",
             amount
         );
+        assertEq(
+            usdc.balanceOf(address(axelarAdapter)),
+            0,
+            "axelarAdapter should have 0 usdc"
+        );
+        assertEq(usdc.balanceOf(user), 0, "user should have 0 usdc");
+        assertEq(
+            address(axelarAdapter).balance,
+            0,
+            "axelarAdapter should have 0 eth"
+        );
+        assertGt(address(user).balance, 0, "user should have > 0 eth");
     }
 
     function test_ReceiveERC20NotEnoughGasForSwap() public {
@@ -228,6 +253,19 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
             "USDC",
             amount
         );
+
+        assertEq(
+            usdc.balanceOf(address(axelarAdapter)),
+            0,
+            "axelarAdapter should have 0 usdc"
+        );
+        assertEq(usdc.balanceOf(user), amount, "user should have all usdc");
+        assertEq(
+            weth.balanceOf(address(axelarAdapter)),
+            0,
+            "axelarAdapter should have 0 weth"
+        );
+        assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
     }
 
     function test_ReceiveERC20EnoughForGasNoSwapData() public {
@@ -249,6 +287,19 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
             "USDC",
             amount
         );
+
+        assertEq(
+            usdc.balanceOf(address(axelarAdapter)),
+            0,
+            "axelarAdapter should have 0 usdc"
+        );
+        assertEq(usdc.balanceOf(user), amount, "user should have all usdc");
+        assertEq(
+            weth.balanceOf(address(axelarAdapter)),
+            0,
+            "axelarAdapter should have 0 weth"
+        );
+        assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
     }
 
     function test_ReceiveERC20FailedSwap() public {
@@ -293,10 +344,23 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
             "USDC",
             amount
         );
+
+        assertEq(
+            usdc.balanceOf(address(axelarAdapter)),
+            0,
+            "axelarAdapter should have 0 usdc"
+        );
+        assertEq(usdc.balanceOf(user), amount, "user should have all usdc");
+        assertEq(
+            weth.balanceOf(address(axelarAdapter)),
+            0,
+            "axelarAdapter should have 0 weth"
+        );
+        assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
     }
 
     function test_ReceiveERC20FailedSwapFromOutOfGas() public {
-       uint32 amount = 1000000; // 1 USDC
+        uint32 amount = 1000000; // 1 USDC
 
         deal(address(usdc), address(axelarAdapterHarness), amount); // axelar adapter receives USDC
 
@@ -336,10 +400,23 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
             "USDC",
             amount
         );
+
+        assertEq(
+            usdc.balanceOf(address(axelarAdapter)),
+            0,
+            "axelarAdapter should have 0 usdc"
+        );
+        assertEq(usdc.balanceOf(user), amount, "user should have all usdc");
+        assertEq(
+            weth.balanceOf(address(axelarAdapter)),
+            0,
+            "axelarAdapter should have 0 weth"
+        );
+        assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
     }
 
     function test_ReceiveERC20FailedSwapSlippageCheck() public {
-       uint32 amount = 1000000; // 1 USDC
+        uint32 amount = 1000000; // 1 USDC
 
         deal(address(usdc), address(axelarAdapterHarness), amount); // axelar adapter receives USDC
 
@@ -380,5 +457,18 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
             "USDC",
             amount
         );
+
+        assertEq(
+            usdc.balanceOf(address(axelarAdapter)),
+            0,
+            "axelarAdapter should have 0 usdc"
+        );
+        assertEq(usdc.balanceOf(user), amount, "user should have all usdc");
+        assertEq(
+            weth.balanceOf(address(axelarAdapter)),
+            0,
+            "axelarAdapter should have 0 weth"
+        );
+        assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
     }
 }

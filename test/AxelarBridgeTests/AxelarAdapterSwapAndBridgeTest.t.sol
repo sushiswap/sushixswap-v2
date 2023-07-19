@@ -121,6 +121,11 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
             "", // swap payload data
             "" // payload data
         );
+
+        assertEq(usdc.balanceOf(address(axelarAdapter)), 0, "axelarAdapter should have 0 usdc");
+        assertEq(usdc.balanceOf(user), 0, "user should have 0 usdc");
+        assertEq(weth.balanceOf(address(axelarAdapter)), 0, "axelarAdapter should have 0 weth");
+        assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
     }
 
     function test_SwapFromNativeToERC20AndBridge() public {
@@ -152,6 +157,7 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
 
         bytes memory rpd_encoded = abi.encode(rpd);
 
+        vm.startPrank(user);
         sushiXswap.swapAndBridge{value: valueToSend}(
             ISushiXSwapV2.BridgeParams({
                 refId: 0x0000,
@@ -172,60 +178,11 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
             "", // swap payload data
             "" // payload data
         );
-    }
 
-    function test_SwapFromERC20ToWethAndBridge() public {
-        // basic swap 1 usdc to weth and bridge
-        uint64 amount = 1000000; // 1 usdc
-        uint64 gasNeeded = 0.1 ether; // eth for gas to pass
-
-        deal(address(usdc), user, amount);
-        vm.deal(user, gasNeeded);
-
-        bytes memory computeRoute = routeProcessorHelper.computeRoute(
-            false, // rpHasToken
-            false, // isV2
-            address(usdc), // tokenIn
-            address(weth), // tokenOut
-            500, // fee
-            address(axelarAdapter) // to
-        );
-
-        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor
-            .RouteProcessorData({
-                tokenIn: address(usdc),
-                amountIn: amount,
-                tokenOut: address(weth),
-                amountOutMin: 0,
-                to: address(axelarAdapter),
-                route: computeRoute
-            });
-
-        bytes memory rpd_encoded = abi.encode(rpd);
-
-        vm.startPrank(user);
-        ERC20(address(usdc)).approve(address(sushiXswap), amount);
-
-        sushiXswap.swapAndBridge{value: gasNeeded}(
-            ISushiXSwapV2.BridgeParams({
-                refId: 0x0000,
-                adapter: address(axelarAdapter),
-                tokenIn: address(weth), // doesn't matter what you put for bridge params when swapping first
-                amountIn: amount,
-                to: address(user),
-                adapterData: abi.encode(
-                    address(weth), // token
-                    StringToBytes32.toBytes32("arbitrum"), // destinationChain
-                    address(axelarAdapter), // destinationAddress
-                    StringToBytes32.toBytes32("WETH"), // symbol
-                    0, // amount - 0 since swap first
-                    user // refundAddress
-                )
-            }),
-            rpd_encoded, // swap data
-            "", // swap payload data
-            "" // payload data
-        );
+        assertEq(address(axelarAdapter).balance, 0, "axelarAdapter should have 0 eth");
+        assertEq(user.balance, 0, "user should have 0 eth");
+        assertEq(usdc.balanceOf(address(axelarAdapter)), 0, "axelarAdapter should have 0 usdc");
+        assertEq(usdc.balanceOf(user), 0, "user should have 0 usdc");
     }
 
     function test_RevertWhen_SwapFromERC20ToNativeAndBridge() public {
