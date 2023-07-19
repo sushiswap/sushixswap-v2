@@ -16,9 +16,35 @@ import {StringToAddress, AddressToString} from "../../src/utils/AddressString.so
 
 import {console2} from "forge-std/console2.sol";
 
+contract AxelarAdapterHarness is AxelarAdapter {
+    constructor(
+        address _axelarGateway,
+        address _gasService,
+        address _rp,
+        address _weth
+    ) AxelarAdapter(_axelarGateway, _gasService, _rp, _weth) {}
+
+    function exposed_executeWithToken(
+        string memory sourceChain,
+        string memory sourceAddress,
+        bytes calldata payload,
+        string memory tokenSymbol,
+        uint256 amount
+    ) external {
+        _executeWithToken(
+            sourceChain,
+            sourceAddress,
+            payload,
+            tokenSymbol,
+            amount
+        );
+    }
+}
+
 contract AxelarAdapterSwapAndBridgeTest is BaseTest {
     SushiXSwapV2 public sushiXswap;
     AxelarAdapter public axelarAdapter;
+    AxelarAdapterHarness public axelarAdapterHarness;
     IRouteProcessor public routeProcessor;
     RouteProcessorHelper public routeProcessorHelper;
 
@@ -64,6 +90,12 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
             constants.getAddress("mainnet.routeProcessor"),
             constants.getAddress("mainnet.weth")
         );
+        axelarAdapterHarness = new AxelarAdapterHarness(
+            constants.getAddress("mainnet.axelarGateway"),
+            constants.getAddress("mainnet.axelarGasService"),
+            constants.getAddress("mainnet.routeProcessor"),
+            constants.getAddress("mainnet.weth")
+        );
         sushiXswap.updateAdapterStatus(address(axelarAdapter), true);
 
         vm.stopPrank();
@@ -71,9 +103,8 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
 
     function test_ReceiveERC20AndSwapToERC20() public {
         uint32 amount = 1000000; // 1 USDC
-        uint64 forwardedGas = 0.1 ether; // eth forwarded
 
-        deal(address(usdc), address(axelarAdapter), amount); // axelar adapter receives USDC
+        deal(address(usdc), address(axelarAdapterHarness), amount); // axelar adapter receives USDC
 
         // receive 1 USDC and swap to weth
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
@@ -103,25 +134,251 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
             "" // _payloadData
         );
 
-        vm.prank(constants.getAddress(axelarAdapter));
-        axelarAdapter._executeWithToken(
-          "arbitrum",
-          AddressToString.toString(address(axelarAdapter)),
-          mockPayload,
-          "USDC",
-          amount
+        vm.prank(address(axelarAdapter));
+        axelarAdapterHarness.exposed_executeWithToken(
+            "arbitrum",
+            AddressToString.toString(address(axelarAdapter)),
+            mockPayload,
+            "USDC",
+            amount
         );
     }
 
-    function test_ReceiveERC20AndSwapToNative() public {}
+    function test_ReceiveERC20AndSwapToNative() public {
+        uint32 amount = 1000000; // 1 USDC
 
-    function test_ReceiveERC20NotEnoughGasForSwap() public {}
+        deal(address(usdc), address(axelarAdapterHarness), amount); // axelar adapter receives USDC
 
-    function test_ReceiveERC20EnoughForGasNoSwapData() public {}
+        // receive 1 USDC and swap to weth
+        bytes memory computedRoute = routeProcessorHelper.computeRouteNativeOut(
+            false,
+            false,
+            address(usdc),
+            address(weth),
+            500,
+            user
+        );
 
-    function test_ReceiveERC20FailedSwap() public {}
+        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor
+            .RouteProcessorData({
+                tokenIn: address(usdc),
+                amountIn: amount,
+                tokenOut: NATIVE_ADDRESS,
+                amountOutMin: 0,
+                to: user,
+                route: computedRoute
+            });
 
-    function test_ReceiveERC20FailedSwapFromOutOfGas() public {}
+        bytes memory rpd_encoded = abi.encode(rpd);
 
-    function test_ReceiveERC20FailedSwapSlippageCheck() public {}
+        bytes memory mockPayload = abi.encode(
+            address(user), // refundAddress
+            rpd_encoded, // _swapData
+            "" // _payloadData
+        );
+
+        vm.prank(address(axelarAdapter));
+        axelarAdapterHarness.exposed_executeWithToken(
+            "arbitrum",
+            AddressToString.toString(address(axelarAdapter)),
+            mockPayload,
+            "USDC",
+            amount
+        );
+    }
+
+    function test_ReceiveERC20NotEnoughGasForSwap() public {
+        uint32 amount = 1000000; // 1 USDC
+
+        deal(address(usdc), address(axelarAdapterHarness), amount); // axelar adapter receives USDC
+
+        // receive 1 USDC and swap to weth
+        bytes memory computedRoute = routeProcessorHelper.computeRoute(
+            false,
+            false,
+            address(usdc),
+            address(weth),
+            500,
+            user
+        );
+
+        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor
+            .RouteProcessorData({
+                tokenIn: address(usdc),
+                amountIn: amount,
+                tokenOut: address(weth),
+                amountOutMin: 0,
+                to: user,
+                route: computedRoute
+            });
+
+        bytes memory rpd_encoded = abi.encode(rpd);
+
+        bytes memory mockPayload = abi.encode(
+            address(user), // refundAddress
+            rpd_encoded, // _swapData
+            "" // _payloadData
+        );
+
+        vm.prank(address(axelarAdapter));
+        axelarAdapterHarness.exposed_executeWithToken{gas: 90000}(
+            "arbitrum",
+            AddressToString.toString(address(axelarAdapter)),
+            mockPayload,
+            "USDC",
+            amount
+        );
+    }
+
+    function test_ReceiveERC20EnoughForGasNoSwapData() public {
+        uint32 amount = 1000000; // 1 USDC
+
+        deal(address(usdc), address(axelarAdapterHarness), amount); // axelar adapter receives USDC
+
+        bytes memory mockPayload = abi.encode(
+            address(user), // refundAddress
+            "", // _swapData
+            "" // _payloadData
+        );
+
+        vm.prank(address(axelarAdapter));
+        axelarAdapterHarness.exposed_executeWithToken(
+            "arbitrum",
+            AddressToString.toString(address(axelarAdapter)),
+            mockPayload,
+            "USDC",
+            amount
+        );
+    }
+
+    function test_ReceiveERC20FailedSwap() public {
+        uint32 amount = 1000000; // 1 USDC
+
+        deal(address(usdc), address(axelarAdapterHarness), amount); // axelar adapter receives USDC
+
+        // receive 1 USDC and swap to weth
+        bytes memory computedRoute = routeProcessorHelper.computeRoute(
+            false,
+            false,
+            address(usdc),
+            address(weth),
+            500,
+            user
+        );
+
+        // switched tokenIn to weth, and tokenOut to usdc - should fail now on swap
+        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor
+            .RouteProcessorData({
+                tokenIn: address(weth),
+                amountIn: amount,
+                tokenOut: address(usdc),
+                amountOutMin: 0,
+                to: user,
+                route: computedRoute
+            });
+
+        bytes memory rpd_encoded = abi.encode(rpd);
+
+        bytes memory mockPayload = abi.encode(
+            address(user), // refundAddress
+            rpd_encoded, // _swapData
+            "" // _payloadData
+        );
+
+        vm.prank(address(axelarAdapter));
+        axelarAdapterHarness.exposed_executeWithToken(
+            "arbitrum",
+            AddressToString.toString(address(axelarAdapter)),
+            mockPayload,
+            "USDC",
+            amount
+        );
+    }
+
+    function test_ReceiveERC20FailedSwapFromOutOfGas() public {
+       uint32 amount = 1000000; // 1 USDC
+
+        deal(address(usdc), address(axelarAdapterHarness), amount); // axelar adapter receives USDC
+
+        // receive 1 USDC and swap to weth
+        bytes memory computedRoute = routeProcessorHelper.computeRoute(
+            false,
+            false,
+            address(usdc),
+            address(weth),
+            500,
+            user
+        );
+
+        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor
+            .RouteProcessorData({
+                tokenIn: address(usdc),
+                amountIn: amount,
+                tokenOut: address(weth),
+                amountOutMin: 0,
+                to: user,
+                route: computedRoute
+            });
+
+        bytes memory rpd_encoded = abi.encode(rpd);
+
+        bytes memory mockPayload = abi.encode(
+            address(user), // refundAddress
+            rpd_encoded, // _swapData
+            "" // _payloadData
+        );
+
+        vm.prank(address(axelarAdapter));
+        axelarAdapterHarness.exposed_executeWithToken{gas: 100005}(
+            "arbitrum",
+            AddressToString.toString(address(axelarAdapter)),
+            mockPayload,
+            "USDC",
+            amount
+        );
+    }
+
+    function test_ReceiveERC20FailedSwapSlippageCheck() public {
+       uint32 amount = 1000000; // 1 USDC
+
+        deal(address(usdc), address(axelarAdapterHarness), amount); // axelar adapter receives USDC
+
+        // receive 1 USDC and swap to weth
+        bytes memory computedRoute = routeProcessorHelper.computeRoute(
+            false,
+            false,
+            address(usdc),
+            address(weth),
+            500,
+            user
+        );
+
+        // attempt to swap usdc to weth with max amountOutMin
+        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor
+            .RouteProcessorData({
+                tokenIn: address(usdc),
+                amountIn: amount,
+                tokenOut: address(weth),
+                amountOutMin: type(uint256).max,
+                to: user,
+                route: computedRoute
+            });
+
+        bytes memory rpd_encoded = abi.encode(rpd);
+
+        bytes memory mockPayload = abi.encode(
+            address(user), // refundAddress
+            rpd_encoded, // _swapData
+            "" // _payloadData
+        );
+
+        vm.prank(address(axelarAdapter));
+        axelarAdapterHarness.exposed_executeWithToken(
+            "arbitrum",
+            AddressToString.toString(address(axelarAdapter)),
+            mockPayload,
+            "USDC",
+            amount
+        );
+    }
 }
