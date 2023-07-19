@@ -129,8 +129,8 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
     }
 
     function test_SwapFromNativeToERC20AndBridge() public {
-        // basic swap 1 weth to usdc and bridge
-        uint64 amount = 1 ether; // 1 weth
+        // basic swap 1 eth to usdc and bridge
+        uint64 amount = 1 ether; // 1 eth
         uint64 gasNeeded = 0.1 ether; // eth for gas to pass
 
         uint256 valueToSend = amount + gasNeeded;
@@ -187,7 +187,7 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
 
     function test_RevertWhen_SwapFromERC20ToNativeAndBridge() public {
         // basic swap 1 usdc to native and bridge
-        uint64 amount = 1000000; // 1 usdc
+        uint32 amount = 1000000; // 1 usdc
         uint64 gasNeeded = 0.1 ether; // eth for gas to pass
 
         deal(address(usdc), user, amount);

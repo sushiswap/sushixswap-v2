@@ -134,7 +134,6 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
             "" // _payloadData
         );
 
-        vm.prank(address(axelarAdapter));
         axelarAdapterHarness.exposed_executeWithToken(
             "arbitrum",
             AddressToString.toString(address(axelarAdapter)),
@@ -162,7 +161,7 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
         uint64 dustAmount = 0.001 ether; 
 
         deal(address(usdc), address(axelarAdapterHarness), amount); // axelar adapter receives USDC
-        deal(address(axelarAdapterHarness), dustAmount);
+        vm.deal(address(axelarAdapterHarness), dustAmount);
 
         // receive 1 USDC and swap to weth
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
@@ -192,7 +191,6 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
             "" // _payloadData
         );
 
-        vm.prank(address(axelarAdapter));
         axelarAdapterHarness.exposed_executeWithToken(
             "arbitrum",
             AddressToString.toString(address(axelarAdapter)),
@@ -250,7 +248,6 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
             "" // _payloadData
         );
 
-        vm.prank(address(axelarAdapter));
         axelarAdapterHarness.exposed_executeWithToken(
             "arbitrum",
             AddressToString.toString(address(axelarAdapter)),
@@ -305,7 +302,6 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
             "" // _payloadData
         );
 
-        vm.prank(address(axelarAdapter));
         axelarAdapterHarness.exposed_executeWithToken{gas: 90000}(
             "arbitrum",
             AddressToString.toString(address(axelarAdapter)),
@@ -333,7 +329,7 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
         uint64 dustAmount = 0.001 ether; //
 
         deal(address(usdc), address(axelarAdapterHarness), amount); // axelar adapter receives USDC
-        deal(address(axelarAdapterHarness), dustAmount);
+        vm.deal(address(axelarAdapterHarness), dustAmount);
 
         // receive 1 USDC and swap to weth
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
@@ -363,7 +359,6 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
             "" // _payloadData
         );
 
-        vm.prank(address(axelarAdapter));
         axelarAdapterHarness.exposed_executeWithToken{gas: 90000}(
             "arbitrum",
             AddressToString.toString(address(axelarAdapter)),
@@ -399,7 +394,6 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
             "" // _payloadData
         );
 
-        vm.prank(address(axelarAdapter));
         axelarAdapterHarness.exposed_executeWithToken(
             "arbitrum",
             AddressToString.toString(address(axelarAdapter)),
@@ -456,7 +450,6 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
             "" // _payloadData
         );
 
-        vm.prank(address(axelarAdapter));
         axelarAdapterHarness.exposed_executeWithToken(
             "arbitrum",
             AddressToString.toString(address(axelarAdapter)),
@@ -512,7 +505,6 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
             "" // _payloadData
         );
 
-        vm.prank(address(axelarAdapter));
         axelarAdapterHarness.exposed_executeWithToken{gas: 100005}(
             "arbitrum",
             AddressToString.toString(address(axelarAdapter)),
@@ -569,7 +561,6 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
             "" // _payloadData
         );
 
-        vm.prank(address(axelarAdapter));
         axelarAdapterHarness.exposed_executeWithToken(
             "arbitrum",
             AddressToString.toString(address(axelarAdapter)),

@@ -156,6 +156,7 @@ contract CCTPAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
         nativeUSDC.safeTransfer(refundAddress, amount);
 
         /// @dev transfer any native token
+        // shouldn't actually have native in here but we return if it does come in
         if (address(this).balance > 0)
           refundAddress.call{value: (address(this).balance)}("");
         
