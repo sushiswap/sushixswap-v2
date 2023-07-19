@@ -163,7 +163,7 @@ contract AxelarAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
       if (gasleft() < reserveGas || _swapData.length == 0) {
         IERC20(_token).safeTransfer(refundAddress, amount);
 
-        /// @dev transfer any natvie token
+        /// @dev transfer any native token
         if (address(this).balance > 0)
           refundAddress.call{value: (address(this).balance)}("");
         
