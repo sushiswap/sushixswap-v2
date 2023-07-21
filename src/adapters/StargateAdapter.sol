@@ -31,8 +31,8 @@ contract StargateAdapter is ISushiXSwapV2Adapter, IStargateReceiver {
         uint256 amount; // amount to bridge
         uint256 amountMin; // amount to bridge minimum
         uint256 dustAmount; // native token to be received on dst chain
-        address receiver;
-        address to;
+        address receiver; // detination address for sgReceive
+        address to; // address for fallback tranfers on sgReceive
         uint256 gas; // extra gas to be sent for dst chain operations
     }
 
@@ -130,7 +130,7 @@ contract StargateAdapter is ISushiXSwapV2Adapter, IStargateReceiver {
         );
 
         if (params.token == NATIVE_ADDRESS) {
-            // RP should not send native in, since we won't know the amount from dust
+            // RP should not send native in, since we won't know the exact amount to bridge
             if (params.amount == 0) revert RpSentNativeIn();
             IStargateEthVault(sgeth).deposit{value: params.amount}();
             params.token = sgeth;
@@ -142,11 +142,12 @@ contract StargateAdapter is ISushiXSwapV2Adapter, IStargateReceiver {
             params.token = sgeth;    
         }
 
+        if (params.amount == 0)
+            params.amount = IERC20(params.token).balanceOf(address(this));
+
         IERC20(params.token).safeApprove(
             address(stargateRouter),
-            params.amount != 0
-                ? params.amount
-                : IERC20(params.token).balanceOf(address(this))
+            params.amount
         );
 
         bytes memory payload = bytes("");
@@ -161,9 +162,7 @@ contract StargateAdapter is ISushiXSwapV2Adapter, IStargateReceiver {
             params.srcPoolId,
             params.dstPoolId,
             payable(tx.origin), // refund address
-            params.amount != 0
-                ? params.amount
-                : IERC20(params.token).balanceOf(address(this)),
+            params.amount,
             params.amountMin,
             IStargateRouter.lzTxObj(
                 params.gas,

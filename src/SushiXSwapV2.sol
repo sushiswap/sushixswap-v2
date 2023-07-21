@@ -180,6 +180,7 @@ contract SushiXSwapV2 is ISushiXSwapV2, Ownable, Multicall {
         );
     }
 
+    // todo: add amount param
     function rescueTokens(address _token, address _to) external onlyOwner {
         if (_token != NATIVE_ADDRESS) {
             IERC20(_token).safeTransfer(

@@ -13,8 +13,6 @@ import "../../utils/RouteProcessorHelper.sol";
 
 import {StdUtils} from "forge-std/StdUtils.sol";
 
-import {console2} from "forge-std/console2.sol";
-
 contract StargateAdapterReceivesTest is BaseTest {
     SushiXSwapV2 public sushiXswap;
     StargateAdapter public stargateAdapter;
@@ -1024,7 +1022,7 @@ contract StargateAdapterReceivesTest is BaseTest {
                 adapter: address(stargateAdapter),
                 tokenIn: NATIVE_ADDRESS,
                 amountIn: 1 ether,
-                to: address(0x0),
+                to: user,
                 adapterData: abi.encode(
                     111, // dstChainId - op
                     NATIVE_ADDRESS, // token
@@ -1131,7 +1129,7 @@ contract StargateAdapterReceivesTest is BaseTest {
                 adapter: address(stargateAdapter),
                 tokenIn: address(weth),
                 amountIn: 1 ether,
-                to: address(0x0),
+                to: user,
                 adapterData: abi.encode(
                     111, // dstChainId - op
                     address(usdc), // token

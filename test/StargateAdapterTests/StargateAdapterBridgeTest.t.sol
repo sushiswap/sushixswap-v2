@@ -136,7 +136,7 @@ contract StargateAdapterBridgeTest is BaseTest {
                 adapter: address(stargateAdapter),
                 tokenIn: address(usdc),
                 amountIn: amount,
-                to: address(0x0),
+                to: user,
                 adapterData: abi.encode(
                     111, // dstChainId - op
                     address(usdc), // token
@@ -259,7 +259,7 @@ contract StargateAdapterBridgeTest is BaseTest {
                 adapter: address(stargateAdapter),
                 tokenIn: address(weth),
                 amountIn: amount,
-                to: address(0x0),
+                to: user,
                 adapterData: abi.encode(
                     111, // dstChainId - op
                     address(weth), // token
@@ -379,7 +379,7 @@ contract StargateAdapterBridgeTest is BaseTest {
                     adapter: address(stargateAdapter),
                     tokenIn: NATIVE_ADDRESS,
                     amountIn: amount,
-                    to: address(0x0),
+                    to: user,
                     adapterData: abi.encode(
                         111, // dstChainId - op
                         NATIVE_ADDRESS, // token
@@ -528,7 +528,7 @@ contract StargateAdapterBridgeTest is BaseTest {
                 adapter: address(stargateAdapter),
                 tokenIn: address(usdc),
                 amountIn: amount,
-                to: address(0x0),
+                to: user,
                 adapterData: abi.encode(
                     111, // dstChainId - op
                     address(usdc), // token
@@ -601,7 +601,7 @@ contract StargateAdapterBridgeTest is BaseTest {
                 adapter: address(stargateAdapter),
                 tokenIn: address(usdc),
                 amountIn: amount,
-                to: address(0x0),
+                to: user,
                 adapterData: abi.encode(
                     111, // dstChainId - op
                     address(usdc), // token
