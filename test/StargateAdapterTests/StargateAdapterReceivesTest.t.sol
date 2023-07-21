@@ -1024,7 +1024,7 @@ contract StargateAdapterReceivesTest is BaseTest {
                 adapter: address(stargateAdapter),
                 tokenIn: NATIVE_ADDRESS,
                 amountIn: 1 ether,
-                to: address(0x0),
+                to: user,
                 adapterData: abi.encode(
                     111, // dstChainId - op
                     NATIVE_ADDRESS, // token
@@ -1131,7 +1131,7 @@ contract StargateAdapterReceivesTest is BaseTest {
                 adapter: address(stargateAdapter),
                 tokenIn: address(weth),
                 amountIn: 1 ether,
-                to: address(0x0),
+                to: user,
                 adapterData: abi.encode(
                     111, // dstChainId - op
                     address(usdc), // token

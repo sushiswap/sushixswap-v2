@@ -7,7 +7,6 @@ import {ISushiXSwapV2} from "../../src/interfaces/ISushiXSwapV2.sol";
 import {IRouteProcessor} from "../../src/interfaces/IRouteProcessor.sol";
 import {IWETH} from "../../src/interfaces/IWETH.sol";
 import {ERC20} from "openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
-import {Strings} from "openzeppelin-contracts/contracts/utils/Strings.sol";
 import "../../utils/BaseTest.sol";
 import "../../utils/RouteProcessorHelper.sol";
 
@@ -129,7 +128,7 @@ contract CCTPAdapterExecutesTest is BaseTest {
         bytes memory rpd_encoded = abi.encode(rpd);
 
         bytes memory mockPayload = abi.encode(
-            address(user), // refundAddress
+            user, // to
             amount, // amount of usdc bridged
             rpd_encoded, // _swapData
             "" // _payloadData
@@ -177,7 +176,7 @@ contract CCTPAdapterExecutesTest is BaseTest {
         bytes memory rpd_encoded = abi.encode(rpd);
 
         bytes memory mockPayload = abi.encode(
-            address(user), // refundAddress
+            user, // to
             amount, // amount of usdc bridged
             rpd_encoded, // _swapData
             "" // _payloadData
@@ -226,7 +225,7 @@ contract CCTPAdapterExecutesTest is BaseTest {
         bytes memory rpd_encoded = abi.encode(rpd);
 
         bytes memory mockPayload = abi.encode(
-            address(user), // refundAddress
+            user, // to
             amount, // amount of usdc bridged
             rpd_encoded, // _swapData
             "" // _payloadData
@@ -274,7 +273,7 @@ contract CCTPAdapterExecutesTest is BaseTest {
         bytes memory rpd_encoded = abi.encode(rpd);
 
         bytes memory mockPayload = abi.encode(
-            address(user), // refundAddress
+            user, // to
             amount, // amount of usdc bridged
             rpd_encoded, // _swapData
             "" // _payloadData
@@ -300,7 +299,7 @@ contract CCTPAdapterExecutesTest is BaseTest {
         deal(address(usdc), address(cctpAdapterHarness), amount); // cctp adapter receives USDC
 
         bytes memory mockPayload = abi.encode(
-            address(user), // refundAddress
+            user, // to
             amount, // amount of usdc bridged
             "", // _swapData
             "" // _payloadData
@@ -349,7 +348,7 @@ contract CCTPAdapterExecutesTest is BaseTest {
         bytes memory rpd_encoded = abi.encode(rpd);
 
         bytes memory mockPayload = abi.encode(
-            address(user), // refundAddress
+            user, // to
             amount, // amount of usdc bridged
             rpd_encoded, // _swapData
             "" // _payloadData
@@ -396,7 +395,7 @@ contract CCTPAdapterExecutesTest is BaseTest {
         bytes memory rpd_encoded = abi.encode(rpd);
 
         bytes memory mockPayload = abi.encode(
-            address(user), // refundAddress
+            user, // to
             amount, // amount of usdc bridged
             rpd_encoded, // _swapData
             "" // _payloadData
@@ -444,7 +443,7 @@ contract CCTPAdapterExecutesTest is BaseTest {
         bytes memory rpd_encoded = abi.encode(rpd);
 
         bytes memory mockPayload = abi.encode(
-            address(user), // refundAddress
+            user, // to
             amount, // amount of usdc bridged
             rpd_encoded, // _swapData
             "" // _payloadData

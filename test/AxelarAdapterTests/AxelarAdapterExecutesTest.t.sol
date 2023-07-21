@@ -7,14 +7,11 @@ import {ISushiXSwapV2} from "../../src/interfaces/ISushiXSwapV2.sol";
 import {IRouteProcessor} from "../../src/interfaces/IRouteProcessor.sol";
 import {IWETH} from "../../src/interfaces/IWETH.sol";
 import {ERC20} from "openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
-import {Strings} from "openzeppelin-contracts/contracts/utils/Strings.sol";
 import "../../utils/BaseTest.sol";
 import "../../utils/RouteProcessorHelper.sol";
 
 import {StringToBytes32, Bytes32ToString} from "../../src/utils/Bytes32String.sol";
 import {StringToAddress, AddressToString} from "../../src/utils/AddressString.sol";
-
-import {console2} from "forge-std/console2.sol";
 
 contract AxelarAdapterHarness is AxelarAdapter {
     constructor(
@@ -129,7 +126,7 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
         bytes memory rpd_encoded = abi.encode(rpd);
 
         bytes memory mockPayload = abi.encode(
-            address(user), // refundAddress
+            user, // to
             rpd_encoded, // _swapData
             "" // _payloadData
         );
@@ -158,7 +155,7 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
 
     function test_ReceiveERC20AndDustSwapToERC20() public {
         uint32 amount = 1000000; // 1 USDC
-        uint64 dustAmount = 0.001 ether; 
+        uint64 dustAmount = 0.001 ether;
 
         deal(address(usdc), address(axelarAdapterHarness), amount); // axelar adapter receives USDC
         vm.deal(address(axelarAdapterHarness), dustAmount);
@@ -186,7 +183,7 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
         bytes memory rpd_encoded = abi.encode(rpd);
 
         bytes memory mockPayload = abi.encode(
-            address(user), // refundAddress
+            user, // to
             rpd_encoded, // _swapData
             "" // _payloadData
         );
@@ -211,7 +208,11 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
             "axelarAdapter should have 0 weth"
         );
         assertGt(weth.balanceOf(user), 0, "user should have > 0 weth");
-        assertEq(address(axelarAdapterHarness).balance, 0, "adapter should have 0 eth");
+        assertEq(
+            address(axelarAdapterHarness).balance,
+            0,
+            "adapter should have 0 eth"
+        );
         assertEq(user.balance, dustAmount, "user should have all dust eth");
     }
 
@@ -243,7 +244,7 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
         bytes memory rpd_encoded = abi.encode(rpd);
 
         bytes memory mockPayload = abi.encode(
-            address(user), // refundAddress
+            user, // to
             rpd_encoded, // _swapData
             "" // _payloadData
         );
@@ -266,7 +267,7 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
             0,
             "axelarAdapter should have 0 eth"
         );
-        assertGt(address(user).balance, 0, "user should have > 0 eth");
+        assertGt(user.balance, 0, "user should have > 0 eth");
     }
 
     function test_ReceiveERC20NotEnoughGasForSwap() public {
@@ -297,7 +298,7 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
         bytes memory rpd_encoded = abi.encode(rpd);
 
         bytes memory mockPayload = abi.encode(
-            address(user), // refundAddress
+            user, // to
             rpd_encoded, // _swapData
             "" // _payloadData
         );
@@ -354,7 +355,7 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
         bytes memory rpd_encoded = abi.encode(rpd);
 
         bytes memory mockPayload = abi.encode(
-            address(user), // refundAddress
+            user, // to
             rpd_encoded, // _swapData
             "" // _payloadData
         );
@@ -379,7 +380,11 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
             "axelarAdapter should have 0 weth"
         );
         assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
-        assertEq(address(axelarAdapterHarness).balance, 0, "adapter should have 0 eth");
+        assertEq(
+            address(axelarAdapterHarness).balance,
+            0,
+            "adapter should have 0 eth"
+        );
         assertEq(user.balance, dustAmount, "user should have all dust eth");
     }
 
@@ -389,7 +394,7 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
         deal(address(usdc), address(axelarAdapterHarness), amount); // axelar adapter receives USDC
 
         bytes memory mockPayload = abi.encode(
-            address(user), // refundAddress
+            user, // to
             "", // _swapData
             "" // _payloadData
         );
@@ -445,7 +450,7 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
         bytes memory rpd_encoded = abi.encode(rpd);
 
         bytes memory mockPayload = abi.encode(
-            address(user), // refundAddress
+            user, // to
             rpd_encoded, // _swapData
             "" // _payloadData
         );
@@ -500,7 +505,7 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
         bytes memory rpd_encoded = abi.encode(rpd);
 
         bytes memory mockPayload = abi.encode(
-            address(user), // refundAddress
+            user, // to
             rpd_encoded, // _swapData
             "" // _payloadData
         );
@@ -556,7 +561,7 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
         bytes memory rpd_encoded = abi.encode(rpd);
 
         bytes memory mockPayload = abi.encode(
-            address(user), // refundAddress
+            user, // to
             rpd_encoded, // _swapData
             "" // _payloadData
         );

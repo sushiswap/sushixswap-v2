@@ -7,7 +7,6 @@ import {ISushiXSwapV2} from "../../src/interfaces/ISushiXSwapV2.sol";
 import {IRouteProcessor} from "../../src/interfaces/IRouteProcessor.sol";
 import {IWETH} from "../../src/interfaces/IWETH.sol";
 import {ERC20} from "openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
-import {Strings} from "openzeppelin-contracts/contracts/utils/Strings.sol";
 import "../../utils/BaseTest.sol";
 import "../../utils/RouteProcessorHelper.sol";
 
@@ -107,14 +106,14 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
                 adapter: address(axelarAdapter),
                 tokenIn: address(weth),
                 amountIn: amount,
-                to: address(user),
+                to: user,
                 adapterData: abi.encode(
                     address(usdc), // token
                     StringToBytes32.toBytes32("arbitrum"), // destinationChain
                     address(axelarAdapter), // destinationAddress
                     StringToBytes32.toBytes32("USDC"), // symbol
                     0, // amount - 0 since swap first
-                    user // refundAddress
+                    user // to
                 )
             }),
             rpd_encoded, // swap data
@@ -122,9 +121,17 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
             "" // payload data
         );
 
-        assertEq(usdc.balanceOf(address(axelarAdapter)), 0, "axelarAdapter should have 0 usdc");
+        assertEq(
+            usdc.balanceOf(address(axelarAdapter)),
+            0,
+            "axelarAdapter should have 0 usdc"
+        );
         assertEq(usdc.balanceOf(user), 0, "user should have 0 usdc");
-        assertEq(weth.balanceOf(address(axelarAdapter)), 0, "axelarAdapter should have 0 weth");
+        assertEq(
+            weth.balanceOf(address(axelarAdapter)),
+            0,
+            "axelarAdapter should have 0 weth"
+        );
         assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
     }
 
@@ -164,14 +171,14 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
                 adapter: address(axelarAdapter),
                 tokenIn: address(weth), // doesn't matter what you put for bridge params when swapping first
                 amountIn: amount,
-                to: address(user),
+                to: user,
                 adapterData: abi.encode(
                     address(usdc), // token
                     StringToBytes32.toBytes32("arbitrum"), // destinationChain
                     address(axelarAdapter), // destinationAddress
                     StringToBytes32.toBytes32("USDC"), // symbol
                     0, // amount - 0 since swap first
-                    user // refundAddress
+                    user // to
                 )
             }),
             rpd_encoded, // swap data
@@ -179,9 +186,17 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
             "" // payload data
         );
 
-        assertEq(address(axelarAdapter).balance, 0, "axelarAdapter should have 0 eth");
+        assertEq(
+            address(axelarAdapter).balance,
+            0,
+            "axelarAdapter should have 0 eth"
+        );
         assertEq(user.balance, 0, "user should have 0 eth");
-        assertEq(usdc.balanceOf(address(axelarAdapter)), 0, "axelarAdapter should have 0 usdc");
+        assertEq(
+            usdc.balanceOf(address(axelarAdapter)),
+            0,
+            "axelarAdapter should have 0 usdc"
+        );
         assertEq(usdc.balanceOf(user), 0, "user should have 0 usdc");
     }
 
@@ -224,14 +239,14 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
                 adapter: address(axelarAdapter),
                 tokenIn: address(weth), // doesn't matter what you put for bridge params when swapping first
                 amountIn: amount,
-                to: address(user),
+                to: user,
                 adapterData: abi.encode(
                     NATIVE_ADDRESS, // token
                     StringToBytes32.toBytes32("arbitrum"), // destinationChain
                     address(axelarAdapter), // destinationAddress
                     StringToBytes32.toBytes32("WETH"), // symbol
                     0, // amount - 0 since swap first
-                    user // refundAddress
+                    user // to
                 )
             }),
             rpd_encoded, // swap data

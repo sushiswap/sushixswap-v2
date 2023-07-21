@@ -7,7 +7,6 @@ import {ISushiXSwapV2} from "../../src/interfaces/ISushiXSwapV2.sol";
 import {IRouteProcessor} from "../../src/interfaces/IRouteProcessor.sol";
 import {IWETH} from "../../src/interfaces/IWETH.sol";
 import {ERC20} from "openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
-import {Strings} from "openzeppelin-contracts/contracts/utils/Strings.sol";
 import "../../utils/BaseTest.sol";
 import "../../utils/RouteProcessorHelper.sol";
 
@@ -96,7 +95,7 @@ contract CCTPAdapterSwapAndBridgeTest is BaseTest {
                 to: address(cctpAdapter),
                 route: computedRoute
             });
-        
+
         bytes memory rpd_encoded = abi.encode(rpd);
 
         vm.startPrank(user);
@@ -108,12 +107,12 @@ contract CCTPAdapterSwapAndBridgeTest is BaseTest {
                 adapter: address(cctpAdapter),
                 tokenIn: address(weth),
                 amountIn: amount,
-                to: address(user),
+                to: user,
                 adapterData: abi.encode(
                     StringToBytes32.toBytes32("arbitrum"), // destinationChain
                     address(cctpAdapter), // destinationAddress
                     0, // amount - 0 since swap first
-                    user // refundAddress
+                    user // to
                 )
             }),
             rpd_encoded, // swap data
@@ -121,9 +120,17 @@ contract CCTPAdapterSwapAndBridgeTest is BaseTest {
             "" // payload data
         );
 
-        assertEq(usdc.balanceOf(address(cctpAdapter)), 0, "cctpAdapter should have 0 usdc");
+        assertEq(
+            usdc.balanceOf(address(cctpAdapter)),
+            0,
+            "cctpAdapter should have 0 usdc"
+        );
         assertEq(usdc.balanceOf(user), 0, "user should have 0 usdc");
-        assertEq(weth.balanceOf(address(cctpAdapter)), 0, "cctpAdapter should have 0 weth");
+        assertEq(
+            weth.balanceOf(address(cctpAdapter)),
+            0,
+            "cctpAdapter should have 0 weth"
+        );
         assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
     }
 
@@ -153,7 +160,7 @@ contract CCTPAdapterSwapAndBridgeTest is BaseTest {
                 to: address(cctpAdapter),
                 route: computedRoute
             });
-        
+
         bytes memory rpd_encoded = abi.encode(rpd);
 
         vm.startPrank(user);
@@ -168,7 +175,7 @@ contract CCTPAdapterSwapAndBridgeTest is BaseTest {
                     StringToBytes32.toBytes32("arbitrum"), // destinationChain
                     address(cctpAdapter), // destinationAddress
                     0, // amount - 0 since swap first
-                    user // refundAddress
+                    user // to
                 )
             }),
             rpd_encoded, // swap data
@@ -176,9 +183,17 @@ contract CCTPAdapterSwapAndBridgeTest is BaseTest {
             "" // payload data
         );
 
-        assertEq(usdc.balanceOf(address(cctpAdapter)), 0, "cctpAdapter should have 0 usdc");
+        assertEq(
+            usdc.balanceOf(address(cctpAdapter)),
+            0,
+            "cctpAdapter should have 0 usdc"
+        );
         assertEq(usdc.balanceOf(user), 0, "user should have 0 usdc");
-        assertEq(address(cctpAdapter).balance, 0, "cctpAdapter should have 0 eth");
+        assertEq(
+            address(cctpAdapter).balance,
+            0,
+            "cctpAdapter should have 0 eth"
+        );
         assertEq(user.balance, 0, "user should have 0 eth");
     }
 
@@ -208,7 +223,7 @@ contract CCTPAdapterSwapAndBridgeTest is BaseTest {
                 to: address(cctpAdapter),
                 route: computedRoute
             });
-        
+
         bytes memory rpd_encoded = abi.encode(rpd);
 
         vm.startPrank(user);
@@ -221,12 +236,12 @@ contract CCTPAdapterSwapAndBridgeTest is BaseTest {
                 adapter: address(cctpAdapter),
                 tokenIn: address(usdc), // doesn't matter what you put here
                 amountIn: amount,
-                to: address(user),
+                to: user,
                 adapterData: abi.encode(
                     StringToBytes32.toBytes32("arbitrum"), // destinationChain
                     address(cctpAdapter), // destinationAddress
                     0, // amount - 0 since swap first
-                    user // refundAddress
+                    user // to
                 )
             }),
             rpd_encoded, // swap data

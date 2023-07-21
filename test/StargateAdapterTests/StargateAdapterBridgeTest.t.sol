@@ -85,17 +85,6 @@ contract StargateAdapterBridgeTest is BaseTest {
         vm.stopPrank();
     }
 
-    event Swap(
-        uint16 chainId,
-        uint256 dstPoolId,
-        address from,
-        uint256 amountSD,
-        uint256 eqReward,
-        uint256 eqFee,
-        uint256 protocolFee,
-        uint256 lpFee
-    );
-
     // uint32 keeps it max amount to ~4294 usdc
     function testFuzz_BridgeERC20() public {
         uint32 amount = 1000001;
@@ -136,7 +125,7 @@ contract StargateAdapterBridgeTest is BaseTest {
                 adapter: address(stargateAdapter),
                 tokenIn: address(usdc),
                 amountIn: amount,
-                to: address(0x0),
+                to: user,
                 adapterData: abi.encode(
                     111, // dstChainId - op
                     address(usdc), // token
@@ -259,7 +248,7 @@ contract StargateAdapterBridgeTest is BaseTest {
                 adapter: address(stargateAdapter),
                 tokenIn: address(weth),
                 amountIn: amount,
-                to: address(0x0),
+                to: user,
                 adapterData: abi.encode(
                     111, // dstChainId - op
                     address(weth), // token
@@ -361,7 +350,7 @@ contract StargateAdapterBridgeTest is BaseTest {
                 adapter: address(stargateAdapter),
                 tokenIn: NATIVE_ADDRESS,
                 amountIn: 1 ether,
-                to: address(0x0),
+                to: user,
                 adapterData: abi.encode(
                     111, // dstChainId - op
                     NATIVE_ADDRESS, // token
@@ -434,7 +423,7 @@ contract StargateAdapterBridgeTest is BaseTest {
                 adapter: address(stargateAdapter),
                 tokenIn: address(usdc),
                 amountIn: amount,
-                to: address(0x0),
+                to: user,
                 adapterData: abi.encode(
                     111, // dstChainId - op
                     address(usdc), // token
@@ -507,7 +496,7 @@ contract StargateAdapterBridgeTest is BaseTest {
                 adapter: address(stargateAdapter),
                 tokenIn: address(usdc),
                 amountIn: amount,
-                to: address(0x0),
+                to: user,
                 adapterData: abi.encode(
                     111, // dstChainId - op
                     address(usdc), // token

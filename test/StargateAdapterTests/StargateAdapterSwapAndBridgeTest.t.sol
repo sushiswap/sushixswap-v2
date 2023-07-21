@@ -26,6 +26,7 @@ contract StargateAdapterSwapAndBridgeTest is BaseTest {
         0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
     address public operator = address(0xbeef);
     address public owner = address(0x420);
+    address public user = address(0x4201);
 
     function setUp() public override {
         forkMainnet();
@@ -110,7 +111,7 @@ contract StargateAdapterSwapAndBridgeTest is BaseTest {
                 adapter: address(stargateAdapter),
                 tokenIn: address(weth),
                 amountIn: 1 ether,
-                to: address(0x0),
+                to: user,
                 adapterData: abi.encode(
                     111, // dstChainId - op
                     address(usdc), // token
@@ -171,7 +172,7 @@ contract StargateAdapterSwapAndBridgeTest is BaseTest {
                 adapter: address(stargateAdapter),
                 tokenIn: address(weth), // doesn't matter what you put for bridge params when swapping first
                 amountIn: 1 ether,
-                to: address(0x0),
+                to: user,
                 adapterData: abi.encode(
                     111, // dstChainId - op
                     address(usdc), // token
@@ -232,7 +233,7 @@ contract StargateAdapterSwapAndBridgeTest is BaseTest {
                 adapter: address(stargateAdapter),
                 tokenIn: address(weth), // doesn't matter for bridge params with swapAndBridge
                 amountIn: 1 ether,
-                to: address(0x0),
+                to: user,
                 adapterData: abi.encode(
                     111, // dstChainId - op
                     address(weth), // token
@@ -294,7 +295,7 @@ contract StargateAdapterSwapAndBridgeTest is BaseTest {
                 adapter: address(stargateAdapter),
                 tokenIn: address(weth), // doesn't matter for bridge params with swapAndBridge
                 amountIn: 1 ether,
-                to: address(0x0),
+                to: user,
                 adapterData: abi.encode(
                     111, // dstChainId - op
                     NATIVE_ADDRESS, // token

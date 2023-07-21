@@ -7,14 +7,11 @@ import {ISushiXSwapV2} from "../../src/interfaces/ISushiXSwapV2.sol";
 import {IRouteProcessor} from "../../src/interfaces/IRouteProcessor.sol";
 import {IWETH} from "../../src/interfaces/IWETH.sol";
 import {ERC20} from "openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
-import {Strings} from "openzeppelin-contracts/contracts/utils/Strings.sol";
 import "../../utils/BaseTest.sol";
 import "../../utils/RouteProcessorHelper.sol";
 
 import {StringToBytes32, Bytes32ToString} from "../../src/utils/Bytes32String.sol";
 import {StringToAddress, AddressToString} from "../../src/utils/AddressString.sol";
-
-import {console2} from "forge-std/console2.sol";
 
 contract AxelarAdapterBridgeTest is BaseTest {
     SushiXSwapV2 public sushiXswap;
@@ -86,21 +83,25 @@ contract AxelarAdapterBridgeTest is BaseTest {
                 adapter: address(axelarAdapter),
                 tokenIn: address(usdc),
                 amountIn: amount,
-                to: address(0x0),
+                to: user,
                 adapterData: abi.encode(
                     address(usdc), // token
                     StringToBytes32.toBytes32("arbitrum"), // destinationChain
                     address(axelarAdapter), // destinationAddress
                     StringToBytes32.toBytes32("USDC"), // symbol
                     amount, // amount
-                    user // refundAddress
+                    user // to
                 )
             }),
             "", // swap payload
             "" // payload data
         );
 
-        assertEq(usdc.balanceOf(address(axelarAdapter)), 0, "axelarAdapter should have 0 usdc");
+        assertEq(
+            usdc.balanceOf(address(axelarAdapter)),
+            0,
+            "axelarAdapter should have 0 usdc"
+        );
         assertEq(usdc.balanceOf(user), 0, "user should have 0 usdc");
     }
 
@@ -120,7 +121,7 @@ contract AxelarAdapterBridgeTest is BaseTest {
                 adapter: address(axelarAdapter),
                 tokenIn: NATIVE_ADDRESS,
                 amountIn: amount,
-                to: address(0x0),
+                to: user,
                 adapterData: abi.encode(
                     NATIVE_ADDRESS,
                     StringToBytes32.toBytes32("arbitrum"),
@@ -134,7 +135,11 @@ contract AxelarAdapterBridgeTest is BaseTest {
             "" // payload data
         );
 
-        assertEq(address(axelarAdapter).balance, 0, "axelarAdapter should have 0 usdc");
+        assertEq(
+            address(axelarAdapter).balance,
+            0,
+            "axelarAdapter should have 0 usdc"
+        );
         assertEq(user.balance, 0, "user should have 0 usdc");
     }
 
@@ -157,14 +162,14 @@ contract AxelarAdapterBridgeTest is BaseTest {
                 adapter: address(axelarAdapter),
                 tokenIn: address(sushi),
                 amountIn: amount,
-                to: address(0x0),
+                to: user,
                 adapterData: abi.encode(
                     address(sushi), // token
                     StringToBytes32.toBytes32("arbitrum"), // destinationChain
                     address(axelarAdapter), // destinationAddress
                     StringToBytes32.toBytes32("SUSHI"), // symbol
                     amount, // amount
-                    user // refundAddress
+                    user // to
                 )
             }),
             "", // swap payload
@@ -210,21 +215,25 @@ contract AxelarAdapterBridgeTest is BaseTest {
                 adapter: address(axelarAdapter),
                 tokenIn: address(usdc),
                 amountIn: amount,
-                to: address(0x0),
+                to: user,
                 adapterData: abi.encode(
                     address(usdc), // token
                     StringToBytes32.toBytes32("arbitrum"), // destinationChain
                     address(axelarAdapter), // destinationAddress
                     StringToBytes32.toBytes32("USDC"), // symbol
                     amount, // amount
-                    user // refundAddress
+                    user // to
                 )
             }),
             rpd_encoded_dst, // swap payload
             "" // payload data
         );
 
-        assertEq(usdc.balanceOf(address(axelarAdapter)), 0, "axelarAdapter should have 0 usdc");
+        assertEq(
+            usdc.balanceOf(address(axelarAdapter)),
+            0,
+            "axelarAdapter should have 0 usdc"
+        );
         assertEq(usdc.balanceOf(user), 0, "user should have 0 usdc");
     }
 
@@ -265,7 +274,7 @@ contract AxelarAdapterBridgeTest is BaseTest {
                 adapter: address(axelarAdapter),
                 tokenIn: NATIVE_ADDRESS,
                 amountIn: amount,
-                to: address(0x0),
+                to: user,
                 adapterData: abi.encode(
                     NATIVE_ADDRESS,
                     StringToBytes32.toBytes32("arbitrum"),
@@ -279,7 +288,11 @@ contract AxelarAdapterBridgeTest is BaseTest {
             "" // payload data
         );
 
-        assertEq(address(axelarAdapter).balance, 0, "axelarAdapter should have 0 usdc");
+        assertEq(
+            address(axelarAdapter).balance,
+            0,
+            "axelarAdapter should have 0 usdc"
+        );
         assertEq(user.balance, 0, "user should have 0 usdc");
     }
 
@@ -301,14 +314,14 @@ contract AxelarAdapterBridgeTest is BaseTest {
                 adapter: address(axelarAdapter),
                 tokenIn: address(usdc),
                 amountIn: amount,
-                to: address(0x0),
+                to: user,
                 adapterData: abi.encode(
                     address(usdc), // token
                     StringToBytes32.toBytes32("arbitrum"), // destinationChain
                     address(axelarAdapter), // destinationAddress
                     StringToBytes32.toBytes32("USDC"), // symbol
                     amount, // amount
-                    user // refundAddress
+                    user // to
                 )
             }),
             "", // swap payload
@@ -334,7 +347,7 @@ contract AxelarAdapterBridgeTest is BaseTest {
                 adapter: address(axelarAdapter),
                 tokenIn: NATIVE_ADDRESS,
                 amountIn: amount,
-                to: address(0x0),
+                to: user,
                 adapterData: abi.encode(
                     NATIVE_ADDRESS,
                     StringToBytes32.toBytes32("arbitrum"),
