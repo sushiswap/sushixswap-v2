@@ -13,8 +13,6 @@ import "../../utils/RouteProcessorHelper.sol";
 import {StringToBytes32, Bytes32ToString} from "../../src/utils/Bytes32String.sol";
 import {StringToAddress, AddressToString} from "../../src/utils/AddressString.sol";
 
-import {console2} from "forge-std/console2.sol";
-
 contract AxelarAdapterSwapAndBridgeTest is BaseTest {
     SushiXSwapV2 public sushiXswap;
     AxelarAdapter public axelarAdapter;

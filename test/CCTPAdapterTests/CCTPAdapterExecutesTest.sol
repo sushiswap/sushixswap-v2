@@ -13,28 +13,30 @@ import "../../utils/RouteProcessorHelper.sol";
 import {StringToBytes32, Bytes32ToString} from "../../src/utils/Bytes32String.sol";
 import {StringToAddress, AddressToString} from "../../src/utils/AddressString.sol";
 
-import {console2} from "forge-std/console2.sol";
-
 contract CCTPAdapterHarness is CCTPAdapter {
-  constructor(
-    address _axelarGateway,
-    address _gasService,
-    address _tokenMessenger,
-    address _rp,
-    address _nativeUSDC
-  ) CCTPAdapter(_axelarGateway, _gasService, _tokenMessenger, _rp, _nativeUSDC) {}
+    constructor(
+        address _axelarGateway,
+        address _gasService,
+        address _tokenMessenger,
+        address _rp,
+        address _nativeUSDC
+    )
+        CCTPAdapter(
+            _axelarGateway,
+            _gasService,
+            _tokenMessenger,
+            _rp,
+            _nativeUSDC
+        )
+    {}
 
-  function exposed_execute(
-    string memory sourceChain,
-    string memory sourceAddress,
-    bytes calldata payload
-  ) external {
-      _execute(
-        sourceChain,
-        sourceAddress,
-        payload
-      );
-  }
+    function exposed_execute(
+        string memory sourceChain,
+        string memory sourceAddress,
+        bytes calldata payload
+    ) external {
+        _execute(sourceChain, sourceAddress, payload);
+    }
 }
 
 contract CCTPAdapterExecutesTest is BaseTest {
@@ -104,7 +106,6 @@ contract CCTPAdapterExecutesTest is BaseTest {
 
         deal(address(usdc), address(cctpAdapterHarness), amount); // cctp adapter receives USDC
 
-
         // receives 1 minted USDC and swap to weth
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
             false,
@@ -135,14 +136,22 @@ contract CCTPAdapterExecutesTest is BaseTest {
         );
 
         cctpAdapterHarness.exposed_execute(
-          "arbitrum",
-          AddressToString.toString(address(cctpAdapter)),
-          mockPayload
+            "arbitrum",
+            AddressToString.toString(address(cctpAdapter)),
+            mockPayload
         );
 
-        assertEq(usdc.balanceOf(address(cctpAdapterHarness)), 0, "cctp adapter should have 0 usdc");
+        assertEq(
+            usdc.balanceOf(address(cctpAdapterHarness)),
+            0,
+            "cctp adapter should have 0 usdc"
+        );
         assertEq(usdc.balanceOf(user), 0, "user should have 0 usdc");
-        assertEq(weth.balanceOf(address(cctpAdapterHarness)), 0, "cctp adapter should have 0 weth");
+        assertEq(
+            weth.balanceOf(address(cctpAdapterHarness)),
+            0,
+            "cctp adapter should have 0 weth"
+        );
         assertGt(weth.balanceOf(user), 0, "user should have > 0 weth");
     }
 
@@ -183,16 +192,28 @@ contract CCTPAdapterExecutesTest is BaseTest {
         );
 
         cctpAdapterHarness.exposed_execute(
-          "arbitrum",
-          AddressToString.toString(address(cctpAdapter)),
-          mockPayload
+            "arbitrum",
+            AddressToString.toString(address(cctpAdapter)),
+            mockPayload
         );
 
-        assertEq(usdc.balanceOf(address(cctpAdapterHarness)), 0, "cctp adapter should have 0 usdc");
+        assertEq(
+            usdc.balanceOf(address(cctpAdapterHarness)),
+            0,
+            "cctp adapter should have 0 usdc"
+        );
         assertEq(usdc.balanceOf(user), 0, "user should have 0 usdc");
-        assertEq(weth.balanceOf(address(cctpAdapterHarness)), 0, "cctp adapter should have 0 weth");
+        assertEq(
+            weth.balanceOf(address(cctpAdapterHarness)),
+            0,
+            "cctp adapter should have 0 weth"
+        );
         assertGt(weth.balanceOf(user), 0, "user should have > 0 weth");
-        assertEq(address(cctpAdapterHarness).balance, 0, "adapter should have 0 eth");
+        assertEq(
+            address(cctpAdapterHarness).balance,
+            0,
+            "adapter should have 0 eth"
+        );
         assertEq(user.balance, dustAmount, "user should have all dust eth");
     }
 
@@ -200,7 +221,6 @@ contract CCTPAdapterExecutesTest is BaseTest {
         uint32 amount = 1000000; // 1 usdc
 
         deal(address(usdc), address(cctpAdapterHarness), amount); // cctp adapter receives USDC
-
 
         // receives 1 minted USDC and swap to weth
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
@@ -232,14 +252,22 @@ contract CCTPAdapterExecutesTest is BaseTest {
         );
 
         cctpAdapterHarness.exposed_execute{gas: 90000}(
-          "arbitrum",
-          AddressToString.toString(address(cctpAdapter)),
-          mockPayload
+            "arbitrum",
+            AddressToString.toString(address(cctpAdapter)),
+            mockPayload
         );
 
-        assertEq(usdc.balanceOf(address(cctpAdapterHarness)), 0, "cctp adapter should have 0 usdc");
+        assertEq(
+            usdc.balanceOf(address(cctpAdapterHarness)),
+            0,
+            "cctp adapter should have 0 usdc"
+        );
         assertEq(usdc.balanceOf(user), amount, "user should have all usdc");
-        assertEq(weth.balanceOf(address(cctpAdapterHarness)), 0, "cctp adapter should have 0 weth");
+        assertEq(
+            weth.balanceOf(address(cctpAdapterHarness)),
+            0,
+            "cctp adapter should have 0 weth"
+        );
         assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
     }
 
@@ -280,16 +308,28 @@ contract CCTPAdapterExecutesTest is BaseTest {
         );
 
         cctpAdapterHarness.exposed_execute{gas: 90000}(
-          "arbitrum",
-          AddressToString.toString(address(cctpAdapter)),
-          mockPayload
+            "arbitrum",
+            AddressToString.toString(address(cctpAdapter)),
+            mockPayload
         );
 
-        assertEq(usdc.balanceOf(address(cctpAdapterHarness)), 0, "cctp adapter should have 0 usdc");
+        assertEq(
+            usdc.balanceOf(address(cctpAdapterHarness)),
+            0,
+            "cctp adapter should have 0 usdc"
+        );
         assertEq(usdc.balanceOf(user), amount, "user should have all usdc");
-        assertEq(weth.balanceOf(address(cctpAdapterHarness)), 0, "cctp adapter should have 0 weth");
+        assertEq(
+            weth.balanceOf(address(cctpAdapterHarness)),
+            0,
+            "cctp adapter should have 0 weth"
+        );
         assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
-        assertEq(address(cctpAdapterHarness).balance, 0, "adapter should have 0 eth");
+        assertEq(
+            address(cctpAdapterHarness).balance,
+            0,
+            "adapter should have 0 eth"
+        );
         assertEq(user.balance, dustAmount, "user should have all dust eth");
     }
 
@@ -306,14 +346,22 @@ contract CCTPAdapterExecutesTest is BaseTest {
         );
 
         cctpAdapterHarness.exposed_execute(
-          "arbitrum",
-          AddressToString.toString(address(cctpAdapter)),
-          mockPayload
+            "arbitrum",
+            AddressToString.toString(address(cctpAdapter)),
+            mockPayload
         );
 
-        assertEq(usdc.balanceOf(address(cctpAdapterHarness)), 0, "cctp adapter should have 0 usdc");
+        assertEq(
+            usdc.balanceOf(address(cctpAdapterHarness)),
+            0,
+            "cctp adapter should have 0 usdc"
+        );
         assertEq(usdc.balanceOf(user), amount, "user should have all usdc");
-        assertEq(weth.balanceOf(address(cctpAdapterHarness)), 0, "cctp adapter should have 0 weth");
+        assertEq(
+            weth.balanceOf(address(cctpAdapterHarness)),
+            0,
+            "cctp adapter should have 0 weth"
+        );
         assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
     }
 
@@ -321,7 +369,6 @@ contract CCTPAdapterExecutesTest is BaseTest {
         uint32 amount = 1000000; // 1 usdc
 
         deal(address(usdc), address(cctpAdapterHarness), amount); // cctp adapter receives USDC
-
 
         // receives 1 minted USDC and swap to weth
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
@@ -332,7 +379,6 @@ contract CCTPAdapterExecutesTest is BaseTest {
             500,
             user
         );
-
 
         // switched tokenIn to weth, and tokenOut to usdc - should fail now on swap
         IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor
@@ -355,14 +401,22 @@ contract CCTPAdapterExecutesTest is BaseTest {
         );
 
         cctpAdapterHarness.exposed_execute(
-          "arbitrum",
-          AddressToString.toString(address(cctpAdapter)),
-          mockPayload
+            "arbitrum",
+            AddressToString.toString(address(cctpAdapter)),
+            mockPayload
         );
 
-        assertEq(usdc.balanceOf(address(cctpAdapterHarness)), 0, "cctp adapter should have 0 usdc");
+        assertEq(
+            usdc.balanceOf(address(cctpAdapterHarness)),
+            0,
+            "cctp adapter should have 0 usdc"
+        );
         assertEq(usdc.balanceOf(user), amount, "user should have all usdc");
-        assertEq(weth.balanceOf(address(cctpAdapterHarness)), 0, "cctp adapter should have 0 weth");
+        assertEq(
+            weth.balanceOf(address(cctpAdapterHarness)),
+            0,
+            "cctp adapter should have 0 weth"
+        );
         assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
     }
 
@@ -370,7 +424,6 @@ contract CCTPAdapterExecutesTest is BaseTest {
         uint32 amount = 1000000; // 1 usdc
 
         deal(address(usdc), address(cctpAdapterHarness), amount); // cctp adapter receives USDC
-
 
         // receives 1 minted USDC and swap to weth
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
@@ -402,22 +455,29 @@ contract CCTPAdapterExecutesTest is BaseTest {
         );
 
         cctpAdapterHarness.exposed_execute{gas: 100005}(
-          "arbitrum",
-          AddressToString.toString(address(cctpAdapter)),
-          mockPayload
+            "arbitrum",
+            AddressToString.toString(address(cctpAdapter)),
+            mockPayload
         );
 
-        assertEq(usdc.balanceOf(address(cctpAdapterHarness)), 0, "cctp adapter should have 0 usdc");
+        assertEq(
+            usdc.balanceOf(address(cctpAdapterHarness)),
+            0,
+            "cctp adapter should have 0 usdc"
+        );
         assertEq(usdc.balanceOf(user), amount, "user should have all usdc");
-        assertEq(weth.balanceOf(address(cctpAdapterHarness)), 0, "cctp adapter should have 0 weth");
+        assertEq(
+            weth.balanceOf(address(cctpAdapterHarness)),
+            0,
+            "cctp adapter should have 0 weth"
+        );
         assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
     }
-    
+
     function test_ReedemUSDCFailedSwapSlippageCheck() public {
         uint32 amount = 1000000; // 1 usdc
 
         deal(address(usdc), address(cctpAdapterHarness), amount); // cctp adapter receives USDC
-
 
         // receives 1 minted USDC and swap to weth
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
@@ -450,15 +510,22 @@ contract CCTPAdapterExecutesTest is BaseTest {
         );
 
         cctpAdapterHarness.exposed_execute(
-          "arbitrum",
-          AddressToString.toString(address(cctpAdapter)),
-          mockPayload
+            "arbitrum",
+            AddressToString.toString(address(cctpAdapter)),
+            mockPayload
         );
 
-        assertEq(usdc.balanceOf(address(cctpAdapterHarness)), 0, "cctp adapter should have 0 usdc");
+        assertEq(
+            usdc.balanceOf(address(cctpAdapterHarness)),
+            0,
+            "cctp adapter should have 0 usdc"
+        );
         assertEq(usdc.balanceOf(user), amount, "user should have all usdc");
-        assertEq(weth.balanceOf(address(cctpAdapterHarness)), 0, "cctp adapter should have 0 weth");
+        assertEq(
+            weth.balanceOf(address(cctpAdapterHarness)),
+            0,
+            "cctp adapter should have 0 weth"
+        );
         assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
     }
-
 }

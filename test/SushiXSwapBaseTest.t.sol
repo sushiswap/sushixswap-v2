@@ -10,8 +10,6 @@ import "../utils/BaseTest.sol";
 import "../utils/RouteProcessorHelper.sol";
 import {StdUtils} from "forge-std/StdUtils.sol";
 
-import {console2} from "forge-std/console2.sol";
-
 contract SushiXSwapBaseTest is BaseTest {
     SushiXSwapV2 public sushiXswap;
     StargateAdapter public stargateAdapter;
