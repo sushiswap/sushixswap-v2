@@ -410,12 +410,26 @@ contract StargateAdapterBridgeTest is BaseTest {
             assertLe(
                 operator.balance,
                 balanceBefore - (gasNeeded + amountMin) - gas_used,
-                string(abi.encodePacked("operator balance should be lte ", Strings.toString(balanceBefore - (gasNeeded + amountMin) - gas_used)))
+                string(
+                    abi.encodePacked(
+                        "operator balance should be lte ",
+                        Strings.toString(
+                            balanceBefore - (gasNeeded + amountMin) - gas_used
+                        )
+                    )
+                )
             );
             assertGe(
                 operator.balance,
                 balanceBefore - (gasNeeded + amount) - gas_used,
-                string(abi.encodePacked("operator balance should be gte ", Strings.toString(balanceBefore - (gasNeeded + amount) - gas_used)))
+                string(
+                    abi.encodePacked(
+                        "operator balance should be gte ",
+                        Strings.toString(
+                            balanceBefore - (gasNeeded + amount) - gas_used
+                        )
+                    )
+                )
             );
         }
 

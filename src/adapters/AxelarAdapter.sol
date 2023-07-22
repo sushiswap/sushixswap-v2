@@ -169,7 +169,6 @@ contract AxelarAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
 
         // 100000 -> exit gas
         uint256 limit = gasleft() - reserveGas;
-        bool failed;
 
         if (_swapData.length > 0) {
             try
@@ -179,9 +178,7 @@ contract AxelarAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
                     _token,
                     _payloadData
                 )
-            {} catch (bytes memory) {
-                failed = true;
-            }
+            {} catch (bytes memory) {}
         } else if (_payloadData.length > 0) {
             try
                 ISushiXSwapV2Adapter(address(this)).executePayload{gas: limit}(
@@ -189,14 +186,11 @@ contract AxelarAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
                     _payloadData,
                     _token
                 )
-            {} catch (bytes memory) {
-                failed = true;
-            }
-        } else {
-            failed = true;
+            {} catch (bytes memory) {}
         }
 
-        if (failed) IERC20(_token).safeTransfer(to, amount);
+        if (IERC20(_token).balanceOf(address(this)) > 0)
+            IERC20(_token).safeTransfer(to, amount);
 
         /// @dev transfer any native token received as dust to the to address
         if (address(this).balance > 0)

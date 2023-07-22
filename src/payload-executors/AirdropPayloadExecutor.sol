@@ -4,8 +4,13 @@ pragma solidity 0.8.10;
 import "../interfaces/IPayloadExecutor.sol";
 import "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import {console2} from "forge-std/console2.sol";
-
+/*
+    Basic Airdrop Payload Executor
+        Should not be used in production, mainly for testing
+        And any additional payloads that are built should have guards
+        in place to assure delivery of tokens w/ reverts if correct operations
+        doesn't happen.
+*/
 contract AirdropPayloadExecutor is IPayloadExecutor {
     using SafeERC20 for IERC20;
 
@@ -24,7 +29,9 @@ contract AirdropPayloadExecutor is IPayloadExecutor {
 
         uint256 amount = IERC20(params.token).balanceOf(address(this));
 
-        console2.log(amount);
+        if (amount <= 0) {
+            revert();
+        }
 
         //todo: prob will have dust from rounding
         uint256 sendAmount = amount / params.recipients.length;

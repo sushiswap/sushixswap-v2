@@ -225,7 +225,6 @@ contract StargateAdapter is ISushiXSwapV2Adapter, IStargateReceiver {
 
         // 100000 -> exit gas
         uint256 limit = gasleft() - reserveGas;
-        bool failed;
 
         if (_swapData.length > 0) {
             try
@@ -235,9 +234,7 @@ contract StargateAdapter is ISushiXSwapV2Adapter, IStargateReceiver {
                     _token,
                     _payloadData
                 )
-            {} catch (bytes memory) {
-                failed = true;
-            }
+            {} catch (bytes memory) {}
         } else if (_payloadData.length > 0) {
             try
                 ISushiXSwapV2Adapter(address(this)).executePayload{gas: limit}(
@@ -245,14 +242,10 @@ contract StargateAdapter is ISushiXSwapV2Adapter, IStargateReceiver {
                     _payloadData,
                     _token
                 )
-            {} catch (bytes memory) {
-                failed = true;
-            }
-        } else {
-            failed = true;
-        }
+            {} catch (bytes memory) {}
+        } else {}
 
-        if (failed && _token != sgeth)
+        if (IERC20(_token).balanceOf(address(this)) > 0 && _token != sgeth)
             IERC20(_token).safeTransfer(to, amountLD);
 
         /// @dev transfer any native token received as dust to the to address

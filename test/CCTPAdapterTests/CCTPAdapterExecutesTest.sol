@@ -3,7 +3,9 @@ pragma solidity >=0.8.0;
 
 import {SushiXSwapV2} from "../../src/SushiXSwapV2.sol";
 import {CCTPAdapter} from "../../src/adapters/CCTPAdapter.sol";
+import {AirdropPayloadExecutor} from "../../src/payload-executors/AirdropPayloadExecutor.sol";
 import {ISushiXSwapV2} from "../../src/interfaces/ISushiXSwapV2.sol";
+import {ISushiXSwapV2Adapter} from "../../src/interfaces/ISushiXSwapV2Adapter.sol";
 import {IRouteProcessor} from "../../src/interfaces/IRouteProcessor.sol";
 import {IWETH} from "../../src/interfaces/IWETH.sol";
 import {ERC20} from "openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
@@ -43,6 +45,7 @@ contract CCTPAdapterExecutesTest is BaseTest {
     SushiXSwapV2 public sushiXswap;
     CCTPAdapter public cctpAdapter;
     CCTPAdapterHarness public cctpAdapterHarness;
+    AirdropPayloadExecutor public airdropExecutor;
     IRouteProcessor public routeProcessor;
     RouteProcessorHelper public routeProcessorHelper;
 
@@ -98,10 +101,13 @@ contract CCTPAdapterExecutesTest is BaseTest {
         );
         sushiXswap.updateAdapterStatus(address(cctpAdapter), true);
 
+        // deploy payload executors
+        airdropExecutor = new AirdropPayloadExecutor();
+
         vm.stopPrank();
     }
 
-    function test_ReedemUSDCSwapToERC20() public {
+    function test_ReceiveUSDCSwapToERC20() public {
         uint32 amount = 1000000; // 1 usdc
 
         deal(address(usdc), address(cctpAdapterHarness), amount); // cctp adapter receives USDC
@@ -155,7 +161,7 @@ contract CCTPAdapterExecutesTest is BaseTest {
         assertGt(weth.balanceOf(user), 0, "user should have > 0 weth");
     }
 
-    function test_ReedemUSDCAndDustSwapToERC20() public {
+    function test_ReceiveUSDCAndDustSwapToERC20() public {
         uint32 amount = 1000000; // 1 usdc
         uint64 dustAmount = 0.001 ether;
 
@@ -217,7 +223,7 @@ contract CCTPAdapterExecutesTest is BaseTest {
         assertEq(user.balance, dustAmount, "user should have all dust eth");
     }
 
-    function test_ReedemUSDCNotEnoughGasForSwap() public {
+    function test_ReceiveUSDCNotEnoughGasForSwap() public {
         uint32 amount = 1000000; // 1 usdc
 
         deal(address(usdc), address(cctpAdapterHarness), amount); // cctp adapter receives USDC
@@ -271,7 +277,7 @@ contract CCTPAdapterExecutesTest is BaseTest {
         assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
     }
 
-    function test_ReedemUSDCAndDustNotEnoughGasForSwap() public {
+    function test_ReceiveUSDCAndDustNotEnoughGasForSwap() public {
         uint32 amount = 1000000; // 1 usdc
         uint64 dustAmount = 0.001 ether;
 
@@ -333,7 +339,7 @@ contract CCTPAdapterExecutesTest is BaseTest {
         assertEq(user.balance, dustAmount, "user should have all dust eth");
     }
 
-    function test_ReedemUSDCEnoughForGasNoSwapData() public {
+    function test_ReceiveUSDCEnoughForGasNoSwapOrPayloadData() public {
         uint32 amount = 1000000; // 1 usdc
 
         deal(address(usdc), address(cctpAdapterHarness), amount); // cctp adapter receives USDC
@@ -365,7 +371,7 @@ contract CCTPAdapterExecutesTest is BaseTest {
         assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
     }
 
-    function test_ReedemUSDCFailedSwap() public {
+    function test_ReceiveUSDCFailedSwap() public {
         uint32 amount = 1000000; // 1 usdc
 
         deal(address(usdc), address(cctpAdapterHarness), amount); // cctp adapter receives USDC
@@ -420,7 +426,7 @@ contract CCTPAdapterExecutesTest is BaseTest {
         assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
     }
 
-    function test_ReedemUSDCFailedSwapFromOutOfGas() public {
+    function test_ReceiveUSDCFailedSwapFromOutOfGas() public {
         uint32 amount = 1000000; // 1 usdc
 
         deal(address(usdc), address(cctpAdapterHarness), amount); // cctp adapter receives USDC
@@ -454,7 +460,7 @@ contract CCTPAdapterExecutesTest is BaseTest {
             "" // _payloadData
         );
 
-        cctpAdapterHarness.exposed_execute{gas: 100005}(
+        cctpAdapterHarness.exposed_execute{gas: 120000}(
             "arbitrum",
             AddressToString.toString(address(cctpAdapter)),
             mockPayload
@@ -474,7 +480,7 @@ contract CCTPAdapterExecutesTest is BaseTest {
         assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
     }
 
-    function test_ReedemUSDCFailedSwapSlippageCheck() public {
+    function test_ReceiveUSDCFailedSwapSlippageCheck() public {
         uint32 amount = 1000000; // 1 usdc
 
         deal(address(usdc), address(cctpAdapterHarness), amount); // cctp adapter receives USDC
@@ -527,5 +533,322 @@ contract CCTPAdapterExecutesTest is BaseTest {
             "cctp adapter should have 0 weth"
         );
         assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
+    }
+
+    function test_ReceiveUSDCAndSwapToERC20AndAirdropERC20FromPayload() public {
+        uint32 amount = 1000001;
+        vm.assume(amount > 1000000); // > 1 usdc
+
+        deal(address(usdc), address(cctpAdapterHarness), amount); // amount adapter receives
+
+        // receive 1 usdc and swap to weth
+        bytes memory computedRoute = routeProcessorHelper.computeRoute(
+            false,
+            false,
+            address(usdc),
+            address(weth),
+            500,
+            address(airdropExecutor)
+        );
+
+        // airdrop all the weth to two addresses
+        address user1 = address(0x4203);
+        address user2 = address(0x4204);
+        address[] memory recipients = new address[](2);
+        recipients[0] = user1;
+        recipients[1] = user2;
+
+        cctpAdapterHarness.exposed_execute(
+            "arbitrum",
+            AddressToString.toString(address(cctpAdapter)),
+            abi.encode(
+                address(user), // to
+                amount, // amount
+                abi.encode(
+                    IRouteProcessor.RouteProcessorData({
+                        tokenIn: address(usdc),
+                        amountIn: amount,
+                        tokenOut: address(weth),
+                        amountOutMin: 0,
+                        to: address(airdropExecutor),
+                        route: computedRoute
+                    })
+                ), // swap data
+                abi.encode(
+                    ISushiXSwapV2Adapter.PayloadData({
+                        target: address(airdropExecutor),
+                        gasLimit: 200000,
+                        targetData: abi.encode(
+                            AirdropPayloadExecutor.AirdropPayloadParams({
+                                token: address(weth),
+                                recipients: recipients
+                            })
+                        )
+                    })
+                ) // payloadData
+            )
+        );
+
+        assertEq(
+            usdc.balanceOf(address(cctpAdapterHarness)),
+            0,
+            "cctpAdapter should have 0 usdc"
+        );
+        assertEq(usdc.balanceOf(user), 0, "user should have 0 usdc");
+        assertEq(
+            weth.balanceOf(address(cctpAdapterHarness)),
+            0,
+            "cctpAdapter should have 0 weth"
+        );
+        assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
+        assertGt(
+            weth.balanceOf(user1),
+            0,
+            "user1 should have > 0 weth from airdrop"
+        );
+        assertGt(
+            weth.balanceOf(user2),
+            0,
+            "user2 should have > 0 weth from airdrop"
+        );
+    }
+
+    function test_ReceiveUSDCAndSwapToERC20AndFailedAirdropERC20FromPayload()
+        public
+    {
+        uint32 amount = 1000001;
+        vm.assume(amount > 1000000); // > 1 usdc
+
+        deal(address(usdc), address(cctpAdapterHarness), amount); // amount adapter receives
+
+        // receive 1 usdc and swap to weth
+        bytes memory computedRoute = routeProcessorHelper.computeRoute(
+            false,
+            false,
+            address(usdc),
+            address(weth),
+            500,
+            address(airdropExecutor)
+        );
+
+        // airdrop all the weth to two addresses
+        address user1 = address(0x4203);
+        address user2 = address(0x4204);
+        address[] memory recipients = new address[](2);
+        recipients[0] = user1;
+        recipients[1] = user2;
+
+        cctpAdapterHarness.exposed_execute(
+            "arbitrum",
+            AddressToString.toString(address(cctpAdapter)),
+            abi.encode(
+                address(user), // to
+                amount, // amount
+                abi.encode(
+                    IRouteProcessor.RouteProcessorData({
+                        tokenIn: address(usdc),
+                        amountIn: amount,
+                        tokenOut: address(weth),
+                        amountOutMin: 0,
+                        to: address(airdropExecutor),
+                        route: computedRoute
+                    })
+                ), // swap data
+                abi.encode(
+                    ISushiXSwapV2Adapter.PayloadData({
+                        target: address(airdropExecutor),
+                        gasLimit: 200000,
+                        targetData: abi.encode(
+                            AirdropPayloadExecutor.AirdropPayloadParams({
+                                token: address(user), // using user for token to aridrop so it fails
+                                recipients: recipients
+                            })
+                        )
+                    })
+                ) // payloadData
+            )
+        );
+
+        assertEq(
+            usdc.balanceOf(address(cctpAdapterHarness)),
+            0,
+            "cctpAdapter should have 0 usdc"
+        );
+        assertEq(usdc.balanceOf(user), amount, "user should all usdc");
+        assertEq(
+            weth.balanceOf(address(cctpAdapterHarness)),
+            0,
+            "cctpAdapter should have 0 weth"
+        );
+        assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
+        assertEq(
+            usdc.balanceOf(user1),
+            0,
+            "user1 should have 0 usdc from airdrop"
+        );
+        assertEq(
+            usdc.balanceOf(user2),
+            0,
+            "user2 should have 0 usdc from airdrop"
+        );
+    }
+
+    function test_ReceiveUSDCAndAirdropFromPayload() public {
+        uint32 amount = 1000001;
+        vm.assume(amount > 1000000); // > 1 usdc
+
+        deal(address(usdc), address(cctpAdapterHarness), amount); // amount adapter receives
+
+        // airdrop all the usdc to two addresses
+        address user1 = address(0x4203);
+        address user2 = address(0x4204);
+        address[] memory recipients = new address[](2);
+        recipients[0] = user1;
+        recipients[1] = user2;
+
+        cctpAdapterHarness.exposed_execute(
+            "arbitrum",
+            AddressToString.toString(address(cctpAdapter)),
+            abi.encode(
+                address(user), // to
+                amount, // amount
+                "", // swap data
+                abi.encode(
+                    ISushiXSwapV2Adapter.PayloadData({
+                        target: address(airdropExecutor),
+                        gasLimit: 200000,
+                        targetData: abi.encode(
+                            AirdropPayloadExecutor.AirdropPayloadParams({
+                                token: address(usdc),
+                                recipients: recipients
+                            })
+                        )
+                    })
+                ) // payloadData
+            )
+        );
+
+        assertEq(
+            usdc.balanceOf(address(cctpAdapterHarness)),
+            0,
+            "cctpAdapter should have 0 usdc"
+        );
+        assertEq(usdc.balanceOf(user), 0, "user should have 0 usdc");
+        assertGt(
+            usdc.balanceOf(user1),
+            0,
+            "user1 should have > 0 usdc from airdrop"
+        );
+        assertGt(
+            usdc.balanceOf(user2),
+            0,
+            "user2 should have > 0 usdc from airdrop"
+        );
+    }
+
+    function test_ReceiveUSDCAndFailedAirdropFromPayload() public {
+        uint32 amount = 1000001;
+        vm.assume(amount > 1000000); // > 1 usdc
+
+        deal(address(usdc), address(cctpAdapterHarness), amount); // amount adapter receives
+
+        // airdrop all the usdc to two addresses
+        address user1 = address(0x4203);
+        address user2 = address(0x4204);
+        address[] memory recipients = new address[](2);
+        recipients[0] = user1;
+        recipients[1] = user2;
+
+        cctpAdapterHarness.exposed_execute(
+            "arbitrum",
+            AddressToString.toString(address(cctpAdapter)),
+            abi.encode(
+                address(user), // to
+                amount, // amount
+                "", // swap data
+                abi.encode(
+                    ISushiXSwapV2Adapter.PayloadData({
+                        target: address(airdropExecutor),
+                        gasLimit: 200000,
+                        targetData: abi.encode(
+                            AirdropPayloadExecutor.AirdropPayloadParams({
+                                token: address(weth), // using weth for token to airdrop so it fails
+                                recipients: recipients
+                            })
+                        )
+                    })
+                ) // payloadData
+            )
+        );
+
+        assertEq(
+            usdc.balanceOf(address(cctpAdapterHarness)),
+            0,
+            "cctpAdapter should have 0 usdc"
+        );
+        assertEq(usdc.balanceOf(user), amount, "user should all usdc");
+        assertEq(
+            usdc.balanceOf(user1),
+            0,
+            "user1 should have 0 usdc from airdrop"
+        );
+        assertEq(
+            usdc.balanceOf(user2),
+            0,
+            "user2 should have 0 usdc from airdrop"
+        );
+    }
+
+    function test_ReceiveUSDCAndFailedAirdropPayloadFromOutOfGas() public {
+        uint32 amount = 1000001;
+        vm.assume(amount > 1000000); // > 1 usdc
+
+        deal(address(usdc), address(cctpAdapterHarness), amount); // amount adapter receives
+
+        // airdrop all the usdc to two addresses
+        address user1 = address(0x4203);
+        address user2 = address(0x4204);
+        address[] memory recipients = new address[](2);
+        recipients[0] = user1;
+        recipients[1] = user2;
+
+        cctpAdapterHarness.exposed_execute{gas: 120000}(
+            "arbitrum",
+            AddressToString.toString(address(cctpAdapter)),
+            abi.encode(
+                address(user), // to
+                amount, // amount
+                "", // swap data
+                abi.encode(
+                    ISushiXSwapV2Adapter.PayloadData({
+                        target: address(airdropExecutor),
+                        gasLimit: 200000,
+                        targetData: abi.encode(
+                            AirdropPayloadExecutor.AirdropPayloadParams({
+                                token: address(usdc),
+                                recipients: recipients
+                            })
+                        )
+                    })
+                ) // payloadData
+            )
+        );
+
+        assertEq(
+            usdc.balanceOf(address(cctpAdapterHarness)),
+            0,
+            "cctpAdapter should have 0 usdc"
+        );
+        assertEq(usdc.balanceOf(user), amount, "user should all usdc");
+        assertEq(
+            usdc.balanceOf(user1),
+            0,
+            "user1 should have 0 usdc from airdrop"
+        );
+        assertEq(
+            usdc.balanceOf(user2),
+            0,
+            "user2 should have 0 usdc from airdrop"
+        );
     }
 }
