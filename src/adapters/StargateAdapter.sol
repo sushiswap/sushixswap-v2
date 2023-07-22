@@ -227,7 +227,7 @@ contract StargateAdapter is ISushiXSwapV2Adapter, IStargateReceiver {
                 }
                 failed = true;
             }
-        }
+        } // todo: think we can just do if else for payloadData.length > 0
 
         /// @dev transfer any native token received as dust to the to address
         if (address(this).balance > 0)

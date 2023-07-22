@@ -3,7 +3,9 @@ pragma solidity >=0.8.0;
 
 import {SushiXSwapV2} from "../../src/SushiXSwapV2.sol";
 import {StargateAdapter} from "../../src/adapters/StargateAdapter.sol";
+import {AirdropPayloadExecutor} from "../../src/payload-executors/AirdropPayloadExecutor.sol";
 import {ISushiXSwapV2} from "../../src/interfaces/ISushiXSwapV2.sol";
+import {ISushiXSwapV2Adapter} from "../../src/interfaces/ISushiXSwapV2Adapter.sol";
 import {IRouteProcessor} from "../../src/interfaces/IRouteProcessor.sol";
 import {IWETH} from "../../src/interfaces/IWETH.sol";
 import {IStargateFeeLibrary} from "../../src/interfaces/stargate/IStargateFeeLibrary.sol";
@@ -16,6 +18,7 @@ import {StdUtils} from "forge-std/StdUtils.sol";
 contract StargateAdapterReceivesTest is BaseTest {
     SushiXSwapV2 public sushiXswap;
     StargateAdapter public stargateAdapter;
+    AirdropPayloadExecutor public airdropExecutor;
     IRouteProcessor public routeProcessor;
     RouteProcessorHelper public routeProcessorHelper;
 
@@ -83,6 +86,9 @@ contract StargateAdapterReceivesTest is BaseTest {
             constants.getAddress("mainnet.weth")
         );
         sushiXswap.updateAdapterStatus(address(stargateAdapter), true);
+
+        // deploy payload executors
+        airdropExecutor = new AirdropPayloadExecutor();
 
         vm.stopPrank();
     }
@@ -969,198 +975,74 @@ contract StargateAdapterReceivesTest is BaseTest {
         assertEq(usdc.balanceOf(user), 0, "user should have 0 usdc");
     }
 
-    // todo: more so integration-eque test, goes better with LayerZero mock probably
-    //       but also could be worth mocking a couple of these accounting for eqFees taken
-    function test_NativeBridgeReceiveAndSwap() public {
-        // bridge 1 eth - swap weth to usdc
-        vm.startPrank(operator);
+    function test_ReceiveERC20AndSwapToERC20AndAirdropERC20FromPayload() public {
+        uint32 amount = 1000001;
+        vm.assume(amount > 1000000); // > 1 usdc
 
-        bytes memory computedRoute_dst = routeProcessorHelper.computeRoute(
+        deal(address(usdc), address(stargateAdapter), amount); // amount adapter receives
+
+        // receive 1 usdc and swap to weth
+        bytes memory computedRoute = routeProcessorHelper.computeRoute(
             false,
             false,
-            address(weth),
             address(usdc),
+            address(weth),
             500,
-            address(operator)
+            address(airdropExecutor)
         );
 
-        IRouteProcessor.RouteProcessorData memory rpd_dst = IRouteProcessor
-            .RouteProcessorData({
-                tokenIn: address(weth),
-                amountIn: 0, // amountIn doesn't matter on dst since we use amount bridged
-                tokenOut: address(usdc),
-                amountOutMin: 0,
-                to: address(operator),
-                route: computedRoute_dst
-            });
+        // airdrop all the weth to two addresses
+        address user1 = address(0x4203);
+        address user2 = address(0x4204);
+        address[] memory recipients = new address[](2);
+        recipients[0] = user1;
+        recipients[1] = user2;
 
-        bytes memory rpd_encoded_dst = abi.encode(rpd_dst);
-
-        bytes memory mockPayload = abi.encode(
-            address(operator), // to
-            rpd_encoded_dst, // _swapData
-            "" // _payloadData
-        );
-
-        uint256 gasForSwap = 500000;
-
-        (uint256 gasNeeded, ) = stargateAdapter.getFee(
-            111, // dstChainId
-            1, // functionType
-            address(operator), // receiver
-            gasForSwap, // gas
-            0, // dustAmount
-            mockPayload // payload
-        );
-
-        // todo: need to figure out how to get EqFee or mock it
-        // assumption that 0.1 eth will be taken for fee so amountIn is 0.9eth
-        uint256 valueToSend = gasNeeded + 1 ether;
-        sushiXswap.bridge{value: valueToSend}(
-            ISushiXSwapV2.BridgeParams({
-                refId: 0x0000,
-                adapter: address(stargateAdapter),
-                tokenIn: NATIVE_ADDRESS,
-                amountIn: 1 ether,
-                to: user,
-                adapterData: abi.encode(
-                    111, // dstChainId - op
-                    NATIVE_ADDRESS, // token
-                    13, // srcPoolId
-                    13, // dstPoolId
-                    900000000000000000, // amount
-                    0, // amountMin,
-                    0, // dustAmount
-                    address(stargateAdapter), // receiver
-                    address(operator), // to
-                    500000 // gas
-                )
-            }),
-            "", // _swapPayload
-            mockPayload // _payloadData
-        );
-
-        // mock the sgReceive
-        // using 1 eth for the receive (in prod env it will be less due to eqFee)
-        address(stargateAdapter).call{value: 1 ether}("");
-        vm.stopPrank();
-
-        vm.startPrank(constants.getAddress("mainnet.stargateRouter"));
-        stargateAdapter.sgReceive{gas: gasForSwap}(
-            0,
-            "",
-            0,
-            constants.getAddress("mainnet.sgeth"),
-            1 ether,
-            mockPayload
-        );
-    }
-
-    //todo: this prob can go in separate test file for full integration
-    //      tests using the LayerZeroMock
-    // https://github.com/LayerZero-Labs/solidity-examples/blob/8e62ebc886407aafc89dbd2a778e61b7c0a25ca0/contracts/mocks/LZEndpointMock.sol
-    function test_SwapAndBridgeReceiveAndSwap() public {
-        // swap weth to usdc - bridge usdc - swap usdc to weth
-        vm.startPrank(operator);
-        ERC20(address(weth)).approve(address(sushiXswap), 1 ether);
-
-        // routes for first swap on src
-        bytes memory computedRoute_src = routeProcessorHelper.computeRoute(
-            false, // rpHasToken
-            false, // isV2
-            address(weth), // tokenIn
-            address(usdc), // tokenOut
-            500, // fee
-            address(stargateAdapter) // to
-        );
-
-        IRouteProcessor.RouteProcessorData memory rpd_src = IRouteProcessor
-            .RouteProcessorData({
-                tokenIn: address(weth),
-                amountIn: 1 ether,
-                tokenOut: address(usdc),
-                amountOutMin: 0,
-                to: address(stargateAdapter),
-                route: computedRoute_src
-            });
-
-        bytes memory computedRoute_dst = routeProcessorHelper.computeRoute(
-            false, // rpHasToken
-            false, // isV2
-            address(usdc), // tokenIn
-            address(weth), // tokenOut
-            500, // fee
-            address(operator) // to
-        );
-
-        IRouteProcessor.RouteProcessorData memory rpd_dst = IRouteProcessor
-            .RouteProcessorData({
+        vm.prank(constants.getAddress("mainnet.stargateRouter"));
+        // auto sends enough gas, so no need to calculate gasNeeded & send here
+        stargateAdapter.sgReceive(0, "", 0, address(usdc), amount, abi.encode(
+            address(user), // to
+            abi.encode(
+              IRouteProcessor.RouteProcessorData({
                 tokenIn: address(usdc),
-                amountIn: 0, // amountIn doesn't matter on dst since we use amount bridged
+                amountIn: amount,
                 tokenOut: address(weth),
                 amountOutMin: 0,
-                to: address(operator),
-                route: computedRoute_dst
-            });
-
-        bytes memory rpd_encoded_src = abi.encode(rpd_src);
-        bytes memory rpd_encoded_dst = abi.encode(rpd_dst);
-
-        bytes memory mockPayload = abi.encode(
-            address(operator), // to
-            rpd_encoded_dst, // _swapData
-            "" // _payloadData
-        );
-
-        uint256 gasForSwap = 250000;
-
-        (uint256 gasNeeded, ) = stargateAdapter.getFee(
-            111, // dstChainId
-            1, // functionType
-            address(operator), // receiver
-            gasForSwap, // gas
-            0, // dustAmount
-            mockPayload // payload
-        );
-
-        sushiXswap.swapAndBridge{value: gasNeeded}(
-            ISushiXSwapV2.BridgeParams({
-                refId: 0x0000,
-                adapter: address(stargateAdapter),
-                tokenIn: address(weth),
-                amountIn: 1 ether,
-                to: user,
-                adapterData: abi.encode(
-                    111, // dstChainId - op
-                    address(usdc), // token
-                    1, // srcPoolId
-                    1, // dstPoolId
-                    0, // amount
-                    0, // amountMin,
-                    0, // dustAmount
-                    address(stargateAdapter), // receiver
-                    address(operator), // to
-                    gasForSwap // gas
+                to: address(airdropExecutor),
+                route: computedRoute
+              })
+            ), // rpd data
+            abi.encode(
+              ISushiXSwapV2Adapter.PayloadData({
+                target: address(airdropExecutor),
+                gasLimit: 200000,
+                targetData: abi.encode(
+                  AirdropPayloadExecutor.AirdropPayloadParams({
+                    token: address(weth),
+                    recipients: recipients
+                  })
                 )
-            }),
-            rpd_encoded_src,
-            rpd_encoded_dst, // _swapPayload
-            "" // _payloadData
-        );
+              })
+            ) // payloadData
+        ));
 
-        // mock the sgReceive
-        // using random amount of usdc for the receive
-        // prob should have event for bridges, and then we can use that in this test
-        usdc.transfer(address(stargateAdapter), 1000000);
-        vm.prank(constants.getAddress("mainnet.stargateRouter"));
-        // todo: need a better way to figure out to calculate & send proper gas
-        stargateAdapter.sgReceive{gas: gasForSwap}(
+        assertEq(
+            usdc.balanceOf(address(stargateAdapter)),
             0,
-            "",
-            0,
-            address(usdc),
-            1000000,
-            mockPayload
+            "stargateAdapter should have 0 usdc"
         );
+        assertEq(usdc.balanceOf(user), 0, "user should have 0 usdc");
+        assertEq(
+            weth.balanceOf(address(stargateAdapter)),
+            0,
+            "stargateAdapter should have 0 weth"
+        );
+        assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
+        assertGt(weth.balanceOf(user1), 0, "user1 should have > 0 weth from airdrop");
+        assertGt(weth.balanceOf(user2), 0, "user2 should have > 0 weth from airdrop");
     }
+
+    
+
+    
 }
