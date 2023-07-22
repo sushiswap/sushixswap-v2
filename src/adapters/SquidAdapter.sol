@@ -25,6 +25,14 @@ contract SquidAdapter is ISushiXSwapV2Adapter {
         revert();
     }
 
+    function executePayload(
+        uint256 _amountBridged,
+        bytes calldata _payloadData,
+        address _token
+    ) external payable override {
+        revert();
+    }
+
     function adapterBridge(
         bytes calldata _adapterData,
         bytes calldata,

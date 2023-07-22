@@ -22,8 +22,6 @@ contract AirdropPayloadExecutor is IPayloadExecutor {
             (AirdropPayloadParams)
         );
 
-        console2.log("got inside payload executor");
-
         uint256 amount = IERC20(params.token).balanceOf(address(this));
 
         console2.log(amount);
