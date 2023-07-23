@@ -11,6 +11,8 @@ contract SushiXSwapV2 is ISushiXSwapV2, Ownable, Multicall {
     mapping(address => bool) public approvedAdapters;
     mapping(address => bool) privilegedUsers;
 
+    uint8 public bridgeFee;
+
     address constant NATIVE_ADDRESS =
         0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
 
@@ -22,6 +24,7 @@ contract SushiXSwapV2 is ISushiXSwapV2, Ownable, Multicall {
     constructor(IRouteProcessor _rp, address _weth) {
         rp = _rp;
         weth = IWETH(_weth);
+        bridgeFee = 0;
     }
 
     modifier onlyApprovedAdapters(address _adapter) {
@@ -55,6 +58,14 @@ contract SushiXSwapV2 is ISushiXSwapV2, Ownable, Multicall {
 
     function resume() external onlyOwnerOrPrivilegedUser {
         paused = 1;
+    }
+
+    function setFee(uint8 fee) external onlyOwner {
+        // fee (1 / N) can be from n = 4 to 100 -> 25 bps to 1 bp or 0 for no fee
+        require(
+            (fee == 0 || (fee >= 4 && fee <= 100))
+        ); 
+        bridgeFee = bps;
     }
 
     function updateAdapterStatus(

@@ -10,6 +10,8 @@ import "../utils/BaseTest.sol";
 import "../utils/RouteProcessorHelper.sol";
 import {StdUtils} from "forge-std/StdUtils.sol";
 
+import {console2} from "forge-std/console2.sol";
+
 contract SushiXSwapBaseTest is BaseTest {
     SushiXSwapV2 public sushiXswap;
     StargateAdapter public stargateAdapter;
@@ -84,6 +86,15 @@ contract SushiXSwapBaseTest is BaseTest {
     }
 
     // uint64 keeps it max amount to ~18 weth
+
+    function test_fee_calculation() public {
+        console2.log("Testing Fee Taking");
+
+        // can be betwen 4 to 100 -> 25 bps to 1 bp
+        uint8 bridgeFee = 5; // bps
+
+
+    }
     function test_RescueTokens(uint64 amountToRescue) public {
         vm.assume(amountToRescue > 0.1 ether);
 

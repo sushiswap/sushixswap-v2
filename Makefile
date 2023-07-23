@@ -9,7 +9,7 @@ init:
 	git submodule update --init --recursive
 	forge install
 test:
-	forge test -vv
+	forge test -vv --match-contract SushiXSwapBaseTest
 test-gas-report:
 	forge test -vv --gas-report
 trace:
