@@ -25,7 +25,7 @@ contract SushiXSwapV2 is ISushiXSwapV2, Ownable, Multicall {
     constructor(IRouteProcessor _rp, address _weth, address _feeCollector) {
         rp = _rp;
         weth = IWETH(_weth);
-        bridgeFee = 0;
+        fee = 0;
         feeCollector = _feeCollector;
     }
 
@@ -111,14 +111,15 @@ contract SushiXSwapV2 is ISushiXSwapV2, Ownable, Multicall {
             rpd.tokenIn = address(weth);
         }
 
-        uint256 feeToTake = (_bridgeParams.amountIn * fee) / 10000;
-        IERC20(_bridgeParams.tokenIn).safeTransfer(
-            feeCollector,
-            feeToTake
-        );
+        uint256 feeToTake = (rpd.amountIn * fee) / 10000;
+        if (fee > 0)
+            IERC20(rpd.tokenIn).safeTransfer(
+                feeCollector,
+                feeToTake
+            );
 
         // increase token approval to RP
-        IERC20(rpd.tokenIn).safeIncreaseAllowance(address(rp), rpd.amountIn);
+        IERC20(rpd.tokenIn).safeIncreaseAllowance(address(rp), rpd.amountIn - feeToTake);
 
         rp.processRoute(
             rpd.tokenIn,
@@ -151,13 +152,15 @@ contract SushiXSwapV2 is ISushiXSwapV2, Ownable, Multicall {
     {
         // bridge
 
+        uint256 feeToTake;
         if (_bridgeParams.tokenIn != NATIVE_ADDRESS) {
-            uint256 feeToTake = (_bridgeParams.amountIn * fee) / 10000;
-            IERC20(_bridgeParams.tokenIn).safeTransferFrom(
-                msg.sender,
-                feeCollector,
-                feeToTake
-            );
+            feeToTake = (_bridgeParams.amountIn * fee) / 10000;
+            if (fee > 0)
+                IERC20(_bridgeParams.tokenIn).safeTransferFrom(
+                    msg.sender,
+                    feeCollector,
+                    feeToTake
+                );
 
             IERC20(_bridgeParams.tokenIn).safeTransferFrom(
                 msg.sender,
@@ -165,14 +168,14 @@ contract SushiXSwapV2 is ISushiXSwapV2, Ownable, Multicall {
                 _bridgeParams.amountIn - feeToTake
             );
         } else {
-            uint256 feeToTake = (msg.value * fee) / 10000;
-            payable(feeCollector).transfer(feeToTake);
+            feeToTake = (msg.value * fee) / 10000;
+            if (fee > 0)
+                payable(feeCollector).transfer(feeToTake);
+
             payable(_bridgeParams.adapter).transfer(
                 msg.value - feeToTake
             );
         }
-
-
 
         ISushiXSwapV2Adapter(_bridgeParams.adapter).adapterBridge{
             value: address(this).balance
