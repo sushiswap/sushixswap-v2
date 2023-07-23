@@ -11,7 +11,8 @@ contract SushiXSwapV2 is ISushiXSwapV2, Ownable, Multicall {
     mapping(address => bool) public approvedAdapters;
     mapping(address => bool) privilegedUsers;
 
-    uint8 public bridgeFee;
+    address public feeCollector;
+    uint8 public fee;
 
     address constant NATIVE_ADDRESS =
         0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
@@ -21,10 +22,11 @@ contract SushiXSwapV2 is ISushiXSwapV2, Ownable, Multicall {
     uint8 private unlocked = 1;
     uint8 private paused = 1;
 
-    constructor(IRouteProcessor _rp, address _weth) {
+    constructor(IRouteProcessor _rp, address _weth, address _feeCollector) {
         rp = _rp;
         weth = IWETH(_weth);
         bridgeFee = 0;
+        feeCollector = _feeCollector;
     }
 
     modifier onlyApprovedAdapters(address _adapter) {
@@ -60,12 +62,16 @@ contract SushiXSwapV2 is ISushiXSwapV2, Ownable, Multicall {
         paused = 1;
     }
 
-    function setFee(uint8 fee) external onlyOwner {
-        // fee (1 / N) can be from n = 4 to 100 -> 25 bps to 1 bp or 0 for no fee
+    function setFee(uint8 feeToSet) external onlyOwner {
+        // 100 bps or 1% is the highest fee can be set
         require(
-            (fee == 0 || (fee >= 4 && fee <= 100))
+            (feeToSet <= 100)
         ); 
-        bridgeFee = bps;
+        fee = feeToSet;
+    }
+
+    function setFeeCollector(address feeCollectorToSet) external onlyOwner {
+        feeCollector = feeCollectorToSet;
     }
 
     function updateAdapterStatus(
@@ -105,12 +111,18 @@ contract SushiXSwapV2 is ISushiXSwapV2, Ownable, Multicall {
             rpd.tokenIn = address(weth);
         }
 
+        uint256 feeToTake = (_bridgeParams.amountIn * fee) / 10000;
+        IERC20(_bridgeParams.tokenIn).safeTransfer(
+            feeCollector,
+            feeToTake
+        );
+
         // increase token approval to RP
         IERC20(rpd.tokenIn).safeIncreaseAllowance(address(rp), rpd.amountIn);
 
         rp.processRoute(
             rpd.tokenIn,
-            rpd.amountIn,
+            rpd.amountIn - feeToTake,
             rpd.tokenOut,
             rpd.amountOutMin,
             rpd.to,
@@ -140,12 +152,27 @@ contract SushiXSwapV2 is ISushiXSwapV2, Ownable, Multicall {
         // bridge
 
         if (_bridgeParams.tokenIn != NATIVE_ADDRESS) {
+            uint256 feeToTake = (_bridgeParams.amountIn * fee) / 10000;
+            IERC20(_bridgeParams.tokenIn).safeTransferFrom(
+                msg.sender,
+                feeCollector,
+                feeToTake
+            );
+
             IERC20(_bridgeParams.tokenIn).safeTransferFrom(
                 msg.sender,
                 _bridgeParams.adapter,
-                _bridgeParams.amountIn
+                _bridgeParams.amountIn - feeToTake
+            );
+        } else {
+            uint256 feeToTake = (msg.value * fee) / 10000;
+            payable(feeCollector).transfer(feeToTake);
+            payable(_bridgeParams.adapter).transfer(
+                msg.value - feeToTake
             );
         }
+
+
 
         ISushiXSwapV2Adapter(_bridgeParams.adapter).adapterBridge{
             value: address(this).balance
