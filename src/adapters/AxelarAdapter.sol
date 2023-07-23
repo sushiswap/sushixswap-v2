@@ -2,7 +2,7 @@
 pragma solidity 0.8.10;
 
 import "../interfaces/IRouteProcessor.sol";
-import "../interfaces/IWeth.sol";
+import "../interfaces/IWETH.sol";
 import "axelar-gmp-sdk-solidity/executable/AxelarExecutable.sol";
 import "axelar-gmp-sdk-solidity/interfaces/IAxelarGasService.sol";
 import "axelar-gmp-sdk-solidity/interfaces/IAxelarGateway.sol";
