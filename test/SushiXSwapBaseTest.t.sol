@@ -90,10 +90,30 @@ contract SushiXSwapBaseTest is BaseTest {
     function test_fee_calculation() public {
         console2.log("Testing Fee Taking");
 
-        // can be betwen 4 to 100 -> 25 bps to 1 bp
-        uint8 bridgeFee = 5; // bps
+        // in bps
+        uint8 bridgeFee = 1; // 1 bp or 0.01%
+        uint256 amount = 1 ether;
 
+        uint256 feeToTake = (amount * bridgeFee) / 10000;
+        uint256 amountToSwap = amount - feeToTake;
+        
+        console2.log("FeeTake 1bp");
+        console2.log("------");
+        console2.log("amountIn: ", amount);
+        console2.log("feeToTake: ", feeToTake);
+        console2.log("amountToSwap: ", amountToSwap);
 
+        uint8 bridgeFee2 = 100; // 100 bps or 1%
+        uint32 amount2 = 10;
+
+        uint256 feeToTake2 = (amount2 * bridgeFee2) / 10000;
+        uint256 amountToSwap2 = amount2 - feeToTake2;
+        
+        console2.log("FeeTake 1bp");
+        console2.log("------");
+        console2.log("amountIn: ", amount2);
+        console2.log("feeToTake: ", feeToTake2);
+        console2.log("amountToSwap: ", amountToSwap2);
     }
     function test_RescueTokens(uint64 amountToRescue) public {
         vm.assume(amountToRescue > 0.1 ether);
