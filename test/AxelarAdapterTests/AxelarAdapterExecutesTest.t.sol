@@ -159,12 +159,12 @@ contract AxelarAdapterExecutesTest is BaseTest {
         assertGt(weth.balanceOf(user), 0, "user should have > 0 weth");
     }
 
-    function test_ReceiveERC20AndDustSwapToERC20() public {
+    function test_ReceiveERC20AndNativeSwapToERC20ReturnDust() public {
         uint32 amount = 1000000; // 1 USDC
-        uint64 dustAmount = 0.001 ether;
+        uint64 nativeAmount = 0.001 ether;
 
         deal(address(usdc), address(axelarAdapterHarness), amount); // axelar adapter receives USDC
-        vm.deal(address(axelarAdapterHarness), dustAmount);
+        vm.deal(address(axelarAdapterHarness), nativeAmount);
 
         // receive 1 USDC and swap to weth
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
@@ -219,7 +219,7 @@ contract AxelarAdapterExecutesTest is BaseTest {
             0,
             "adapter should have 0 eth"
         );
-        assertEq(user.balance, dustAmount, "user should have all dust eth");
+        assertEq(user.balance, nativeAmount, "user should have all dust eth");
     }
 
     function test_ReceiveERC20SwapToNative() public {
@@ -333,73 +333,10 @@ contract AxelarAdapterExecutesTest is BaseTest {
 
     function test_ReceiveERC20AndNativeNotEnoughGasForSwap() public {
         uint32 amount = 1000000; // 1 USDC
-        uint64 nativeAmount = 0.01 ether;
+        uint64 nativeAmount = 0.001 ether; //
 
         deal(address(usdc), address(axelarAdapterHarness), amount); // axelar adapter receives USDC
-
-        // receive 1 USDC and swap to weth
-        bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false,
-            false,
-            address(usdc),
-            address(weth),
-            500,
-            user
-        );
-
-        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor
-            .RouteProcessorData({
-                tokenIn: address(usdc),
-                amountIn: amount,
-                tokenOut: address(weth),
-                amountOutMin: 0,
-                to: user,
-                route: computedRoute
-            });
-
-        bytes memory rpd_encoded = abi.encode(rpd);
-
-        bytes memory mockPayload = abi.encode(
-            user, // to
-            rpd_encoded, // _swapData
-            "" // _payloadData
-        );
-
-        // shouldn't receive any native, but we test it sends to user if happens
-        address(axelarAdapterHarness).call{value: nativeAmount}("");
-        axelarAdapterHarness.exposed_executeWithToken{gas: 90000}(
-            "arbitrum",
-            AddressToString.toString(address(axelarAdapter)),
-            mockPayload,
-            "USDC",
-            amount
-        );
-
-        assertEq(
-            usdc.balanceOf(address(axelarAdapterHarness)),
-            0,
-            "axelarAdapter should have 0 usdc"
-        );
-        assertEq(usdc.balanceOf(user), amount, "user should have all usdc");
-        assertEq(
-            weth.balanceOf(address(axelarAdapterHarness)),
-            0,
-            "axelarAdapter should have 0 weth"
-        );
-        assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
-        assertEq(
-            user.balance,
-            nativeAmount,
-            "user should have all the native amount"
-        );
-    }
-
-    function test_ReceiveERC20AndDustNotEnoughGasForSwap() public {
-        uint32 amount = 1000000; // 1 USDC
-        uint64 dustAmount = 0.001 ether; //
-
-        deal(address(usdc), address(axelarAdapterHarness), amount); // axelar adapter receives USDC
-        vm.deal(address(axelarAdapterHarness), dustAmount);
+        vm.deal(address(axelarAdapterHarness), nativeAmount);
 
         // receive 1 USDC and swap to weth
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
@@ -454,7 +391,7 @@ contract AxelarAdapterExecutesTest is BaseTest {
             0,
             "adapter should have 0 eth"
         );
-        assertEq(user.balance, dustAmount, "user should have all dust eth");
+        assertEq(user.balance, nativeAmount, "user should have all dust eth");
     }
 
     function test_ReceiveERC20EnoughForGasNoSwapOrPayloadData() public {
@@ -657,7 +594,7 @@ contract AxelarAdapterExecutesTest is BaseTest {
         assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
     }
 
-    function test_ReceiveERC20AndSwapToERC20AndAirdropERC20FromPayload()
+    function test_ReceiveERC20SwapToERC20AirdropERC20FromPayload()
         public
     {
         uint32 amount = 1000001;
@@ -738,7 +675,7 @@ contract AxelarAdapterExecutesTest is BaseTest {
         );
     }
 
-    function test_ReceiveERC20AndSwapToERC20AndFailedAirdropERC20FromPayload()
+    function test_ReceiveERC20SwapToERC20FailedAirdropFromPayload()
         public
     {
         uint32 amount = 1000001;
@@ -819,7 +756,7 @@ contract AxelarAdapterExecutesTest is BaseTest {
         );
     }
 
-    function test_ReceiveERC20AndAirdropFromPayload() public {
+    function test_ReceiveERC20AirdropFromPayload() public {
         uint32 amount = 1000001;
         vm.assume(amount > 1000000); // > 1 usdc
 
@@ -873,7 +810,7 @@ contract AxelarAdapterExecutesTest is BaseTest {
         );
     }
 
-    function test_ReceiveERC20AndFailedAirdropFromPayload() public {
+    function test_ReceiveERC20FailedAirdropFromPayload() public {
         uint32 amount = 1000001;
         vm.assume(amount > 1000000); // > 1 usdc
 
@@ -927,7 +864,7 @@ contract AxelarAdapterExecutesTest is BaseTest {
         );
     }
 
-    function test_ReceiveERC20AndFailedAirdropPayloadFromOutOfGas() public {
+    function test_ReceiveERC20FailedAirdropPayloadFromOutOfGas() public {
         uint32 amount = 1000001;
         vm.assume(amount > 1000000); // > 1 usdc
 

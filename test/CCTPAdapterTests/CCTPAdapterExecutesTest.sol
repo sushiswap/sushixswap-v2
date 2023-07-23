@@ -161,12 +161,12 @@ contract CCTPAdapterExecutesTest is BaseTest {
         assertGt(weth.balanceOf(user), 0, "user should have > 0 weth");
     }
 
-    function test_ReceiveUSDCAndDustSwapToERC20() public {
+    function test_ReceiveUSDCAndNativeSwapToERC20() public {
         uint32 amount = 1000000; // 1 usdc
-        uint64 dustAmount = 0.001 ether;
+        uint64 nativeAmount = 0.001 ether;
 
         deal(address(usdc), address(cctpAdapterHarness), amount); // cctp adapter receives USDC
-        deal(address(cctpAdapterHarness), dustAmount);
+        deal(address(cctpAdapterHarness), nativeAmount);
 
         // receives 1 minted USDC and swap to weth
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
@@ -220,7 +220,7 @@ contract CCTPAdapterExecutesTest is BaseTest {
             0,
             "adapter should have 0 eth"
         );
-        assertEq(user.balance, dustAmount, "user should have all dust eth");
+        assertEq(user.balance, nativeAmount, "user should have all dust eth");
     }
 
     function test_ReceiveUSDCNotEnoughGasForSwap() public {
@@ -277,12 +277,12 @@ contract CCTPAdapterExecutesTest is BaseTest {
         assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
     }
 
-    function test_ReceiveUSDCAndDustNotEnoughGasForSwap() public {
+    function test_ReceiveUSDCAndNativeNotEnoughGasForSwap() public {
         uint32 amount = 1000000; // 1 usdc
-        uint64 dustAmount = 0.001 ether;
+        uint64 nativeAmount = 0.001 ether;
 
         deal(address(usdc), address(cctpAdapterHarness), amount); // cctp adapter receives USDC
-        vm.deal(address(cctpAdapterHarness), dustAmount);
+        vm.deal(address(cctpAdapterHarness), nativeAmount);
 
         // receives 1 minted USDC and swap to weth
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
@@ -336,7 +336,7 @@ contract CCTPAdapterExecutesTest is BaseTest {
             0,
             "adapter should have 0 eth"
         );
-        assertEq(user.balance, dustAmount, "user should have all dust eth");
+        assertEq(user.balance, nativeAmount, "user should have all dust eth");
     }
 
     function test_ReceiveUSDCEnoughForGasNoSwapOrPayloadData() public {
@@ -535,7 +535,7 @@ contract CCTPAdapterExecutesTest is BaseTest {
         assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
     }
 
-    function test_ReceiveUSDCAndSwapToERC20AndAirdropERC20FromPayload() public {
+    function test_ReceiveUSDCSwapToERC20AirdropERC20FromPayload() public {
         uint32 amount = 1000001;
         vm.assume(amount > 1000000); // > 1 usdc
 
@@ -613,7 +613,7 @@ contract CCTPAdapterExecutesTest is BaseTest {
         );
     }
 
-    function test_ReceiveUSDCAndSwapToERC20AndFailedAirdropERC20FromPayload()
+    function test_ReceiveUSDCSwapToERC20FailedAirdropFromPayload()
         public
     {
         uint32 amount = 1000001;
@@ -693,7 +693,7 @@ contract CCTPAdapterExecutesTest is BaseTest {
         );
     }
 
-    function test_ReceiveUSDCAndAirdropFromPayload() public {
+    function test_ReceiveUSDCAirdropFromPayload() public {
         uint32 amount = 1000001;
         vm.assume(amount > 1000000); // > 1 usdc
 
@@ -746,7 +746,7 @@ contract CCTPAdapterExecutesTest is BaseTest {
         );
     }
 
-    function test_ReceiveUSDCAndFailedAirdropFromPayload() public {
+    function test_ReceiveUSDCFailedAirdropFromPayload() public {
         uint32 amount = 1000001;
         vm.assume(amount > 1000000); // > 1 usdc
 
@@ -799,7 +799,7 @@ contract CCTPAdapterExecutesTest is BaseTest {
         );
     }
 
-    function test_ReceiveUSDCAndFailedAirdropPayloadFromOutOfGas() public {
+    function test_ReceiveUSDCFailedAirdropPayloadFromOutOfGas() public {
         uint32 amount = 1000001;
         vm.assume(amount > 1000000); // > 1 usdc
 

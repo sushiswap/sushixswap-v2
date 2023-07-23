@@ -108,11 +108,9 @@ contract AxelarAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
         if (params.amount == 0)
             params.amount = IERC20(params.token).balanceOf(address(this));
 
-        // approve token to gateway
         IERC20(params.token).safeApprove(address(gateway), params.amount);
 
         // build payload from _swapData and _payloadData
-        // to will receive bridged funds from fallback if no swap or payload data
         bytes memory payload = abi.encode(params.to, _swapData, _payloadData);
 
         // pay native gas to gasService

@@ -9,7 +9,7 @@ import "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
         Should not be used in production, mainly for testing
         And any additional payloads that are built should have guards
         in place to assure delivery of tokens w/ reverts if correct operations
-        doesn't happen.
+        doesn't happen. Tokens can potentially get stuck here if received and no revert().
 */
 contract AirdropPayloadExecutor is IPayloadExecutor {
     using SafeERC20 for IERC20;
