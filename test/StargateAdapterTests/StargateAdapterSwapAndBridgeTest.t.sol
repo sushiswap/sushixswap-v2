@@ -78,7 +78,7 @@ contract StargateAdapterSwapAndBridgeTest is BaseTest {
         (uint256 gasNeeded, ) = stargateAdapter.getFee(
             111, // dstChainId
             1, // functionType
-            address(operator), // receiver
+            user, // receiver
             0, // gas
             0, // dustAmount
             "" // payload
@@ -120,7 +120,7 @@ contract StargateAdapterSwapAndBridgeTest is BaseTest {
                     0, // amount
                     0, // amountMin,
                     0, // dustAmount
-                    address(operator), // receiver
+                    user, // receiver
                     address(0x00), // to
                     0 // gas
                 )
@@ -138,7 +138,7 @@ contract StargateAdapterSwapAndBridgeTest is BaseTest {
         (uint256 gasNeeded, ) = stargateAdapter.getFee(
             111, // dstChainId
             1, // functionType
-            address(operator), // receiver
+            user, // receiver
             0, // gas
             0, // dustAmount
             "" // payload
@@ -181,7 +181,7 @@ contract StargateAdapterSwapAndBridgeTest is BaseTest {
                     0, // amount
                     0, // amountMin,
                     0, // dustAmount
-                    address(operator), // receiver
+                    user, // receiver
                     address(0x00), // to
                     0 // gas
                 )
@@ -200,7 +200,7 @@ contract StargateAdapterSwapAndBridgeTest is BaseTest {
         (uint256 gasNeeded, ) = stargateAdapter.getFee(
             111, // dstChainId
             1, // functionType
-            address(operator), // receiver
+            user, // receiver
             0, // gas
             0, // dustAmount
             "" // payload
@@ -242,7 +242,7 @@ contract StargateAdapterSwapAndBridgeTest is BaseTest {
                     0, // amount
                     0, // amountMin,
                     0, // dustAmount
-                    address(operator), // receiver
+                    user, // receiver
                     address(0x00), // to
                     0 // gas
                 )
@@ -261,7 +261,7 @@ contract StargateAdapterSwapAndBridgeTest is BaseTest {
         (uint256 gasNeeded, ) = stargateAdapter.getFee(
             111, // dstChainId
             1, // functionType
-            address(operator), // receiver
+            user, // receiver
             0, // gas
             0, // dustAmount
             "" // payload
@@ -304,7 +304,7 @@ contract StargateAdapterSwapAndBridgeTest is BaseTest {
                     0, // amount
                     0, // amountMin,
                     0, // dustAmount
-                    address(operator), // receiver
+                    user, // receiver
                     address(0x00), // to
                     0 // gas
                 )

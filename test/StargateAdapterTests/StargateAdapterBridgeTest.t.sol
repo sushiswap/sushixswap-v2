@@ -86,17 +86,6 @@ contract StargateAdapterBridgeTest is BaseTest {
         vm.stopPrank();
     }
 
-    event Swap(
-        uint16 chainId,
-        uint256 dstPoolId,
-        address from,
-        uint256 amountSD,
-        uint256 eqReward,
-        uint256 eqFee,
-        uint256 protocolFee,
-        uint256 lpFee
-    );
-
     // uint32 keeps it max amount to ~4294 usdc
     function testFuzz_BridgeERC20(uint32 amount) public {
         vm.assume(amount > 1000000); // > 1 usdc
@@ -111,7 +100,7 @@ contract StargateAdapterBridgeTest is BaseTest {
         (uint256 gasNeeded, ) = stargateAdapter.getFee(
             111, // dstChainId
             1, // functionType
-            address(stargateAdapter), // receiver
+            user, // receiver
             0, // gas -todo: need to figure out what proper gas input is
             0, // dustAmount
             "" // payload
@@ -145,8 +134,8 @@ contract StargateAdapterBridgeTest is BaseTest {
                     amount, // amount
                     amountMin, // amountMin,
                     0, // dustAmount
-                    address(stargateAdapter), // receiver
-                    user, // to
+                    user, // receiver
+                    address(0x0), // to
                     0 // gas
                 )
             }),
@@ -216,9 +205,6 @@ contract StargateAdapterBridgeTest is BaseTest {
             }
         }
     }
-
-    // todo: need to fix all the `to`s this should be who funds are sent to
-    //       receiver is then the stargateAdapter
 
     // uint64 keeps it max amount to ~18 weth
     function testFuzz_BridgeWETH(uint64 amount) public {
@@ -359,7 +345,7 @@ contract StargateAdapterBridgeTest is BaseTest {
             (uint256 gasNeeded, ) = stargateAdapter.getFee(
                 111,
                 1,
-                address(operator),
+                user,
                 0,
                 0,
                 ""
@@ -388,8 +374,8 @@ contract StargateAdapterBridgeTest is BaseTest {
                         amount, // amount
                         amountMin, // amountMin,
                         0, // dustAmount
-                        address(operator), // receiver
-                        address(0x00), // to
+                        user, // receiver
+                        address(0x0), // to
                         0 // gas
                     )
                 }),
@@ -410,12 +396,26 @@ contract StargateAdapterBridgeTest is BaseTest {
             assertLe(
                 operator.balance,
                 balanceBefore - (gasNeeded + amountMin) - gas_used,
-                string(abi.encodePacked("operator balance should be lte ", Strings.toString(balanceBefore - (gasNeeded + amountMin) - gas_used)))
+                string(
+                    abi.encodePacked(
+                        "operator balance should be lte ",
+                        Strings.toString(
+                            balanceBefore - (gasNeeded + amountMin) - gas_used
+                        )
+                    )
+                )
             );
             assertGe(
                 operator.balance,
                 balanceBefore - (gasNeeded + amount) - gas_used,
-                string(abi.encodePacked("operator balance should be gte ", Strings.toString(balanceBefore - (gasNeeded + amount) - gas_used)))
+                string(
+                    abi.encodePacked(
+                        "operator balance should be gte ",
+                        Strings.toString(
+                            balanceBefore - (gasNeeded + amount) - gas_used
+                        )
+                    )
+                )
             );
         }
 
@@ -516,7 +516,7 @@ contract StargateAdapterBridgeTest is BaseTest {
         (uint256 gasNeeded, ) = stargateAdapter.getFee(
             111, // dstChainId
             1, // functionType
-            address(sushiXswap), // receiver
+            address(stargateAdapter), // receiver
             gasForSwap, // gas
             0, // dustAmount
             mockPayload // payload
@@ -537,8 +537,8 @@ contract StargateAdapterBridgeTest is BaseTest {
                     amount, // amount
                     0, // amountMin,
                     0, // dustAmount
-                    user, // receiver
-                    address(sushiXswap), // to
+                    address(stargateAdapter), // receiver
+                    user, // to
                     gasForSwap // gas
                 )
             }),
@@ -588,7 +588,7 @@ contract StargateAdapterBridgeTest is BaseTest {
         (uint256 gasNeeded, ) = stargateAdapter.getFee(
             111, // dstChainId
             1, // functionType
-            address(operator), // receiver
+            address(stargateAdapter), // receiver
             insufficientGasForDst, // gas
             0, // dustAmount
             mockPayload // payload
@@ -610,8 +610,8 @@ contract StargateAdapterBridgeTest is BaseTest {
                     amount, // amount
                     0, // amountMin,
                     0, // dustAmount
-                    user, // receiver
-                    address(sushiXswap), // to
+                    address(stargateAdapter), // receiver
+                    user, // to
                     insufficientGasForDst // gas
                 )
             }),

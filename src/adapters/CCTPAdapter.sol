@@ -84,6 +84,16 @@ contract CCTPAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
         }
     }
 
+    function executePayload(
+        uint256 _amountBridged,
+        bytes calldata _payloadData,
+        address _token
+    ) external payable override {
+        PayloadData memory pd = abi.decode(_payloadData, (PayloadData));
+        nativeUSDC.safeTransfer(pd.target, _amountBridged);
+        IPayloadExecutor(pd.target).onPayloadReceive(pd.targetData);
+    }
+
     function adapterBridge(
         bytes calldata _adapterData,
         bytes calldata _swapData,
@@ -154,7 +164,7 @@ contract CCTPAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
 
         uint256 reserveGas = 100000;
 
-        if (gasleft() < reserveGas || _swapData.length == 0) {
+        if (gasleft() < reserveGas) {
             nativeUSDC.safeTransfer(to, amount);
 
             /// @dev transfer any native token
@@ -168,7 +178,6 @@ contract CCTPAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
         // 100000 -> exit gas
         uint256 limit = gasleft() - reserveGas;
 
-        // todo: what if no swapData but there is payload data?
         if (_swapData.length > 0) {
             try
                 ISushiXSwapV2Adapter(address(this)).swap{gas: limit}(
@@ -177,10 +186,19 @@ contract CCTPAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
                     address(nativeUSDC),
                     _payloadData
                 )
-            {} catch (bytes memory) {
-                nativeUSDC.safeTransfer(to, amount);
-            }
+            {} catch (bytes memory) {}
+        } else if (_payloadData.length > 0) {
+            try
+                ISushiXSwapV2Adapter(address(this)).executePayload{gas: limit}(
+                    amount,
+                    _payloadData,
+                    address(nativeUSDC)
+                )
+            {} catch (bytes memory) {}
         }
+
+        if (nativeUSDC.balanceOf(address(this)) > 0)
+            nativeUSDC.safeTransfer(to, amount);
 
         /// @dev transfer any native token received as dust to the to address
         if (address(this).balance > 0)

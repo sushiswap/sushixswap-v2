@@ -66,6 +66,12 @@ contract AxelarAdapterBridgeTest is BaseTest {
         vm.stopPrank();
     }
 
+    function test_RevertWhen_SendingMessage() public {
+        vm.startPrank(user);
+        vm.expectRevert();
+        sushiXswap.sendMessage(address(axelarAdapter), "");
+    }
+
     function test_BridgeERC20() public {
         uint32 amount = 1000000; // 1 usdc
         uint64 gasNeeded = 0.1 ether; // eth for gas to pass

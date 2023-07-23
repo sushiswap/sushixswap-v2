@@ -25,6 +25,12 @@ interface ISushiXSwapV2Adapter {
         bytes calldata _payloadData
     ) external payable;
 
+    function executePayload(
+        uint256 _amountBridged,
+        bytes calldata _payloadData,
+        address _token
+    ) external payable;
+
     function adapterBridge(
         bytes calldata _adapterData,
         bytes calldata _swapDataPayload,

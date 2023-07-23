@@ -3,7 +3,9 @@ pragma solidity >=0.8.0;
 
 import {SushiXSwapV2} from "../../src/SushiXSwapV2.sol";
 import {AxelarAdapter} from "../../src/adapters/AxelarAdapter.sol";
+import {AirdropPayloadExecutor} from "../../src/payload-executors/AirdropPayloadExecutor.sol";
 import {ISushiXSwapV2} from "../../src/interfaces/ISushiXSwapV2.sol";
+import {ISushiXSwapV2Adapter} from "../../src/interfaces/ISushiXSwapV2Adapter.sol";
 import {IRouteProcessor} from "../../src/interfaces/IRouteProcessor.sol";
 import {IWETH} from "../../src/interfaces/IWETH.sol";
 import {ERC20} from "openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
@@ -38,10 +40,11 @@ contract AxelarAdapterHarness is AxelarAdapter {
     }
 }
 
-contract AxelarAdapterSwapAndBridgeTest is BaseTest {
+contract AxelarAdapterExecutesTest is BaseTest {
     SushiXSwapV2 public sushiXswap;
     AxelarAdapter public axelarAdapter;
     AxelarAdapterHarness public axelarAdapterHarness;
+    AirdropPayloadExecutor public airdropExecutor;
     IRouteProcessor public routeProcessor;
     RouteProcessorHelper public routeProcessorHelper;
 
@@ -94,6 +97,9 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
             constants.getAddress("mainnet.weth")
         );
         sushiXswap.updateAdapterStatus(address(axelarAdapter), true);
+
+        // deploy payload executors
+        airdropExecutor = new AirdropPayloadExecutor();
 
         vm.stopPrank();
     }
@@ -153,12 +159,12 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
         assertGt(weth.balanceOf(user), 0, "user should have > 0 weth");
     }
 
-    function test_ReceiveERC20AndDustSwapToERC20() public {
+    function test_ReceiveERC20AndNativeSwapToERC20ReturnDust() public {
         uint32 amount = 1000000; // 1 USDC
-        uint64 dustAmount = 0.001 ether;
+        uint64 nativeAmount = 0.001 ether;
 
         deal(address(usdc), address(axelarAdapterHarness), amount); // axelar adapter receives USDC
-        vm.deal(address(axelarAdapterHarness), dustAmount);
+        vm.deal(address(axelarAdapterHarness), nativeAmount);
 
         // receive 1 USDC and swap to weth
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
@@ -213,7 +219,7 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
             0,
             "adapter should have 0 eth"
         );
-        assertEq(user.balance, dustAmount, "user should have all dust eth");
+        assertEq(user.balance, nativeAmount, "user should have all dust eth");
     }
 
     function test_ReceiveERC20SwapToNative() public {
@@ -325,12 +331,12 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
         assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
     }
 
-    function test_ReceiveERC20AndDustNotEnoughGasForSwap() public {
+    function test_ReceiveERC20AndNativeNotEnoughGasForSwap() public {
         uint32 amount = 1000000; // 1 USDC
-        uint64 dustAmount = 0.001 ether; //
+        uint64 nativeAmount = 0.001 ether; //
 
         deal(address(usdc), address(axelarAdapterHarness), amount); // axelar adapter receives USDC
-        vm.deal(address(axelarAdapterHarness), dustAmount);
+        vm.deal(address(axelarAdapterHarness), nativeAmount);
 
         // receive 1 USDC and swap to weth
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
@@ -385,10 +391,10 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
             0,
             "adapter should have 0 eth"
         );
-        assertEq(user.balance, dustAmount, "user should have all dust eth");
+        assertEq(user.balance, nativeAmount, "user should have all dust eth");
     }
 
-    function test_ReceiveERC20EnoughForGasNoSwapData() public {
+    function test_ReceiveERC20EnoughForGasNoSwapOrPayloadData() public {
         uint32 amount = 1000000; // 1 USDC
 
         deal(address(usdc), address(axelarAdapterHarness), amount); // axelar adapter receives USDC
@@ -510,7 +516,7 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
             "" // _payloadData
         );
 
-        axelarAdapterHarness.exposed_executeWithToken{gas: 100005}(
+        axelarAdapterHarness.exposed_executeWithToken{gas: 120000}(
             "arbitrum",
             AddressToString.toString(address(axelarAdapter)),
             mockPayload,
@@ -586,5 +592,329 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
             "axelarAdapter should have 0 weth"
         );
         assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
+    }
+
+    function test_ReceiveERC20SwapToERC20AirdropERC20FromPayload()
+        public
+    {
+        uint32 amount = 1000001;
+        vm.assume(amount > 1000000); // > 1 usdc
+
+        deal(address(usdc), address(axelarAdapterHarness), amount); // amount adapter receives
+
+        // receive 1 usdc and swap to weth
+        bytes memory computedRoute = routeProcessorHelper.computeRoute(
+            false,
+            false,
+            address(usdc),
+            address(weth),
+            500,
+            address(airdropExecutor)
+        );
+
+        // airdrop all the weth to two addresses
+        address user1 = address(0x4203);
+        address user2 = address(0x4204);
+        address[] memory recipients = new address[](2);
+        recipients[0] = user1;
+        recipients[1] = user2;
+
+        axelarAdapterHarness.exposed_executeWithToken(
+            "arbitrum",
+            AddressToString.toString(address(axelarAdapter)),
+            abi.encode(
+                address(user), // to
+                abi.encode(
+                    IRouteProcessor.RouteProcessorData({
+                        tokenIn: address(usdc),
+                        amountIn: amount,
+                        tokenOut: address(weth),
+                        amountOutMin: 0,
+                        to: address(airdropExecutor),
+                        route: computedRoute
+                    })
+                ), // swap data
+                abi.encode(
+                    ISushiXSwapV2Adapter.PayloadData({
+                        target: address(airdropExecutor),
+                        gasLimit: 200000,
+                        targetData: abi.encode(
+                            AirdropPayloadExecutor.AirdropPayloadParams({
+                                token: address(weth),
+                                recipients: recipients
+                            })
+                        )
+                    })
+                ) // payloadData
+            ),
+            "USDC",
+            amount
+        );
+
+        assertEq(
+            usdc.balanceOf(address(axelarAdapterHarness)),
+            0,
+            "axelarAdapter should have 0 usdc"
+        );
+        assertEq(usdc.balanceOf(user), 0, "user should have 0 usdc");
+        assertEq(
+            weth.balanceOf(address(axelarAdapterHarness)),
+            0,
+            "axelarAdapter should have 0 weth"
+        );
+        assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
+        assertGt(
+            weth.balanceOf(user1),
+            0,
+            "user1 should have > 0 weth from airdrop"
+        );
+        assertGt(
+            weth.balanceOf(user2),
+            0,
+            "user2 should have > 0 weth from airdrop"
+        );
+    }
+
+    function test_ReceiveERC20SwapToERC20FailedAirdropFromPayload()
+        public
+    {
+        uint32 amount = 1000001;
+        vm.assume(amount > 1000000); // > 1 usdc
+
+        deal(address(usdc), address(axelarAdapterHarness), amount); // amount adapter receives
+
+        // receive 1 usdc and swap to weth
+        bytes memory computedRoute = routeProcessorHelper.computeRoute(
+            false,
+            false,
+            address(usdc),
+            address(weth),
+            500,
+            address(airdropExecutor)
+        );
+
+        // airdrop all the weth to two addresses
+        address user1 = address(0x4203);
+        address user2 = address(0x4204);
+        address[] memory recipients = new address[](2);
+        recipients[0] = user1;
+        recipients[1] = user2;
+
+        axelarAdapterHarness.exposed_executeWithToken(
+            "arbitrum",
+            AddressToString.toString(address(axelarAdapter)),
+            abi.encode(
+                address(user), // to
+                abi.encode(
+                    IRouteProcessor.RouteProcessorData({
+                        tokenIn: address(usdc),
+                        amountIn: amount,
+                        tokenOut: address(weth),
+                        amountOutMin: 0,
+                        to: address(airdropExecutor),
+                        route: computedRoute
+                    })
+                ), // swap data
+                abi.encode(
+                    ISushiXSwapV2Adapter.PayloadData({
+                        target: address(airdropExecutor),
+                        gasLimit: 200000,
+                        targetData: abi.encode(
+                            AirdropPayloadExecutor.AirdropPayloadParams({
+                                token: address(user), // using user for token to airdrop so it fails
+                                recipients: recipients
+                            })
+                        )
+                    })
+                ) // payloadData
+            ),
+            "USDC",
+            amount
+        );
+
+        assertEq(
+            usdc.balanceOf(address(axelarAdapterHarness)),
+            0,
+            "axelarAdapter should have 0 usdc"
+        );
+        assertEq(usdc.balanceOf(user), amount, "user should all usdc");
+        assertEq(
+            weth.balanceOf(address(axelarAdapterHarness)),
+            0,
+            "axelarAdapter should have 0 weth"
+        );
+        assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
+        assertEq(
+            usdc.balanceOf(user1),
+            0,
+            "user1 should have 0 usdc from airdrop"
+        );
+        assertEq(
+            usdc.balanceOf(user2),
+            0,
+            "user2 should have 0 usdc from airdrop"
+        );
+    }
+
+    function test_ReceiveERC20AirdropFromPayload() public {
+        uint32 amount = 1000001;
+        vm.assume(amount > 1000000); // > 1 usdc
+
+        deal(address(usdc), address(axelarAdapterHarness), amount); // amount adapter receives
+
+        // airdrop all the usdc to two addresses
+        address user1 = address(0x4203);
+        address user2 = address(0x4204);
+        address[] memory recipients = new address[](2);
+        recipients[0] = user1;
+        recipients[1] = user2;
+
+        axelarAdapterHarness.exposed_executeWithToken(
+            "arbitrum",
+            AddressToString.toString(address(axelarAdapter)),
+            abi.encode(
+                address(user), // to
+                "", // swap data
+                abi.encode(
+                    ISushiXSwapV2Adapter.PayloadData({
+                        target: address(airdropExecutor),
+                        gasLimit: 200000,
+                        targetData: abi.encode(
+                            AirdropPayloadExecutor.AirdropPayloadParams({
+                                token: address(usdc),
+                                recipients: recipients
+                            })
+                        )
+                    })
+                ) // payloadData
+            ),
+            "USDC",
+            amount
+        );
+
+        assertEq(
+            usdc.balanceOf(address(axelarAdapterHarness)),
+            0,
+            "axelarAdapter should have 0 usdc"
+        );
+        assertEq(usdc.balanceOf(user), 0, "user should have 0 usdc");
+        assertGt(
+            usdc.balanceOf(user1),
+            0,
+            "user1 should have > 0 usdc from airdrop"
+        );
+        assertGt(
+            usdc.balanceOf(user2),
+            0,
+            "user2 should have > 0 usdc from airdrop"
+        );
+    }
+
+    function test_ReceiveERC20FailedAirdropFromPayload() public {
+        uint32 amount = 1000001;
+        vm.assume(amount > 1000000); // > 1 usdc
+
+        deal(address(usdc), address(axelarAdapterHarness), amount); // amount adapter receives
+
+        // airdrop all the weth to two addresses
+        address user1 = address(0x4203);
+        address user2 = address(0x4204);
+        address[] memory recipients = new address[](2);
+        recipients[0] = user1;
+        recipients[1] = user2;
+
+        axelarAdapterHarness.exposed_executeWithToken(
+            "arbitrum",
+            AddressToString.toString(address(axelarAdapter)),
+            abi.encode(
+                address(user), // to
+                "", // swap data
+                abi.encode(
+                    ISushiXSwapV2Adapter.PayloadData({
+                        target: address(airdropExecutor),
+                        gasLimit: 200000,
+                        targetData: abi.encode(
+                            AirdropPayloadExecutor.AirdropPayloadParams({
+                                token: address(weth), // using weth for token to airdrop so it fails
+                                recipients: recipients
+                            })
+                        )
+                    })
+                ) // payloadData
+            ),
+            "USDC",
+            amount
+        );
+
+        assertEq(
+            usdc.balanceOf(address(axelarAdapterHarness)),
+            0,
+            "axelarAdapter should have 0 usdc"
+        );
+        assertEq(usdc.balanceOf(user), amount, "user should all usdc");
+        assertEq(
+            usdc.balanceOf(user1),
+            0,
+            "user1 should have 0 usdc from airdrop"
+        );
+        assertEq(
+            usdc.balanceOf(user2),
+            0,
+            "user2 should have 0 usdc from airdrop"
+        );
+    }
+
+    function test_ReceiveERC20FailedAirdropPayloadFromOutOfGas() public {
+        uint32 amount = 1000001;
+        vm.assume(amount > 1000000); // > 1 usdc
+
+        deal(address(usdc), address(axelarAdapterHarness), amount); // amount adapter receives
+
+        // airdrop all the weth to two addresses
+        address user1 = address(0x4203);
+        address user2 = address(0x4204);
+        address[] memory recipients = new address[](2);
+        recipients[0] = user1;
+        recipients[1] = user2;
+
+        axelarAdapterHarness.exposed_executeWithToken{gas: 120000}(
+            "arbitrum",
+            AddressToString.toString(address(axelarAdapter)),
+            abi.encode(
+                address(user), // to
+                "", // swap data
+                abi.encode(
+                    ISushiXSwapV2Adapter.PayloadData({
+                        target: address(airdropExecutor),
+                        gasLimit: 200000,
+                        targetData: abi.encode(
+                            AirdropPayloadExecutor.AirdropPayloadParams({
+                                token: address(usdc),
+                                recipients: recipients
+                            })
+                        )
+                    })
+                ) // payloadData
+            ),
+            "USDC",
+            amount
+        );
+
+        assertEq(
+            usdc.balanceOf(address(axelarAdapterHarness)),
+            0,
+            "axelarAdapter should have 0 usdc"
+        );
+        assertEq(usdc.balanceOf(user), amount, "user should all usdc");
+        assertEq(
+            usdc.balanceOf(user1),
+            0,
+            "user1 should have 0 usdc from airdrop"
+        );
+        assertEq(
+            usdc.balanceOf(user2),
+            0,
+            "user2 should have 0 usdc from airdrop"
+        );
     }
 }

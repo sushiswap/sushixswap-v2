@@ -72,7 +72,7 @@ contract StargateAdapter is ISushiXSwapV2Adapter, IStargateReceiver {
 
         rp.processRoute(
             rpd.tokenIn,
-            _amountBridged != 0 ? _amountBridged: rpd.amountIn,
+            _amountBridged != 0 ? _amountBridged : rpd.amountIn,
             rpd.tokenOut,
             rpd.amountOutMin,
             rpd.to,
@@ -88,6 +88,21 @@ contract StargateAdapter is ISushiXSwapV2Adapter, IStargateReceiver {
                 revert();
             }
         }
+    }
+
+    function executePayload(
+        uint256 _amountBridged,
+        bytes calldata _payloadData,
+        address _token
+    ) external payable override {
+        // send tokens to payload executor
+        if (_token == sgeth) {
+            weth.deposit{value: _amountBridged}();
+            _token = address(weth);
+        }
+        PayloadData memory pd = abi.decode(_payloadData, (PayloadData));
+        IERC20(_token).safeTransfer(pd.target, _amountBridged);
+        IPayloadExecutor(pd.target).onPayloadReceive(pd.targetData);
     }
 
     /// @notice Get the fees to be paid in native token for the swap
@@ -136,10 +151,11 @@ contract StargateAdapter is ISushiXSwapV2Adapter, IStargateReceiver {
             params.token = sgeth;
         } else if (params.token == address(weth)) {
             // this case is for when rp sends weth in
-            if (params.amount == 0) params.amount = weth.balanceOf(address(this));
+            if (params.amount == 0)
+                params.amount = weth.balanceOf(address(this));
             weth.withdraw(params.amount);
             IStargateEthVault(sgeth).deposit{value: params.amount}();
-            params.token = sgeth;    
+            params.token = sgeth;
         }
 
         if (params.amount == 0)
@@ -194,9 +210,8 @@ contract StargateAdapter is ISushiXSwapV2Adapter, IStargateReceiver {
             .decode(payload, (address, bytes, bytes));
 
         uint256 reserveGas = 100000;
-        bool failed;
 
-        if (gasleft() < reserveGas || _swapData.length == 0) {
+        if (gasleft() < reserveGas) {
             if (_token != sgeth) {
                 IERC20(_token).safeTransfer(to, amountLD);
             }
@@ -205,14 +220,12 @@ contract StargateAdapter is ISushiXSwapV2Adapter, IStargateReceiver {
             if (address(this).balance > 0)
                 to.call{value: (address(this).balance)}("");
 
-            failed = true;
             return;
         }
 
         // 100000 -> exit gas
         uint256 limit = gasleft() - reserveGas;
-        
-        //todo: what if you had payload data for another adapter, but no swapData?
+
         if (_swapData.length > 0) {
             try
                 ISushiXSwapV2Adapter(address(this)).swap{gas: limit}(
@@ -221,13 +234,19 @@ contract StargateAdapter is ISushiXSwapV2Adapter, IStargateReceiver {
                     _token,
                     _payloadData
                 )
-            {} catch (bytes memory) {
-                if (_token != sgeth) {
-                    IERC20(_token).safeTransfer(to, amountLD);
-                }
-                failed = true;
-            }
-        }
+            {} catch (bytes memory) {}
+        } else if (_payloadData.length > 0) {
+            try
+                ISushiXSwapV2Adapter(address(this)).executePayload{gas: limit}(
+                    amountLD,
+                    _payloadData,
+                    _token
+                )
+            {} catch (bytes memory) {}
+        } else {}
+
+        if (IERC20(_token).balanceOf(address(this)) > 0 && _token != sgeth)
+            IERC20(_token).safeTransfer(to, amountLD);
 
         /// @dev transfer any native token received as dust to the to address
         if (address(this).balance > 0)
