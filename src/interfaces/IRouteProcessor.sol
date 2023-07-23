@@ -3,7 +3,6 @@
 pragma solidity 0.8.10;
 
 interface IRouteProcessor {
-    
     struct RouteProcessorData {
         address tokenIn;
         uint256 amountIn;

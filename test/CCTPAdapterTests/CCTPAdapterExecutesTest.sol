@@ -16,27 +16,11 @@ import {StringToBytes32, Bytes32ToString} from "../../src/utils/Bytes32String.so
 import {StringToAddress, AddressToString} from "../../src/utils/AddressString.sol";
 
 contract CCTPAdapterHarness is CCTPAdapter {
-    constructor(
-        address _axelarGateway,
-        address _gasService,
-        address _tokenMessenger,
-        address _rp,
-        address _nativeUSDC
-    )
-        CCTPAdapter(
-            _axelarGateway,
-            _gasService,
-            _tokenMessenger,
-            _rp,
-            _nativeUSDC
-        )
+    constructor(address _axelarGateway, address _gasService, address _tokenMessenger, address _rp, address _nativeUSDC)
+        CCTPAdapter(_axelarGateway, _gasService, _tokenMessenger, _rp, _nativeUSDC)
     {}
 
-    function exposed_execute(
-        string memory sourceChain,
-        string memory sourceAddress,
-        bytes calldata payload
-    ) external {
+    function exposed_execute(string memory sourceChain, string memory sourceAddress, bytes calldata payload) external {
         _execute(sourceChain, sourceAddress, payload);
     }
 }
@@ -53,8 +37,7 @@ contract CCTPAdapterExecutesTest is BaseTest {
     ERC20 public sushi;
     ERC20 public usdc;
 
-    address constant NATIVE_ADDRESS =
-        0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
+    address constant NATIVE_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
     address public operator = address(0xbeef);
     address public owner = address(0x420);
     address public user = address(0x4201);
@@ -67,9 +50,7 @@ contract CCTPAdapterExecutesTest is BaseTest {
         sushi = ERC20(constants.getAddress("mainnet.sushi"));
         usdc = ERC20(constants.getAddress("mainnet.usdc"));
 
-        routeProcessor = IRouteProcessor(
-            constants.getAddress("mainnet.routeProcessor")
-        );
+        routeProcessor = IRouteProcessor(constants.getAddress("mainnet.routeProcessor"));
 
         routeProcessorHelper = new RouteProcessorHelper(
             constants.getAddress("mainnet.v2Factory"),
@@ -113,24 +94,17 @@ contract CCTPAdapterExecutesTest is BaseTest {
         deal(address(usdc), address(cctpAdapterHarness), amount); // cctp adapter receives USDC
 
         // receives 1 minted USDC and swap to weth
-        bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false,
-            false,
-            address(usdc),
-            address(weth),
-            500,
-            user
-        );
+        bytes memory computedRoute =
+            routeProcessorHelper.computeRoute(false, false, address(usdc), address(weth), 500, user);
 
-        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor
-            .RouteProcessorData({
-                tokenIn: address(usdc),
-                amountIn: amount,
-                tokenOut: address(weth),
-                amountOutMin: 0,
-                to: user,
-                route: computedRoute
-            });
+        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor.RouteProcessorData({
+            tokenIn: address(usdc),
+            amountIn: amount,
+            tokenOut: address(weth),
+            amountOutMin: 0,
+            to: user,
+            route: computedRoute
+        });
 
         bytes memory rpd_encoded = abi.encode(rpd);
 
@@ -141,23 +115,11 @@ contract CCTPAdapterExecutesTest is BaseTest {
             "" // _payloadData
         );
 
-        cctpAdapterHarness.exposed_execute(
-            "arbitrum",
-            AddressToString.toString(address(cctpAdapter)),
-            mockPayload
-        );
+        cctpAdapterHarness.exposed_execute("arbitrum", AddressToString.toString(address(cctpAdapter)), mockPayload);
 
-        assertEq(
-            usdc.balanceOf(address(cctpAdapterHarness)),
-            0,
-            "cctp adapter should have 0 usdc"
-        );
+        assertEq(usdc.balanceOf(address(cctpAdapterHarness)), 0, "cctp adapter should have 0 usdc");
         assertEq(usdc.balanceOf(user), 0, "user should have 0 usdc");
-        assertEq(
-            weth.balanceOf(address(cctpAdapterHarness)),
-            0,
-            "cctp adapter should have 0 weth"
-        );
+        assertEq(weth.balanceOf(address(cctpAdapterHarness)), 0, "cctp adapter should have 0 weth");
         assertGt(weth.balanceOf(user), 0, "user should have > 0 weth");
     }
 
@@ -169,24 +131,17 @@ contract CCTPAdapterExecutesTest is BaseTest {
         deal(address(cctpAdapterHarness), nativeAmount);
 
         // receives 1 minted USDC and swap to weth
-        bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false,
-            false,
-            address(usdc),
-            address(weth),
-            500,
-            user
-        );
+        bytes memory computedRoute =
+            routeProcessorHelper.computeRoute(false, false, address(usdc), address(weth), 500, user);
 
-        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor
-            .RouteProcessorData({
-                tokenIn: address(usdc),
-                amountIn: amount,
-                tokenOut: address(weth),
-                amountOutMin: 0,
-                to: user,
-                route: computedRoute
-            });
+        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor.RouteProcessorData({
+            tokenIn: address(usdc),
+            amountIn: amount,
+            tokenOut: address(weth),
+            amountOutMin: 0,
+            to: user,
+            route: computedRoute
+        });
 
         bytes memory rpd_encoded = abi.encode(rpd);
 
@@ -197,29 +152,13 @@ contract CCTPAdapterExecutesTest is BaseTest {
             "" // _payloadData
         );
 
-        cctpAdapterHarness.exposed_execute(
-            "arbitrum",
-            AddressToString.toString(address(cctpAdapter)),
-            mockPayload
-        );
+        cctpAdapterHarness.exposed_execute("arbitrum", AddressToString.toString(address(cctpAdapter)), mockPayload);
 
-        assertEq(
-            usdc.balanceOf(address(cctpAdapterHarness)),
-            0,
-            "cctp adapter should have 0 usdc"
-        );
+        assertEq(usdc.balanceOf(address(cctpAdapterHarness)), 0, "cctp adapter should have 0 usdc");
         assertEq(usdc.balanceOf(user), 0, "user should have 0 usdc");
-        assertEq(
-            weth.balanceOf(address(cctpAdapterHarness)),
-            0,
-            "cctp adapter should have 0 weth"
-        );
+        assertEq(weth.balanceOf(address(cctpAdapterHarness)), 0, "cctp adapter should have 0 weth");
         assertGt(weth.balanceOf(user), 0, "user should have > 0 weth");
-        assertEq(
-            address(cctpAdapterHarness).balance,
-            0,
-            "adapter should have 0 eth"
-        );
+        assertEq(address(cctpAdapterHarness).balance, 0, "adapter should have 0 eth");
         assertEq(user.balance, nativeAmount, "user should have all dust eth");
     }
 
@@ -229,24 +168,17 @@ contract CCTPAdapterExecutesTest is BaseTest {
         deal(address(usdc), address(cctpAdapterHarness), amount); // cctp adapter receives USDC
 
         // receives 1 minted USDC and swap to weth
-        bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false,
-            false,
-            address(usdc),
-            address(weth),
-            500,
-            user
-        );
+        bytes memory computedRoute =
+            routeProcessorHelper.computeRoute(false, false, address(usdc), address(weth), 500, user);
 
-        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor
-            .RouteProcessorData({
-                tokenIn: address(usdc),
-                amountIn: amount,
-                tokenOut: address(weth),
-                amountOutMin: 0,
-                to: user,
-                route: computedRoute
-            });
+        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor.RouteProcessorData({
+            tokenIn: address(usdc),
+            amountIn: amount,
+            tokenOut: address(weth),
+            amountOutMin: 0,
+            to: user,
+            route: computedRoute
+        });
 
         bytes memory rpd_encoded = abi.encode(rpd);
 
@@ -258,22 +190,12 @@ contract CCTPAdapterExecutesTest is BaseTest {
         );
 
         cctpAdapterHarness.exposed_execute{gas: 90000}(
-            "arbitrum",
-            AddressToString.toString(address(cctpAdapter)),
-            mockPayload
+            "arbitrum", AddressToString.toString(address(cctpAdapter)), mockPayload
         );
 
-        assertEq(
-            usdc.balanceOf(address(cctpAdapterHarness)),
-            0,
-            "cctp adapter should have 0 usdc"
-        );
+        assertEq(usdc.balanceOf(address(cctpAdapterHarness)), 0, "cctp adapter should have 0 usdc");
         assertEq(usdc.balanceOf(user), amount, "user should have all usdc");
-        assertEq(
-            weth.balanceOf(address(cctpAdapterHarness)),
-            0,
-            "cctp adapter should have 0 weth"
-        );
+        assertEq(weth.balanceOf(address(cctpAdapterHarness)), 0, "cctp adapter should have 0 weth");
         assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
     }
 
@@ -285,24 +207,17 @@ contract CCTPAdapterExecutesTest is BaseTest {
         vm.deal(address(cctpAdapterHarness), nativeAmount);
 
         // receives 1 minted USDC and swap to weth
-        bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false,
-            false,
-            address(usdc),
-            address(weth),
-            500,
-            user
-        );
+        bytes memory computedRoute =
+            routeProcessorHelper.computeRoute(false, false, address(usdc), address(weth), 500, user);
 
-        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor
-            .RouteProcessorData({
-                tokenIn: address(usdc),
-                amountIn: amount,
-                tokenOut: address(weth),
-                amountOutMin: 0,
-                to: user,
-                route: computedRoute
-            });
+        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor.RouteProcessorData({
+            tokenIn: address(usdc),
+            amountIn: amount,
+            tokenOut: address(weth),
+            amountOutMin: 0,
+            to: user,
+            route: computedRoute
+        });
 
         bytes memory rpd_encoded = abi.encode(rpd);
 
@@ -314,28 +229,14 @@ contract CCTPAdapterExecutesTest is BaseTest {
         );
 
         cctpAdapterHarness.exposed_execute{gas: 90000}(
-            "arbitrum",
-            AddressToString.toString(address(cctpAdapter)),
-            mockPayload
+            "arbitrum", AddressToString.toString(address(cctpAdapter)), mockPayload
         );
 
-        assertEq(
-            usdc.balanceOf(address(cctpAdapterHarness)),
-            0,
-            "cctp adapter should have 0 usdc"
-        );
+        assertEq(usdc.balanceOf(address(cctpAdapterHarness)), 0, "cctp adapter should have 0 usdc");
         assertEq(usdc.balanceOf(user), amount, "user should have all usdc");
-        assertEq(
-            weth.balanceOf(address(cctpAdapterHarness)),
-            0,
-            "cctp adapter should have 0 weth"
-        );
+        assertEq(weth.balanceOf(address(cctpAdapterHarness)), 0, "cctp adapter should have 0 weth");
         assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
-        assertEq(
-            address(cctpAdapterHarness).balance,
-            0,
-            "adapter should have 0 eth"
-        );
+        assertEq(address(cctpAdapterHarness).balance, 0, "adapter should have 0 eth");
         assertEq(user.balance, nativeAmount, "user should have all dust eth");
     }
 
@@ -351,23 +252,11 @@ contract CCTPAdapterExecutesTest is BaseTest {
             "" // _payloadData
         );
 
-        cctpAdapterHarness.exposed_execute(
-            "arbitrum",
-            AddressToString.toString(address(cctpAdapter)),
-            mockPayload
-        );
+        cctpAdapterHarness.exposed_execute("arbitrum", AddressToString.toString(address(cctpAdapter)), mockPayload);
 
-        assertEq(
-            usdc.balanceOf(address(cctpAdapterHarness)),
-            0,
-            "cctp adapter should have 0 usdc"
-        );
+        assertEq(usdc.balanceOf(address(cctpAdapterHarness)), 0, "cctp adapter should have 0 usdc");
         assertEq(usdc.balanceOf(user), amount, "user should have all usdc");
-        assertEq(
-            weth.balanceOf(address(cctpAdapterHarness)),
-            0,
-            "cctp adapter should have 0 weth"
-        );
+        assertEq(weth.balanceOf(address(cctpAdapterHarness)), 0, "cctp adapter should have 0 weth");
         assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
     }
 
@@ -377,25 +266,18 @@ contract CCTPAdapterExecutesTest is BaseTest {
         deal(address(usdc), address(cctpAdapterHarness), amount); // cctp adapter receives USDC
 
         // receives 1 minted USDC and swap to weth
-        bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false,
-            false,
-            address(usdc),
-            address(weth),
-            500,
-            user
-        );
+        bytes memory computedRoute =
+            routeProcessorHelper.computeRoute(false, false, address(usdc), address(weth), 500, user);
 
         // switched tokenIn to weth, and tokenOut to usdc - should fail now on swap
-        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor
-            .RouteProcessorData({
-                tokenIn: address(weth),
-                amountIn: amount,
-                tokenOut: address(usdc),
-                amountOutMin: 0,
-                to: user,
-                route: computedRoute
-            });
+        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor.RouteProcessorData({
+            tokenIn: address(weth),
+            amountIn: amount,
+            tokenOut: address(usdc),
+            amountOutMin: 0,
+            to: user,
+            route: computedRoute
+        });
 
         bytes memory rpd_encoded = abi.encode(rpd);
 
@@ -406,23 +288,11 @@ contract CCTPAdapterExecutesTest is BaseTest {
             "" // _payloadData
         );
 
-        cctpAdapterHarness.exposed_execute(
-            "arbitrum",
-            AddressToString.toString(address(cctpAdapter)),
-            mockPayload
-        );
+        cctpAdapterHarness.exposed_execute("arbitrum", AddressToString.toString(address(cctpAdapter)), mockPayload);
 
-        assertEq(
-            usdc.balanceOf(address(cctpAdapterHarness)),
-            0,
-            "cctp adapter should have 0 usdc"
-        );
+        assertEq(usdc.balanceOf(address(cctpAdapterHarness)), 0, "cctp adapter should have 0 usdc");
         assertEq(usdc.balanceOf(user), amount, "user should have all usdc");
-        assertEq(
-            weth.balanceOf(address(cctpAdapterHarness)),
-            0,
-            "cctp adapter should have 0 weth"
-        );
+        assertEq(weth.balanceOf(address(cctpAdapterHarness)), 0, "cctp adapter should have 0 weth");
         assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
     }
 
@@ -432,24 +302,17 @@ contract CCTPAdapterExecutesTest is BaseTest {
         deal(address(usdc), address(cctpAdapterHarness), amount); // cctp adapter receives USDC
 
         // receives 1 minted USDC and swap to weth
-        bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false,
-            false,
-            address(usdc),
-            address(weth),
-            500,
-            user
-        );
+        bytes memory computedRoute =
+            routeProcessorHelper.computeRoute(false, false, address(usdc), address(weth), 500, user);
 
-        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor
-            .RouteProcessorData({
-                tokenIn: address(usdc),
-                amountIn: amount,
-                tokenOut: address(weth),
-                amountOutMin: 0,
-                to: user,
-                route: computedRoute
-            });
+        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor.RouteProcessorData({
+            tokenIn: address(usdc),
+            amountIn: amount,
+            tokenOut: address(weth),
+            amountOutMin: 0,
+            to: user,
+            route: computedRoute
+        });
 
         bytes memory rpd_encoded = abi.encode(rpd);
 
@@ -461,22 +324,12 @@ contract CCTPAdapterExecutesTest is BaseTest {
         );
 
         cctpAdapterHarness.exposed_execute{gas: 120000}(
-            "arbitrum",
-            AddressToString.toString(address(cctpAdapter)),
-            mockPayload
+            "arbitrum", AddressToString.toString(address(cctpAdapter)), mockPayload
         );
 
-        assertEq(
-            usdc.balanceOf(address(cctpAdapterHarness)),
-            0,
-            "cctp adapter should have 0 usdc"
-        );
+        assertEq(usdc.balanceOf(address(cctpAdapterHarness)), 0, "cctp adapter should have 0 usdc");
         assertEq(usdc.balanceOf(user), amount, "user should have all usdc");
-        assertEq(
-            weth.balanceOf(address(cctpAdapterHarness)),
-            0,
-            "cctp adapter should have 0 weth"
-        );
+        assertEq(weth.balanceOf(address(cctpAdapterHarness)), 0, "cctp adapter should have 0 weth");
         assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
     }
 
@@ -486,25 +339,18 @@ contract CCTPAdapterExecutesTest is BaseTest {
         deal(address(usdc), address(cctpAdapterHarness), amount); // cctp adapter receives USDC
 
         // receives 1 minted USDC and swap to weth
-        bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false,
-            false,
-            address(usdc),
-            address(weth),
-            500,
-            user
-        );
+        bytes memory computedRoute =
+            routeProcessorHelper.computeRoute(false, false, address(usdc), address(weth), 500, user);
 
         // attempt to swap usdc to weth with max amountOutMin
-        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor
-            .RouteProcessorData({
-                tokenIn: address(usdc),
-                amountIn: amount,
-                tokenOut: address(weth),
-                amountOutMin: type(uint256).max,
-                to: user,
-                route: computedRoute
-            });
+        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor.RouteProcessorData({
+            tokenIn: address(usdc),
+            amountIn: amount,
+            tokenOut: address(weth),
+            amountOutMin: type(uint256).max,
+            to: user,
+            route: computedRoute
+        });
 
         bytes memory rpd_encoded = abi.encode(rpd);
 
@@ -515,23 +361,11 @@ contract CCTPAdapterExecutesTest is BaseTest {
             "" // _payloadData
         );
 
-        cctpAdapterHarness.exposed_execute(
-            "arbitrum",
-            AddressToString.toString(address(cctpAdapter)),
-            mockPayload
-        );
+        cctpAdapterHarness.exposed_execute("arbitrum", AddressToString.toString(address(cctpAdapter)), mockPayload);
 
-        assertEq(
-            usdc.balanceOf(address(cctpAdapterHarness)),
-            0,
-            "cctp adapter should have 0 usdc"
-        );
+        assertEq(usdc.balanceOf(address(cctpAdapterHarness)), 0, "cctp adapter should have 0 usdc");
         assertEq(usdc.balanceOf(user), amount, "user should have all usdc");
-        assertEq(
-            weth.balanceOf(address(cctpAdapterHarness)),
-            0,
-            "cctp adapter should have 0 weth"
-        );
+        assertEq(weth.balanceOf(address(cctpAdapterHarness)), 0, "cctp adapter should have 0 weth");
         assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
     }
 
@@ -542,14 +376,8 @@ contract CCTPAdapterExecutesTest is BaseTest {
         deal(address(usdc), address(cctpAdapterHarness), amount); // amount adapter receives
 
         // receive 1 usdc and swap to weth
-        bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false,
-            false,
-            address(usdc),
-            address(weth),
-            500,
-            address(airdropExecutor)
-        );
+        bytes memory computedRoute =
+            routeProcessorHelper.computeRoute(false, false, address(usdc), address(weth), 500, address(airdropExecutor));
 
         // airdrop all the weth to two addresses
         address user1 = address(0x4203);
@@ -579,57 +407,30 @@ contract CCTPAdapterExecutesTest is BaseTest {
                         target: address(airdropExecutor),
                         gasLimit: 200000,
                         targetData: abi.encode(
-                            AirdropPayloadExecutor.AirdropPayloadParams({
-                                token: address(weth),
-                                recipients: recipients
-                            })
-                        )
+                            AirdropPayloadExecutor.AirdropPayloadParams({token: address(weth), recipients: recipients})
+                            )
                     })
                 ) // payloadData
             )
         );
 
-        assertEq(
-            usdc.balanceOf(address(cctpAdapterHarness)),
-            0,
-            "cctpAdapter should have 0 usdc"
-        );
+        assertEq(usdc.balanceOf(address(cctpAdapterHarness)), 0, "cctpAdapter should have 0 usdc");
         assertEq(usdc.balanceOf(user), 0, "user should have 0 usdc");
-        assertEq(
-            weth.balanceOf(address(cctpAdapterHarness)),
-            0,
-            "cctpAdapter should have 0 weth"
-        );
+        assertEq(weth.balanceOf(address(cctpAdapterHarness)), 0, "cctpAdapter should have 0 weth");
         assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
-        assertGt(
-            weth.balanceOf(user1),
-            0,
-            "user1 should have > 0 weth from airdrop"
-        );
-        assertGt(
-            weth.balanceOf(user2),
-            0,
-            "user2 should have > 0 weth from airdrop"
-        );
+        assertGt(weth.balanceOf(user1), 0, "user1 should have > 0 weth from airdrop");
+        assertGt(weth.balanceOf(user2), 0, "user2 should have > 0 weth from airdrop");
     }
 
-    function test_ReceiveUSDCSwapToERC20FailedAirdropFromPayload()
-        public
-    {
+    function test_ReceiveUSDCSwapToERC20FailedAirdropFromPayload() public {
         uint32 amount = 1000001;
         vm.assume(amount > 1000000); // > 1 usdc
 
         deal(address(usdc), address(cctpAdapterHarness), amount); // amount adapter receives
 
         // receive 1 usdc and swap to weth
-        bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false,
-            false,
-            address(usdc),
-            address(weth),
-            500,
-            address(airdropExecutor)
-        );
+        bytes memory computedRoute =
+            routeProcessorHelper.computeRoute(false, false, address(usdc), address(weth), 500, address(airdropExecutor));
 
         // airdrop all the weth to two addresses
         address user1 = address(0x4203);
@@ -663,34 +464,18 @@ contract CCTPAdapterExecutesTest is BaseTest {
                                 token: address(user), // using user for token to aridrop so it fails
                                 recipients: recipients
                             })
-                        )
+                            )
                     })
                 ) // payloadData
             )
         );
 
-        assertEq(
-            usdc.balanceOf(address(cctpAdapterHarness)),
-            0,
-            "cctpAdapter should have 0 usdc"
-        );
+        assertEq(usdc.balanceOf(address(cctpAdapterHarness)), 0, "cctpAdapter should have 0 usdc");
         assertEq(usdc.balanceOf(user), amount, "user should all usdc");
-        assertEq(
-            weth.balanceOf(address(cctpAdapterHarness)),
-            0,
-            "cctpAdapter should have 0 weth"
-        );
+        assertEq(weth.balanceOf(address(cctpAdapterHarness)), 0, "cctpAdapter should have 0 weth");
         assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
-        assertEq(
-            usdc.balanceOf(user1),
-            0,
-            "user1 should have 0 usdc from airdrop"
-        );
-        assertEq(
-            usdc.balanceOf(user2),
-            0,
-            "user2 should have 0 usdc from airdrop"
-        );
+        assertEq(usdc.balanceOf(user1), 0, "user1 should have 0 usdc from airdrop");
+        assertEq(usdc.balanceOf(user2), 0, "user2 should have 0 usdc from airdrop");
     }
 
     function test_ReceiveUSDCAirdropFromPayload() public {
@@ -718,32 +503,17 @@ contract CCTPAdapterExecutesTest is BaseTest {
                         target: address(airdropExecutor),
                         gasLimit: 200000,
                         targetData: abi.encode(
-                            AirdropPayloadExecutor.AirdropPayloadParams({
-                                token: address(usdc),
-                                recipients: recipients
-                            })
-                        )
+                            AirdropPayloadExecutor.AirdropPayloadParams({token: address(usdc), recipients: recipients})
+                            )
                     })
                 ) // payloadData
             )
         );
 
-        assertEq(
-            usdc.balanceOf(address(cctpAdapterHarness)),
-            0,
-            "cctpAdapter should have 0 usdc"
-        );
+        assertEq(usdc.balanceOf(address(cctpAdapterHarness)), 0, "cctpAdapter should have 0 usdc");
         assertEq(usdc.balanceOf(user), 0, "user should have 0 usdc");
-        assertGt(
-            usdc.balanceOf(user1),
-            0,
-            "user1 should have > 0 usdc from airdrop"
-        );
-        assertGt(
-            usdc.balanceOf(user2),
-            0,
-            "user2 should have > 0 usdc from airdrop"
-        );
+        assertGt(usdc.balanceOf(user1), 0, "user1 should have > 0 usdc from airdrop");
+        assertGt(usdc.balanceOf(user2), 0, "user2 should have > 0 usdc from airdrop");
     }
 
     function test_ReceiveUSDCFailedAirdropFromPayload() public {
@@ -775,28 +545,16 @@ contract CCTPAdapterExecutesTest is BaseTest {
                                 token: address(weth), // using weth for token to airdrop so it fails
                                 recipients: recipients
                             })
-                        )
+                            )
                     })
                 ) // payloadData
             )
         );
 
-        assertEq(
-            usdc.balanceOf(address(cctpAdapterHarness)),
-            0,
-            "cctpAdapter should have 0 usdc"
-        );
+        assertEq(usdc.balanceOf(address(cctpAdapterHarness)), 0, "cctpAdapter should have 0 usdc");
         assertEq(usdc.balanceOf(user), amount, "user should all usdc");
-        assertEq(
-            usdc.balanceOf(user1),
-            0,
-            "user1 should have 0 usdc from airdrop"
-        );
-        assertEq(
-            usdc.balanceOf(user2),
-            0,
-            "user2 should have 0 usdc from airdrop"
-        );
+        assertEq(usdc.balanceOf(user1), 0, "user1 should have 0 usdc from airdrop");
+        assertEq(usdc.balanceOf(user2), 0, "user2 should have 0 usdc from airdrop");
     }
 
     function test_ReceiveUSDCFailedAirdropPayloadFromOutOfGas() public {
@@ -824,31 +582,16 @@ contract CCTPAdapterExecutesTest is BaseTest {
                         target: address(airdropExecutor),
                         gasLimit: 200000,
                         targetData: abi.encode(
-                            AirdropPayloadExecutor.AirdropPayloadParams({
-                                token: address(usdc),
-                                recipients: recipients
-                            })
-                        )
+                            AirdropPayloadExecutor.AirdropPayloadParams({token: address(usdc), recipients: recipients})
+                            )
                     })
                 ) // payloadData
             )
         );
 
-        assertEq(
-            usdc.balanceOf(address(cctpAdapterHarness)),
-            0,
-            "cctpAdapter should have 0 usdc"
-        );
+        assertEq(usdc.balanceOf(address(cctpAdapterHarness)), 0, "cctpAdapter should have 0 usdc");
         assertEq(usdc.balanceOf(user), amount, "user should all usdc");
-        assertEq(
-            usdc.balanceOf(user1),
-            0,
-            "user1 should have 0 usdc from airdrop"
-        );
-        assertEq(
-            usdc.balanceOf(user2),
-            0,
-            "user2 should have 0 usdc from airdrop"
-        );
+        assertEq(usdc.balanceOf(user1), 0, "user1 should have 0 usdc from airdrop");
+        assertEq(usdc.balanceOf(user2), 0, "user2 should have 0 usdc from airdrop");
     }
 }

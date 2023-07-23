@@ -28,8 +28,7 @@ contract StargateAdapterBridgeTest is BaseTest {
     ERC20 public sushi;
     ERC20 public usdc;
 
-    address constant NATIVE_ADDRESS =
-        0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
+    address constant NATIVE_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
     address public operator = address(0xbeef);
     address public owner = address(0x420);
     address public user = address(0x4201);
@@ -47,9 +46,7 @@ contract StargateAdapterBridgeTest is BaseTest {
         deal(address(usdc), address(operator), 1 ether);
         deal(address(sushi), address(operator), 1000 ether);
 
-        routeProcessor = IRouteProcessor(
-            constants.getAddress("mainnet.routeProcessor")
-        );
+        routeProcessor = IRouteProcessor(constants.getAddress("mainnet.routeProcessor"));
         routeProcessorHelper = new RouteProcessorHelper(
             constants.getAddress("mainnet.v2Factory"),
             constants.getAddress("mainnet.v3Factory"),
@@ -57,15 +54,9 @@ contract StargateAdapterBridgeTest is BaseTest {
             address(weth)
         );
 
-        stargateFeeLibrary = IStargateFeeLibrary(
-            constants.getAddress("mainnet.stargateFeeLibrary")
-        );
-        stargateUSDCPoolAddress = constants.getAddress(
-            "mainnet.stargateUSDCPool"
-        );
-        stargateETHPoolAddress = constants.getAddress(
-            "mainnet.stargateETHPool"
-        );
+        stargateFeeLibrary = IStargateFeeLibrary(constants.getAddress("mainnet.stargateFeeLibrary"));
+        stargateUSDCPoolAddress = constants.getAddress("mainnet.stargateUSDCPool");
+        stargateETHPoolAddress = constants.getAddress("mainnet.stargateETHPool");
 
         vm.startPrank(owner);
         sushiXswap = new SushiXSwapV2(routeProcessor, address(weth));
@@ -97,7 +88,7 @@ contract StargateAdapterBridgeTest is BaseTest {
         vm.startPrank(user);
         usdc.approve(address(sushiXswap), amount);
 
-        (uint256 gasNeeded, ) = stargateAdapter.getFee(
+        (uint256 gasNeeded,) = stargateAdapter.getFee(
             111, // dstChainId
             1, // functionType
             user, // receiver
@@ -106,14 +97,13 @@ contract StargateAdapterBridgeTest is BaseTest {
             "" // payload
         );
 
-        (, uint256 eqFee, , , uint256 protocolFee, ) = stargateFeeLibrary
-            .getFees(
-                1, // srcPoolId
-                1, // dstPoolId
-                111, // dstChainId
-                address(stargateAdapter), // from
-                amount // amountSD
-            );
+        (, uint256 eqFee,,, uint256 protocolFee,) = stargateFeeLibrary.getFees(
+            1, // srcPoolId
+            1, // dstPoolId
+            111, // dstChainId
+            address(stargateAdapter), // from
+            amount // amountSD
+        );
 
         uint256 amountMin = amount - eqFee - protocolFee;
 
@@ -144,16 +134,12 @@ contract StargateAdapterBridgeTest is BaseTest {
         );
 
         // check balances post call
-        assertEq(
-            usdc.balanceOf(address(sushiXswap)),
-            0,
-            "xswasp usdc balance should be 0"
-        );
+        assertEq(usdc.balanceOf(address(sushiXswap)), 0, "xswasp usdc balance should be 0");
         assertEq(usdc.balanceOf(user), 0, "user usdc balance should be 0");
 
         Vm.Log[] memory entries = vm.getRecordedLogs();
         // first event from the stargate pool will be Swap
-        for (uint i = 0; i < entries.length; i++) {
+        for (uint256 i = 0; i < entries.length; i++) {
             // can get poolAddress from the stargate factory
             if (entries[i].emitter == stargateUSDCPoolAddress) {
                 (
@@ -165,41 +151,15 @@ contract StargateAdapterBridgeTest is BaseTest {
                     uint256 _eqFeeEvent,
                     uint256 _protocolFeeEvent,
                     uint256 _lpFee
-                ) = abi.decode(
-                        entries[i].data,
-                        (
-                            uint16,
-                            uint256,
-                            address,
-                            uint256,
-                            uint256,
-                            uint256,
-                            uint256,
-                            uint256
-                        )
-                    );
+                ) = abi.decode(entries[i].data, (uint16, uint256, address, uint256, uint256, uint256, uint256, uint256));
 
                 assertEq(chainId, 111, "Swap event chainId should be 111");
                 assertEq(dstPoolId, 1, "Swap event dstPoolId should be 1");
+                assertEq(from, address(stargateAdapter), "Swap event from should be stargateAdapter");
+                assertEq(amountSD, amountMin, "Swap event amountSD should be amount bridged");
+                assertEq(_eqFeeEvent, eqFee, "Swap event eqFee should be polled eqFee before bridge");
                 assertEq(
-                    from,
-                    address(stargateAdapter),
-                    "Swap event from should be stargateAdapter"
-                );
-                assertEq(
-                    amountSD,
-                    amountMin,
-                    "Swap event amountSD should be amount bridged"
-                );
-                assertEq(
-                    _eqFeeEvent,
-                    eqFee,
-                    "Swap event eqFee should be polled eqFee before bridge"
-                );
-                assertEq(
-                    _protocolFeeEvent,
-                    protocolFee,
-                    "Swap event protocolFee should be polled protocolFee before bridge"
+                    _protocolFeeEvent, protocolFee, "Swap event protocolFee should be polled protocolFee before bridge"
                 );
                 break;
             }
@@ -217,7 +177,7 @@ contract StargateAdapterBridgeTest is BaseTest {
         vm.startPrank(user);
         ERC20(address(weth)).approve(address(sushiXswap), amount);
 
-        (uint256 gasNeeded, ) = stargateAdapter.getFee(
+        (uint256 gasNeeded,) = stargateAdapter.getFee(
             111, // dstChainId
             1, // functionType
             user, // receiver
@@ -226,14 +186,13 @@ contract StargateAdapterBridgeTest is BaseTest {
             "" // payload
         );
 
-        (, uint256 eqFee, , , uint256 protocolFee, ) = stargateFeeLibrary
-            .getFees(
-                13, // srcPoolId
-                13, // dstPoolId
-                111, // dstChainId
-                address(stargateAdapter), // from
-                amount // amountSD
-            );
+        (, uint256 eqFee,,, uint256 protocolFee,) = stargateFeeLibrary.getFees(
+            13, // srcPoolId
+            13, // dstPoolId
+            111, // dstChainId
+            address(stargateAdapter), // from
+            amount // amountSD
+        );
 
         uint256 amountMin = amount - eqFee - protocolFee;
 
@@ -264,16 +223,12 @@ contract StargateAdapterBridgeTest is BaseTest {
         );
 
         // check balances post call
-        assertEq(
-            weth.balanceOf(address(sushiXswap)),
-            0,
-            "xswasp weth balance should be 0"
-        );
+        assertEq(weth.balanceOf(address(sushiXswap)), 0, "xswasp weth balance should be 0");
         assertEq(weth.balanceOf(user), 0, "user weth balance should be 0");
 
         Vm.Log[] memory entries = vm.getRecordedLogs();
         // first event from the stargate pool will be Swap
-        for (uint i = 0; i < entries.length; i++) {
+        for (uint256 i = 0; i < entries.length; i++) {
             // can get poolAddress from the stargate factory
             if (entries[i].emitter == stargateETHPoolAddress) {
                 (
@@ -285,41 +240,15 @@ contract StargateAdapterBridgeTest is BaseTest {
                     uint256 _eqFeeEvent,
                     uint256 _protocolFeeEvent,
                     uint256 _lpFee
-                ) = abi.decode(
-                        entries[i].data,
-                        (
-                            uint16,
-                            uint256,
-                            address,
-                            uint256,
-                            uint256,
-                            uint256,
-                            uint256,
-                            uint256
-                        )
-                    );
+                ) = abi.decode(entries[i].data, (uint16, uint256, address, uint256, uint256, uint256, uint256, uint256));
 
                 assertEq(chainId, 111, "Swap event chainId should be 111");
                 assertEq(dstPoolId, 13, "Swap event dstPoolId should be 13");
+                assertEq(from, address(stargateAdapter), "Swap event from should be stargateAdapter");
+                assertEq(amountSD, amountMin, "Swap event amountSD should be amount bridged");
+                assertEq(_eqFeeEvent, eqFee, "Swap event eqFee should be polled eqFee before bridge");
                 assertEq(
-                    from,
-                    address(stargateAdapter),
-                    "Swap event from should be stargateAdapter"
-                );
-                assertEq(
-                    amountSD,
-                    amountMin,
-                    "Swap event amountSD should be amount bridged"
-                );
-                assertEq(
-                    _eqFeeEvent,
-                    eqFee,
-                    "Swap event eqFee should be polled eqFee before bridge"
-                );
-                assertEq(
-                    _protocolFeeEvent,
-                    protocolFee,
-                    "Swap event protocolFee should be polled protocolFee before bridge"
+                    _protocolFeeEvent, protocolFee, "Swap event protocolFee should be polled protocolFee before bridge"
                 );
                 break;
             }
@@ -330,26 +259,18 @@ contract StargateAdapterBridgeTest is BaseTest {
     function testFuzz_BridgeNative(uint64 amount) public {
         vm.assume(amount > 0.1 ether);
 
-        (, uint256 eqFee, , , uint256 protocolFee, ) = stargateFeeLibrary
-            .getFees(
-                13, // srcPoolId
-                13, // dstPoolId
-                111, // dstChainId
-                address(stargateAdapter), // from
-                amount // amountSD
-            );
+        (, uint256 eqFee,,, uint256 protocolFee,) = stargateFeeLibrary.getFees(
+            13, // srcPoolId
+            13, // dstPoolId
+            111, // dstChainId
+            address(stargateAdapter), // from
+            amount // amountSD
+        );
 
         uint256 amountMin = amount - eqFee - protocolFee;
 
         {
-            (uint256 gasNeeded, ) = stargateAdapter.getFee(
-                111,
-                1,
-                user,
-                0,
-                0,
-                ""
-            );
+            (uint256 gasNeeded,) = stargateAdapter.getFee(111, 1, user, 0, 0, "");
 
             uint256 balanceBefore = operator.balance;
 
@@ -388,20 +309,14 @@ contract StargateAdapterBridgeTest is BaseTest {
             vm.stopPrank();
 
             // check balances post call
-            assertEq(
-                address(sushiXswap).balance,
-                0,
-                "xswap eth balance should be 0"
-            );
+            assertEq(address(sushiXswap).balance, 0, "xswap eth balance should be 0");
             assertLe(
                 operator.balance,
                 balanceBefore - (gasNeeded + amountMin) - gas_used,
                 string(
                     abi.encodePacked(
                         "operator balance should be lte ",
-                        Strings.toString(
-                            balanceBefore - (gasNeeded + amountMin) - gas_used
-                        )
+                        Strings.toString(balanceBefore - (gasNeeded + amountMin) - gas_used)
                     )
                 )
             );
@@ -411,9 +326,7 @@ contract StargateAdapterBridgeTest is BaseTest {
                 string(
                     abi.encodePacked(
                         "operator balance should be gte ",
-                        Strings.toString(
-                            balanceBefore - (gasNeeded + amount) - gas_used
-                        )
+                        Strings.toString(balanceBefore - (gasNeeded + amount) - gas_used)
                     )
                 )
             );
@@ -421,7 +334,7 @@ contract StargateAdapterBridgeTest is BaseTest {
 
         Vm.Log[] memory entries = vm.getRecordedLogs();
         // first event from the stargate pool will be Swap
-        for (uint i = 0; i < entries.length; i++) {
+        for (uint256 i = 0; i < entries.length; i++) {
             // can get poolAddress from the stargate factory
             if (entries[i].emitter == stargateETHPoolAddress) {
                 (
@@ -433,41 +346,15 @@ contract StargateAdapterBridgeTest is BaseTest {
                     uint256 _eqFeeEvent,
                     uint256 _protocolFeeEvent,
                     uint256 _lpFee
-                ) = abi.decode(
-                        entries[i].data,
-                        (
-                            uint16,
-                            uint256,
-                            address,
-                            uint256,
-                            uint256,
-                            uint256,
-                            uint256,
-                            uint256
-                        )
-                    );
+                ) = abi.decode(entries[i].data, (uint16, uint256, address, uint256, uint256, uint256, uint256, uint256));
 
                 assertEq(chainId, 111, "Swap event chainId should be 111");
                 assertEq(dstPoolId, 13, "Swap event dstPoolId should be 13");
+                assertEq(from, address(stargateAdapter), "Swap event from should be stargateAdapter");
+                assertEq(amountSD, amountMin, "Swap event amountSD should be amount bridged");
+                assertEq(_eqFeeEvent, eqFee, "Swap event eqFee should be polled eqFee before bridge");
                 assertEq(
-                    from,
-                    address(stargateAdapter),
-                    "Swap event from should be stargateAdapter"
-                );
-                assertEq(
-                    amountSD,
-                    amountMin,
-                    "Swap event amountSD should be amount bridged"
-                );
-                assertEq(
-                    _eqFeeEvent,
-                    eqFee,
-                    "Swap event eqFee should be polled eqFee before bridge"
-                );
-                assertEq(
-                    _protocolFeeEvent,
-                    protocolFee,
-                    "Swap event protocolFee should be polled protocolFee before bridge"
+                    _protocolFeeEvent, protocolFee, "Swap event protocolFee should be polled protocolFee before bridge"
                 );
                 break;
             }
@@ -484,24 +371,17 @@ contract StargateAdapterBridgeTest is BaseTest {
 
         ERC20(address(usdc)).approve(address(sushiXswap), amount);
 
-        bytes memory computedRoute_dst = routeProcessorHelper.computeRoute(
-            false,
-            false,
-            address(usdc),
-            address(weth),
-            500,
-            user
-        );
+        bytes memory computedRoute_dst =
+            routeProcessorHelper.computeRoute(false, false, address(usdc), address(weth), 500, user);
 
-        IRouteProcessor.RouteProcessorData memory rpd_dst = IRouteProcessor
-            .RouteProcessorData({
-                tokenIn: address(usdc),
-                amountIn: 0, // amountIn doesn't matter on dst since we use amount bridged
-                tokenOut: address(weth),
-                amountOutMin: 0,
-                to: user,
-                route: computedRoute_dst
-            });
+        IRouteProcessor.RouteProcessorData memory rpd_dst = IRouteProcessor.RouteProcessorData({
+            tokenIn: address(usdc),
+            amountIn: 0, // amountIn doesn't matter on dst since we use amount bridged
+            tokenOut: address(weth),
+            amountOutMin: 0,
+            to: user,
+            route: computedRoute_dst
+        });
 
         bytes memory rpd_encoded_dst = abi.encode(rpd_dst);
 
@@ -513,7 +393,7 @@ contract StargateAdapterBridgeTest is BaseTest {
 
         uint256 gasForSwap = 250000;
 
-        (uint256 gasNeeded, ) = stargateAdapter.getFee(
+        (uint256 gasNeeded,) = stargateAdapter.getFee(
             111, // dstChainId
             1, // functionType
             address(stargateAdapter), // receiver
@@ -556,24 +436,17 @@ contract StargateAdapterBridgeTest is BaseTest {
 
         ERC20(address(usdc)).approve(address(sushiXswap), amount);
 
-        bytes memory computedRoute_dst = routeProcessorHelper.computeRoute(
-            false,
-            false,
-            address(usdc),
-            address(weth),
-            500,
-            user
-        );
+        bytes memory computedRoute_dst =
+            routeProcessorHelper.computeRoute(false, false, address(usdc), address(weth), 500, user);
 
-        IRouteProcessor.RouteProcessorData memory rpd_dst = IRouteProcessor
-            .RouteProcessorData({
-                tokenIn: address(usdc),
-                amountIn: 0, // amountIn doesn't matter on dst since we use amount bridged
-                tokenOut: address(weth),
-                amountOutMin: 0,
-                to: user,
-                route: computedRoute_dst
-            });
+        IRouteProcessor.RouteProcessorData memory rpd_dst = IRouteProcessor.RouteProcessorData({
+            tokenIn: address(usdc),
+            amountIn: 0, // amountIn doesn't matter on dst since we use amount bridged
+            tokenOut: address(weth),
+            amountOutMin: 0,
+            to: user,
+            route: computedRoute_dst
+        });
 
         bytes memory rpd_encoded_dst = abi.encode(rpd_dst);
 
@@ -585,7 +458,7 @@ contract StargateAdapterBridgeTest is BaseTest {
 
         uint256 insufficientGasForDst = 90000;
 
-        (uint256 gasNeeded, ) = stargateAdapter.getFee(
+        (uint256 gasNeeded,) = stargateAdapter.getFee(
             111, // dstChainId
             1, // functionType
             address(stargateAdapter), // receiver

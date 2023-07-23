@@ -32,13 +32,9 @@ contract CCTPAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
 
     error NoUSDCToBridge();
 
-    constructor(
-        address _axelarGateway,
-        address _gasService,
-        address _tokenMessenger,
-        address _rp,
-        address _nativeUSDC
-    ) AxelarExecutable(_axelarGateway) {
+    constructor(address _axelarGateway, address _gasService, address _tokenMessenger, address _rp, address _nativeUSDC)
+        AxelarExecutable(_axelarGateway)
+    {
         axelarGasService = IAxelarGasService(_gasService);
         tokenMessenger = ITokenMessenger(_tokenMessenger);
         rp = IRouteProcessor(_rp);
@@ -51,16 +47,12 @@ contract CCTPAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
         circleDestinationDomains["arbitrum"] = 3;
     }
 
-    function swap(
-        uint256 _amountBridged,
-        bytes calldata _swapData,
-        address _token,
-        bytes calldata _payloadData
-    ) external payable override {
-        IRouteProcessor.RouteProcessorData memory rpd = abi.decode(
-            _swapData,
-            (IRouteProcessor.RouteProcessorData)
-        );
+    function swap(uint256 _amountBridged, bytes calldata _swapData, address _token, bytes calldata _payloadData)
+        external
+        payable
+        override
+    {
+        IRouteProcessor.RouteProcessorData memory rpd = abi.decode(_swapData, (IRouteProcessor.RouteProcessorData));
         // increase token approval to RP
         IERC20(rpd.tokenIn).safeIncreaseAllowance(address(rp), _amountBridged);
 
@@ -76,63 +68,51 @@ contract CCTPAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
         // tokens should be sent via rp
         if (_payloadData.length > 0) {
             PayloadData memory pd = abi.decode(_payloadData, (PayloadData));
-            try
-                IPayloadExecutor(pd.target).onPayloadReceive(pd.targetData)
-            {} catch (bytes memory) {
+            try IPayloadExecutor(pd.target).onPayloadReceive(pd.targetData) {}
+            catch (bytes memory) {
                 revert();
             }
         }
     }
 
-    function executePayload(
-        uint256 _amountBridged,
-        bytes calldata _payloadData,
-        address _token
-    ) external payable override {
+    function executePayload(uint256 _amountBridged, bytes calldata _payloadData, address _token)
+        external
+        payable
+        override
+    {
         PayloadData memory pd = abi.decode(_payloadData, (PayloadData));
         nativeUSDC.safeTransfer(pd.target, _amountBridged);
         IPayloadExecutor(pd.target).onPayloadReceive(pd.targetData);
     }
 
-    function adapterBridge(
-        bytes calldata _adapterData,
-        bytes calldata _swapData,
-        bytes calldata _payloadData
-    ) external payable override {
-        CCTPBridgeParams memory params = abi.decode(
-            _adapterData,
-            (CCTPBridgeParams)
-        );
+    function adapterBridge(bytes calldata _adapterData, bytes calldata _swapData, bytes calldata _payloadData)
+        external
+        payable
+        override
+    {
+        CCTPBridgeParams memory params = abi.decode(_adapterData, (CCTPBridgeParams));
 
         if (nativeUSDC.balanceOf(address(this)) <= 0) revert NoUSDCToBridge();
 
-        if (params.amount == 0)
+        if (params.amount == 0) {
             params.amount = nativeUSDC.balanceOf(address(this));
+        }
 
         // burn params.amount of USDC tokens
         nativeUSDC.safeApprove(address(tokenMessenger), params.amount);
 
         tokenMessenger.depositForBurn(
             params.amount,
-            this.circleDestinationDomains(
-                Bytes32ToString.toTrimmedString(params.destinationChain)
-            ),
+            this.circleDestinationDomains(Bytes32ToString.toTrimmedString(params.destinationChain)),
             bytes32(uint256(uint160(params.destinationAddress))),
             address(nativeUSDC)
         );
 
         // build payload from _swapData and _payloadData
-        bytes memory payload = abi.encode(
-            params.to,
-            params.amount,
-            _swapData,
-            _payloadData
-        );
+        bytes memory payload = abi.encode(params.to, params.amount, _swapData, _payloadData);
 
         // pay native gas to gasService
-        axelarGasService.payNativeGasForContractCall{
-            value: address(this).balance
-        }(
+        axelarGasService.payNativeGasForContractCall{value: address(this).balance}(
             address(this),
             Bytes32ToString.toTrimmedString(params.destinationChain),
             AddressToString.toString(params.destinationAddress),
@@ -150,17 +130,12 @@ contract CCTPAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
 
     /// @notice Receiver function on dst chain
     /// @param payload payload data
-    function _execute(
-        string memory /*sourceChain*/,
-        string memory /*sourceAddress*/,
-        bytes calldata payload
-    ) internal override {
-        (
-            address to,
-            uint256 amount,
-            bytes memory _swapData,
-            bytes memory _payloadData
-        ) = abi.decode(payload, (address, uint256, bytes, bytes));
+    function _execute(string memory, /*sourceChain*/ string memory, /*sourceAddress*/ bytes calldata payload)
+        internal
+        override
+    {
+        (address to, uint256 amount, bytes memory _swapData, bytes memory _payloadData) =
+            abi.decode(payload, (address, uint256, bytes, bytes));
 
         uint256 reserveGas = 100000;
 
@@ -169,8 +144,9 @@ contract CCTPAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
 
             /// @dev transfer any native token
             // shouldn't actually have native in here but we return if it does come in
-            if (address(this).balance > 0)
+            if (address(this).balance > 0) {
                 to.call{value: (address(this).balance)}("");
+            }
 
             return;
         }
@@ -179,30 +155,23 @@ contract CCTPAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
         uint256 limit = gasleft() - reserveGas;
 
         if (_swapData.length > 0) {
-            try
-                ISushiXSwapV2Adapter(address(this)).swap{gas: limit}(
-                    amount,
-                    _swapData,
-                    address(nativeUSDC),
-                    _payloadData
-                )
-            {} catch (bytes memory) {}
+            try ISushiXSwapV2Adapter(address(this)).swap{gas: limit}(
+                amount, _swapData, address(nativeUSDC), _payloadData
+            ) {} catch (bytes memory) {}
         } else if (_payloadData.length > 0) {
-            try
-                ISushiXSwapV2Adapter(address(this)).executePayload{gas: limit}(
-                    amount,
-                    _payloadData,
-                    address(nativeUSDC)
-                )
-            {} catch (bytes memory) {}
+            try ISushiXSwapV2Adapter(address(this)).executePayload{gas: limit}(
+                amount, _payloadData, address(nativeUSDC)
+            ) {} catch (bytes memory) {}
         }
 
-        if (nativeUSDC.balanceOf(address(this)) > 0)
+        if (nativeUSDC.balanceOf(address(this)) > 0) {
             nativeUSDC.safeTransfer(to, amount);
+        }
 
         /// @dev transfer any native token received as dust to the to address
-        if (address(this).balance > 0)
+        if (address(this).balance > 0) {
             to.call{value: (address(this).balance)}("");
+        }
     }
 
     function sendMessage(bytes calldata _adapterData) external override {

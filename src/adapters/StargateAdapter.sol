@@ -20,8 +20,7 @@ contract StargateAdapter is ISushiXSwapV2Adapter, IStargateReceiver {
     IRouteProcessor public immutable rp;
     IWETH public immutable weth;
 
-    address constant NATIVE_ADDRESS =
-        0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
+    address constant NATIVE_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
 
     struct StargateTeleportParams {
         uint16 dstChainId; // stargate dst chain id
@@ -40,13 +39,7 @@ contract StargateAdapter is ISushiXSwapV2Adapter, IStargateReceiver {
     error NotStargateRouter();
     error RpSentNativeIn();
 
-    constructor(
-        address _stargateRouter,
-        address _stargateWidget,
-        address _sgeth,
-        address _rp,
-        address _weth
-    ) {
+    constructor(address _stargateRouter, address _stargateWidget, address _sgeth, address _rp, address _weth) {
         stargateRouter = IStargateRouter(_stargateRouter);
         stargateWidget = IStargateWidget(_stargateWidget);
         sgeth = _sgeth;
@@ -54,16 +47,12 @@ contract StargateAdapter is ISushiXSwapV2Adapter, IStargateReceiver {
         weth = IWETH(_weth);
     }
 
-    function swap(
-        uint256 _amountBridged,
-        bytes calldata _swapData,
-        address _token,
-        bytes calldata _payloadData
-    ) external payable override {
-        IRouteProcessor.RouteProcessorData memory rpd = abi.decode(
-            _swapData,
-            (IRouteProcessor.RouteProcessorData)
-        );
+    function swap(uint256 _amountBridged, bytes calldata _swapData, address _token, bytes calldata _payloadData)
+        external
+        payable
+        override
+    {
+        IRouteProcessor.RouteProcessorData memory rpd = abi.decode(_swapData, (IRouteProcessor.RouteProcessorData));
         if (_token == sgeth) {
             weth.deposit{value: _amountBridged}();
         }
@@ -82,19 +71,18 @@ contract StargateAdapter is ISushiXSwapV2Adapter, IStargateReceiver {
         // tokens should be sent via rp
         if (_payloadData.length > 0) {
             PayloadData memory pd = abi.decode(_payloadData, (PayloadData));
-            try
-                IPayloadExecutor(pd.target).onPayloadReceive(pd.targetData)
-            {} catch (bytes memory) {
+            try IPayloadExecutor(pd.target).onPayloadReceive(pd.targetData) {}
+            catch (bytes memory) {
                 revert();
             }
         }
     }
 
-    function executePayload(
-        uint256 _amountBridged,
-        bytes calldata _payloadData,
-        address _token
-    ) external payable override {
+    function executePayload(uint256 _amountBridged, bytes calldata _payloadData, address _token)
+        external
+        payable
+        override
+    {
         // send tokens to payload executor
         if (_token == sgeth) {
             weth.deposit{value: _amountBridged}();
@@ -126,23 +114,16 @@ contract StargateAdapter is ISushiXSwapV2Adapter, IStargateReceiver {
             _functionType,
             abi.encodePacked(_receiver),
             abi.encode(_payload),
-            IStargateRouter.lzTxObj(
-                _gas,
-                _dustAmount,
-                abi.encodePacked(_receiver)
-            )
+            IStargateRouter.lzTxObj(_gas, _dustAmount, abi.encodePacked(_receiver))
         );
     }
 
-    function adapterBridge(
-        bytes calldata _adapterData,
-        bytes calldata _swapData,
-        bytes calldata _payloadData
-    ) external payable override {
-        StargateTeleportParams memory params = abi.decode(
-            _adapterData,
-            (StargateTeleportParams)
-        );
+    function adapterBridge(bytes calldata _adapterData, bytes calldata _swapData, bytes calldata _payloadData)
+        external
+        payable
+        override
+    {
+        StargateTeleportParams memory params = abi.decode(_adapterData, (StargateTeleportParams));
 
         if (params.token == NATIVE_ADDRESS) {
             // RP should not send native in, since we won't know the exact amount to bridge
@@ -151,20 +132,19 @@ contract StargateAdapter is ISushiXSwapV2Adapter, IStargateReceiver {
             params.token = sgeth;
         } else if (params.token == address(weth)) {
             // this case is for when rp sends weth in
-            if (params.amount == 0)
+            if (params.amount == 0) {
                 params.amount = weth.balanceOf(address(this));
+            }
             weth.withdraw(params.amount);
             IStargateEthVault(sgeth).deposit{value: params.amount}();
             params.token = sgeth;
         }
 
-        if (params.amount == 0)
+        if (params.amount == 0) {
             params.amount = IERC20(params.token).balanceOf(address(this));
+        }
 
-        IERC20(params.token).safeApprove(
-            address(stargateRouter),
-            params.amount
-        );
+        IERC20(params.token).safeApprove(address(stargateRouter), params.amount);
 
         bytes memory payload = bytes("");
         if (_swapData.length > 0 || _payloadData.length > 0) {
@@ -180,11 +160,7 @@ contract StargateAdapter is ISushiXSwapV2Adapter, IStargateReceiver {
             payable(tx.origin), // refund address
             params.amount,
             params.amountMin,
-            IStargateRouter.lzTxObj(
-                params.gas,
-                params.dustAmount,
-                abi.encodePacked(params.receiver)
-            ),
+            IStargateRouter.lzTxObj(params.gas, params.dustAmount, abi.encodePacked(params.receiver)),
             abi.encodePacked(params.receiver),
             payload
         );
@@ -196,18 +172,12 @@ contract StargateAdapter is ISushiXSwapV2Adapter, IStargateReceiver {
     /// @param _token bridge token received
     /// @param amountLD amount received
     /// @param payload ABI-Encoded data received from src chain
-    function sgReceive(
-        uint16,
-        bytes memory,
-        uint256,
-        address _token,
-        uint256 amountLD,
-        bytes memory payload
-    ) external {
+    function sgReceive(uint16, bytes memory, uint256, address _token, uint256 amountLD, bytes memory payload)
+        external
+    {
         if (msg.sender != address(stargateRouter)) revert NotStargateRouter();
 
-        (address to, bytes memory _swapData, bytes memory _payloadData) = abi
-            .decode(payload, (address, bytes, bytes));
+        (address to, bytes memory _swapData, bytes memory _payloadData) = abi.decode(payload, (address, bytes, bytes));
 
         uint256 reserveGas = 100000;
 
@@ -217,8 +187,9 @@ contract StargateAdapter is ISushiXSwapV2Adapter, IStargateReceiver {
             }
 
             /// @dev transfer any native token received as dust to the to address
-            if (address(this).balance > 0)
+            if (address(this).balance > 0) {
                 to.call{value: (address(this).balance)}("");
+            }
 
             return;
         }
@@ -227,30 +198,21 @@ contract StargateAdapter is ISushiXSwapV2Adapter, IStargateReceiver {
         uint256 limit = gasleft() - reserveGas;
 
         if (_swapData.length > 0) {
-            try
-                ISushiXSwapV2Adapter(address(this)).swap{gas: limit}(
-                    amountLD,
-                    _swapData,
-                    _token,
-                    _payloadData
-                )
-            {} catch (bytes memory) {}
+            try ISushiXSwapV2Adapter(address(this)).swap{gas: limit}(amountLD, _swapData, _token, _payloadData) {}
+                catch (bytes memory) {}
         } else if (_payloadData.length > 0) {
-            try
-                ISushiXSwapV2Adapter(address(this)).executePayload{gas: limit}(
-                    amountLD,
-                    _payloadData,
-                    _token
-                )
-            {} catch (bytes memory) {}
+            try ISushiXSwapV2Adapter(address(this)).executePayload{gas: limit}(amountLD, _payloadData, _token) {}
+                catch (bytes memory) {}
         } else {}
 
-        if (IERC20(_token).balanceOf(address(this)) > 0 && _token != sgeth)
+        if (IERC20(_token).balanceOf(address(this)) > 0 && _token != sgeth) {
             IERC20(_token).safeTransfer(to, amountLD);
+        }
 
         /// @dev transfer any native token received as dust to the to address
-        if (address(this).balance > 0)
+        if (address(this).balance > 0) {
             to.call{value: (address(this).balance)}("");
+        }
     }
 
     function sendMessage(bytes calldata _adapterData) external {

@@ -23,8 +23,7 @@ contract SquidBridgeTest is BaseTest {
     ERC20 public sushi;
     ERC20 public usdc;
 
-    address constant NATIVE_ADDRESS =
-        0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
+    address constant NATIVE_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
     address public operator = address(0xbeef);
     address public owner = address(0x420);
     address public user = address(0x4201);
@@ -37,9 +36,7 @@ contract SquidBridgeTest is BaseTest {
         sushi = ERC20(constants.getAddress("mainnet.sushi"));
         usdc = ERC20(constants.getAddress("mainnet.usdc"));
 
-        routeProcessor = IRouteProcessor(
-            constants.getAddress("mainnet.routeProcessor")
-        );
+        routeProcessor = IRouteProcessor(constants.getAddress("mainnet.routeProcessor"));
 
         vm.startPrank(owner);
         sushiXswap = new SushiXSwapV2(routeProcessor, address(weth));

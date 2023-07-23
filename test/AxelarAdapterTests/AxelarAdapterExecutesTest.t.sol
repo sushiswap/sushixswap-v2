@@ -16,12 +16,9 @@ import {StringToBytes32, Bytes32ToString} from "../../src/utils/Bytes32String.so
 import {StringToAddress, AddressToString} from "../../src/utils/AddressString.sol";
 
 contract AxelarAdapterHarness is AxelarAdapter {
-    constructor(
-        address _axelarGateway,
-        address _gasService,
-        address _rp,
-        address _weth
-    ) AxelarAdapter(_axelarGateway, _gasService, _rp, _weth) {}
+    constructor(address _axelarGateway, address _gasService, address _rp, address _weth)
+        AxelarAdapter(_axelarGateway, _gasService, _rp, _weth)
+    {}
 
     function exposed_executeWithToken(
         string memory sourceChain,
@@ -30,13 +27,7 @@ contract AxelarAdapterHarness is AxelarAdapter {
         string memory tokenSymbol,
         uint256 amount
     ) external {
-        _executeWithToken(
-            sourceChain,
-            sourceAddress,
-            payload,
-            tokenSymbol,
-            amount
-        );
+        _executeWithToken(sourceChain, sourceAddress, payload, tokenSymbol, amount);
     }
 }
 
@@ -52,8 +43,7 @@ contract AxelarAdapterExecutesTest is BaseTest {
     ERC20 public sushi;
     ERC20 public usdc;
 
-    address constant NATIVE_ADDRESS =
-        0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
+    address constant NATIVE_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
     address public operator = address(0xbeef);
     address public owner = address(0x420);
     address public user = address(0x4201);
@@ -66,9 +56,7 @@ contract AxelarAdapterExecutesTest is BaseTest {
         sushi = ERC20(constants.getAddress("mainnet.sushi"));
         usdc = ERC20(constants.getAddress("mainnet.usdc"));
 
-        routeProcessor = IRouteProcessor(
-            constants.getAddress("mainnet.routeProcessor")
-        );
+        routeProcessor = IRouteProcessor(constants.getAddress("mainnet.routeProcessor"));
 
         routeProcessorHelper = new RouteProcessorHelper(
             constants.getAddress("mainnet.v2Factory"),
@@ -110,24 +98,17 @@ contract AxelarAdapterExecutesTest is BaseTest {
         deal(address(usdc), address(axelarAdapterHarness), amount); // axelar adapter receives USDC
 
         // receive 1 USDC and swap to weth
-        bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false,
-            false,
-            address(usdc),
-            address(weth),
-            500,
-            user
-        );
+        bytes memory computedRoute =
+            routeProcessorHelper.computeRoute(false, false, address(usdc), address(weth), 500, user);
 
-        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor
-            .RouteProcessorData({
-                tokenIn: address(usdc),
-                amountIn: amount,
-                tokenOut: address(weth),
-                amountOutMin: 0,
-                to: user,
-                route: computedRoute
-            });
+        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor.RouteProcessorData({
+            tokenIn: address(usdc),
+            amountIn: amount,
+            tokenOut: address(weth),
+            amountOutMin: 0,
+            to: user,
+            route: computedRoute
+        });
 
         bytes memory rpd_encoded = abi.encode(rpd);
 
@@ -138,24 +119,12 @@ contract AxelarAdapterExecutesTest is BaseTest {
         );
 
         axelarAdapterHarness.exposed_executeWithToken(
-            "arbitrum",
-            AddressToString.toString(address(axelarAdapter)),
-            mockPayload,
-            "USDC",
-            amount
+            "arbitrum", AddressToString.toString(address(axelarAdapter)), mockPayload, "USDC", amount
         );
 
-        assertEq(
-            usdc.balanceOf(address(axelarAdapterHarness)),
-            0,
-            "axelarAdapter should have 0 usdc"
-        );
+        assertEq(usdc.balanceOf(address(axelarAdapterHarness)), 0, "axelarAdapter should have 0 usdc");
         assertEq(usdc.balanceOf(user), 0, "user should have 0 usdc");
-        assertEq(
-            weth.balanceOf(address(axelarAdapterHarness)),
-            0,
-            "axelarAdapter should have 0 weth"
-        );
+        assertEq(weth.balanceOf(address(axelarAdapterHarness)), 0, "axelarAdapter should have 0 weth");
         assertGt(weth.balanceOf(user), 0, "user should have > 0 weth");
     }
 
@@ -167,24 +136,17 @@ contract AxelarAdapterExecutesTest is BaseTest {
         vm.deal(address(axelarAdapterHarness), nativeAmount);
 
         // receive 1 USDC and swap to weth
-        bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false,
-            false,
-            address(usdc),
-            address(weth),
-            500,
-            user
-        );
+        bytes memory computedRoute =
+            routeProcessorHelper.computeRoute(false, false, address(usdc), address(weth), 500, user);
 
-        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor
-            .RouteProcessorData({
-                tokenIn: address(usdc),
-                amountIn: amount,
-                tokenOut: address(weth),
-                amountOutMin: 0,
-                to: user,
-                route: computedRoute
-            });
+        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor.RouteProcessorData({
+            tokenIn: address(usdc),
+            amountIn: amount,
+            tokenOut: address(weth),
+            amountOutMin: 0,
+            to: user,
+            route: computedRoute
+        });
 
         bytes memory rpd_encoded = abi.encode(rpd);
 
@@ -195,30 +157,14 @@ contract AxelarAdapterExecutesTest is BaseTest {
         );
 
         axelarAdapterHarness.exposed_executeWithToken(
-            "arbitrum",
-            AddressToString.toString(address(axelarAdapter)),
-            mockPayload,
-            "USDC",
-            amount
+            "arbitrum", AddressToString.toString(address(axelarAdapter)), mockPayload, "USDC", amount
         );
 
-        assertEq(
-            usdc.balanceOf(address(axelarAdapterHarness)),
-            0,
-            "axelarAdapter should have 0 usdc"
-        );
+        assertEq(usdc.balanceOf(address(axelarAdapterHarness)), 0, "axelarAdapter should have 0 usdc");
         assertEq(usdc.balanceOf(user), 0, "user should have 0 usdc");
-        assertEq(
-            weth.balanceOf(address(axelarAdapterHarness)),
-            0,
-            "axelarAdapter should have 0 weth"
-        );
+        assertEq(weth.balanceOf(address(axelarAdapterHarness)), 0, "axelarAdapter should have 0 weth");
         assertGt(weth.balanceOf(user), 0, "user should have > 0 weth");
-        assertEq(
-            address(axelarAdapterHarness).balance,
-            0,
-            "adapter should have 0 eth"
-        );
+        assertEq(address(axelarAdapterHarness).balance, 0, "adapter should have 0 eth");
         assertEq(user.balance, nativeAmount, "user should have all dust eth");
     }
 
@@ -228,24 +174,17 @@ contract AxelarAdapterExecutesTest is BaseTest {
         deal(address(usdc), address(axelarAdapterHarness), amount); // axelar adapter receives USDC
 
         // receive 1 USDC and swap to weth
-        bytes memory computedRoute = routeProcessorHelper.computeRouteNativeOut(
-            false,
-            false,
-            address(usdc),
-            address(weth),
-            500,
-            user
-        );
+        bytes memory computedRoute =
+            routeProcessorHelper.computeRouteNativeOut(false, false, address(usdc), address(weth), 500, user);
 
-        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor
-            .RouteProcessorData({
-                tokenIn: address(usdc),
-                amountIn: amount,
-                tokenOut: NATIVE_ADDRESS,
-                amountOutMin: 0,
-                to: user,
-                route: computedRoute
-            });
+        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor.RouteProcessorData({
+            tokenIn: address(usdc),
+            amountIn: amount,
+            tokenOut: NATIVE_ADDRESS,
+            amountOutMin: 0,
+            to: user,
+            route: computedRoute
+        });
 
         bytes memory rpd_encoded = abi.encode(rpd);
 
@@ -256,23 +195,11 @@ contract AxelarAdapterExecutesTest is BaseTest {
         );
 
         axelarAdapterHarness.exposed_executeWithToken(
-            "arbitrum",
-            AddressToString.toString(address(axelarAdapter)),
-            mockPayload,
-            "USDC",
-            amount
+            "arbitrum", AddressToString.toString(address(axelarAdapter)), mockPayload, "USDC", amount
         );
-        assertEq(
-            usdc.balanceOf(address(axelarAdapterHarness)),
-            0,
-            "axelarAdapter should have 0 usdc"
-        );
+        assertEq(usdc.balanceOf(address(axelarAdapterHarness)), 0, "axelarAdapter should have 0 usdc");
         assertEq(usdc.balanceOf(user), 0, "user should have 0 usdc");
-        assertEq(
-            address(axelarAdapterHarness).balance,
-            0,
-            "axelarAdapter should have 0 eth"
-        );
+        assertEq(address(axelarAdapterHarness).balance, 0, "axelarAdapter should have 0 eth");
         assertGt(user.balance, 0, "user should have > 0 eth");
     }
 
@@ -282,24 +209,17 @@ contract AxelarAdapterExecutesTest is BaseTest {
         deal(address(usdc), address(axelarAdapterHarness), amount); // axelar adapter receives USDC
 
         // receive 1 USDC and swap to weth
-        bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false,
-            false,
-            address(usdc),
-            address(weth),
-            500,
-            user
-        );
+        bytes memory computedRoute =
+            routeProcessorHelper.computeRoute(false, false, address(usdc), address(weth), 500, user);
 
-        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor
-            .RouteProcessorData({
-                tokenIn: address(usdc),
-                amountIn: amount,
-                tokenOut: address(weth),
-                amountOutMin: 0,
-                to: user,
-                route: computedRoute
-            });
+        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor.RouteProcessorData({
+            tokenIn: address(usdc),
+            amountIn: amount,
+            tokenOut: address(weth),
+            amountOutMin: 0,
+            to: user,
+            route: computedRoute
+        });
 
         bytes memory rpd_encoded = abi.encode(rpd);
 
@@ -310,53 +230,33 @@ contract AxelarAdapterExecutesTest is BaseTest {
         );
 
         axelarAdapterHarness.exposed_executeWithToken{gas: 90000}(
-            "arbitrum",
-            AddressToString.toString(address(axelarAdapter)),
-            mockPayload,
-            "USDC",
-            amount
+            "arbitrum", AddressToString.toString(address(axelarAdapter)), mockPayload, "USDC", amount
         );
 
-        assertEq(
-            usdc.balanceOf(address(axelarAdapterHarness)),
-            0,
-            "axelarAdapter should have 0 usdc"
-        );
+        assertEq(usdc.balanceOf(address(axelarAdapterHarness)), 0, "axelarAdapter should have 0 usdc");
         assertEq(usdc.balanceOf(user), amount, "user should have all usdc");
-        assertEq(
-            weth.balanceOf(address(axelarAdapterHarness)),
-            0,
-            "axelarAdapter should have 0 weth"
-        );
+        assertEq(weth.balanceOf(address(axelarAdapterHarness)), 0, "axelarAdapter should have 0 weth");
         assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
     }
 
     function test_ReceiveERC20AndNativeNotEnoughGasForSwap() public {
         uint32 amount = 1000000; // 1 USDC
         uint64 nativeAmount = 0.001 ether; //
-
         deal(address(usdc), address(axelarAdapterHarness), amount); // axelar adapter receives USDC
         vm.deal(address(axelarAdapterHarness), nativeAmount);
 
         // receive 1 USDC and swap to weth
-        bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false,
-            false,
-            address(usdc),
-            address(weth),
-            500,
-            user
-        );
+        bytes memory computedRoute =
+            routeProcessorHelper.computeRoute(false, false, address(usdc), address(weth), 500, user);
 
-        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor
-            .RouteProcessorData({
-                tokenIn: address(usdc),
-                amountIn: amount,
-                tokenOut: address(weth),
-                amountOutMin: 0,
-                to: user,
-                route: computedRoute
-            });
+        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor.RouteProcessorData({
+            tokenIn: address(usdc),
+            amountIn: amount,
+            tokenOut: address(weth),
+            amountOutMin: 0,
+            to: user,
+            route: computedRoute
+        });
 
         bytes memory rpd_encoded = abi.encode(rpd);
 
@@ -367,30 +267,14 @@ contract AxelarAdapterExecutesTest is BaseTest {
         );
 
         axelarAdapterHarness.exposed_executeWithToken{gas: 90000}(
-            "arbitrum",
-            AddressToString.toString(address(axelarAdapter)),
-            mockPayload,
-            "USDC",
-            amount
+            "arbitrum", AddressToString.toString(address(axelarAdapter)), mockPayload, "USDC", amount
         );
 
-        assertEq(
-            usdc.balanceOf(address(axelarAdapterHarness)),
-            0,
-            "axelarAdapter should have 0 usdc"
-        );
+        assertEq(usdc.balanceOf(address(axelarAdapterHarness)), 0, "axelarAdapter should have 0 usdc");
         assertEq(usdc.balanceOf(user), amount, "user should have all usdc");
-        assertEq(
-            weth.balanceOf(address(axelarAdapterHarness)),
-            0,
-            "axelarAdapter should have 0 weth"
-        );
+        assertEq(weth.balanceOf(address(axelarAdapterHarness)), 0, "axelarAdapter should have 0 weth");
         assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
-        assertEq(
-            address(axelarAdapterHarness).balance,
-            0,
-            "adapter should have 0 eth"
-        );
+        assertEq(address(axelarAdapterHarness).balance, 0, "adapter should have 0 eth");
         assertEq(user.balance, nativeAmount, "user should have all dust eth");
     }
 
@@ -406,24 +290,12 @@ contract AxelarAdapterExecutesTest is BaseTest {
         );
 
         axelarAdapterHarness.exposed_executeWithToken(
-            "arbitrum",
-            AddressToString.toString(address(axelarAdapter)),
-            mockPayload,
-            "USDC",
-            amount
+            "arbitrum", AddressToString.toString(address(axelarAdapter)), mockPayload, "USDC", amount
         );
 
-        assertEq(
-            usdc.balanceOf(address(axelarAdapterHarness)),
-            0,
-            "axelarAdapter should have 0 usdc"
-        );
+        assertEq(usdc.balanceOf(address(axelarAdapterHarness)), 0, "axelarAdapter should have 0 usdc");
         assertEq(usdc.balanceOf(user), amount, "user should have all usdc");
-        assertEq(
-            weth.balanceOf(address(axelarAdapterHarness)),
-            0,
-            "axelarAdapter should have 0 weth"
-        );
+        assertEq(weth.balanceOf(address(axelarAdapterHarness)), 0, "axelarAdapter should have 0 weth");
         assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
     }
 
@@ -433,25 +305,18 @@ contract AxelarAdapterExecutesTest is BaseTest {
         deal(address(usdc), address(axelarAdapterHarness), amount); // axelar adapter receives USDC
 
         // receive 1 USDC and swap to weth
-        bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false,
-            false,
-            address(usdc),
-            address(weth),
-            500,
-            user
-        );
+        bytes memory computedRoute =
+            routeProcessorHelper.computeRoute(false, false, address(usdc), address(weth), 500, user);
 
         // switched tokenIn to weth, and tokenOut to usdc - should fail now on swap
-        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor
-            .RouteProcessorData({
-                tokenIn: address(weth),
-                amountIn: amount,
-                tokenOut: address(usdc),
-                amountOutMin: 0,
-                to: user,
-                route: computedRoute
-            });
+        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor.RouteProcessorData({
+            tokenIn: address(weth),
+            amountIn: amount,
+            tokenOut: address(usdc),
+            amountOutMin: 0,
+            to: user,
+            route: computedRoute
+        });
 
         bytes memory rpd_encoded = abi.encode(rpd);
 
@@ -462,24 +327,12 @@ contract AxelarAdapterExecutesTest is BaseTest {
         );
 
         axelarAdapterHarness.exposed_executeWithToken(
-            "arbitrum",
-            AddressToString.toString(address(axelarAdapter)),
-            mockPayload,
-            "USDC",
-            amount
+            "arbitrum", AddressToString.toString(address(axelarAdapter)), mockPayload, "USDC", amount
         );
 
-        assertEq(
-            usdc.balanceOf(address(axelarAdapterHarness)),
-            0,
-            "axelarAdapter should have 0 usdc"
-        );
+        assertEq(usdc.balanceOf(address(axelarAdapterHarness)), 0, "axelarAdapter should have 0 usdc");
         assertEq(usdc.balanceOf(user), amount, "user should have all usdc");
-        assertEq(
-            weth.balanceOf(address(axelarAdapterHarness)),
-            0,
-            "axelarAdapter should have 0 weth"
-        );
+        assertEq(weth.balanceOf(address(axelarAdapterHarness)), 0, "axelarAdapter should have 0 weth");
         assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
     }
 
@@ -489,24 +342,17 @@ contract AxelarAdapterExecutesTest is BaseTest {
         deal(address(usdc), address(axelarAdapterHarness), amount); // axelar adapter receives USDC
 
         // receive 1 USDC and swap to weth
-        bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false,
-            false,
-            address(usdc),
-            address(weth),
-            500,
-            user
-        );
+        bytes memory computedRoute =
+            routeProcessorHelper.computeRoute(false, false, address(usdc), address(weth), 500, user);
 
-        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor
-            .RouteProcessorData({
-                tokenIn: address(usdc),
-                amountIn: amount,
-                tokenOut: address(weth),
-                amountOutMin: 0,
-                to: user,
-                route: computedRoute
-            });
+        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor.RouteProcessorData({
+            tokenIn: address(usdc),
+            amountIn: amount,
+            tokenOut: address(weth),
+            amountOutMin: 0,
+            to: user,
+            route: computedRoute
+        });
 
         bytes memory rpd_encoded = abi.encode(rpd);
 
@@ -517,24 +363,12 @@ contract AxelarAdapterExecutesTest is BaseTest {
         );
 
         axelarAdapterHarness.exposed_executeWithToken{gas: 120000}(
-            "arbitrum",
-            AddressToString.toString(address(axelarAdapter)),
-            mockPayload,
-            "USDC",
-            amount
+            "arbitrum", AddressToString.toString(address(axelarAdapter)), mockPayload, "USDC", amount
         );
 
-        assertEq(
-            usdc.balanceOf(address(axelarAdapterHarness)),
-            0,
-            "axelarAdapter should have 0 usdc"
-        );
+        assertEq(usdc.balanceOf(address(axelarAdapterHarness)), 0, "axelarAdapter should have 0 usdc");
         assertEq(usdc.balanceOf(user), amount, "user should have all usdc");
-        assertEq(
-            weth.balanceOf(address(axelarAdapterHarness)),
-            0,
-            "axelarAdapter should have 0 weth"
-        );
+        assertEq(weth.balanceOf(address(axelarAdapterHarness)), 0, "axelarAdapter should have 0 weth");
         assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
     }
 
@@ -544,25 +378,18 @@ contract AxelarAdapterExecutesTest is BaseTest {
         deal(address(usdc), address(axelarAdapterHarness), amount); // axelar adapter receives USDC
 
         // receive 1 USDC and swap to weth
-        bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false,
-            false,
-            address(usdc),
-            address(weth),
-            500,
-            user
-        );
+        bytes memory computedRoute =
+            routeProcessorHelper.computeRoute(false, false, address(usdc), address(weth), 500, user);
 
         // attempt to swap usdc to weth with max amountOutMin
-        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor
-            .RouteProcessorData({
-                tokenIn: address(usdc),
-                amountIn: amount,
-                tokenOut: address(weth),
-                amountOutMin: type(uint256).max,
-                to: user,
-                route: computedRoute
-            });
+        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor.RouteProcessorData({
+            tokenIn: address(usdc),
+            amountIn: amount,
+            tokenOut: address(weth),
+            amountOutMin: type(uint256).max,
+            to: user,
+            route: computedRoute
+        });
 
         bytes memory rpd_encoded = abi.encode(rpd);
 
@@ -573,44 +400,24 @@ contract AxelarAdapterExecutesTest is BaseTest {
         );
 
         axelarAdapterHarness.exposed_executeWithToken(
-            "arbitrum",
-            AddressToString.toString(address(axelarAdapter)),
-            mockPayload,
-            "USDC",
-            amount
+            "arbitrum", AddressToString.toString(address(axelarAdapter)), mockPayload, "USDC", amount
         );
 
-        assertEq(
-            usdc.balanceOf(address(axelarAdapterHarness)),
-            0,
-            "axelarAdapter should have 0 usdc"
-        );
+        assertEq(usdc.balanceOf(address(axelarAdapterHarness)), 0, "axelarAdapter should have 0 usdc");
         assertEq(usdc.balanceOf(user), amount, "user should have all usdc");
-        assertEq(
-            weth.balanceOf(address(axelarAdapterHarness)),
-            0,
-            "axelarAdapter should have 0 weth"
-        );
+        assertEq(weth.balanceOf(address(axelarAdapterHarness)), 0, "axelarAdapter should have 0 weth");
         assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
     }
 
-    function test_ReceiveERC20SwapToERC20AirdropERC20FromPayload()
-        public
-    {
+    function test_ReceiveERC20SwapToERC20AirdropERC20FromPayload() public {
         uint32 amount = 1000001;
         vm.assume(amount > 1000000); // > 1 usdc
 
         deal(address(usdc), address(axelarAdapterHarness), amount); // amount adapter receives
 
         // receive 1 usdc and swap to weth
-        bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false,
-            false,
-            address(usdc),
-            address(weth),
-            500,
-            address(airdropExecutor)
-        );
+        bytes memory computedRoute =
+            routeProcessorHelper.computeRoute(false, false, address(usdc), address(weth), 500, address(airdropExecutor));
 
         // airdrop all the weth to two addresses
         address user1 = address(0x4203);
@@ -639,11 +446,8 @@ contract AxelarAdapterExecutesTest is BaseTest {
                         target: address(airdropExecutor),
                         gasLimit: 200000,
                         targetData: abi.encode(
-                            AirdropPayloadExecutor.AirdropPayloadParams({
-                                token: address(weth),
-                                recipients: recipients
-                            })
-                        )
+                            AirdropPayloadExecutor.AirdropPayloadParams({token: address(weth), recipients: recipients})
+                            )
                     })
                 ) // payloadData
             ),
@@ -651,47 +455,23 @@ contract AxelarAdapterExecutesTest is BaseTest {
             amount
         );
 
-        assertEq(
-            usdc.balanceOf(address(axelarAdapterHarness)),
-            0,
-            "axelarAdapter should have 0 usdc"
-        );
+        assertEq(usdc.balanceOf(address(axelarAdapterHarness)), 0, "axelarAdapter should have 0 usdc");
         assertEq(usdc.balanceOf(user), 0, "user should have 0 usdc");
-        assertEq(
-            weth.balanceOf(address(axelarAdapterHarness)),
-            0,
-            "axelarAdapter should have 0 weth"
-        );
+        assertEq(weth.balanceOf(address(axelarAdapterHarness)), 0, "axelarAdapter should have 0 weth");
         assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
-        assertGt(
-            weth.balanceOf(user1),
-            0,
-            "user1 should have > 0 weth from airdrop"
-        );
-        assertGt(
-            weth.balanceOf(user2),
-            0,
-            "user2 should have > 0 weth from airdrop"
-        );
+        assertGt(weth.balanceOf(user1), 0, "user1 should have > 0 weth from airdrop");
+        assertGt(weth.balanceOf(user2), 0, "user2 should have > 0 weth from airdrop");
     }
 
-    function test_ReceiveERC20SwapToERC20FailedAirdropFromPayload()
-        public
-    {
+    function test_ReceiveERC20SwapToERC20FailedAirdropFromPayload() public {
         uint32 amount = 1000001;
         vm.assume(amount > 1000000); // > 1 usdc
 
         deal(address(usdc), address(axelarAdapterHarness), amount); // amount adapter receives
 
         // receive 1 usdc and swap to weth
-        bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false,
-            false,
-            address(usdc),
-            address(weth),
-            500,
-            address(airdropExecutor)
-        );
+        bytes memory computedRoute =
+            routeProcessorHelper.computeRoute(false, false, address(usdc), address(weth), 500, address(airdropExecutor));
 
         // airdrop all the weth to two addresses
         address user1 = address(0x4203);
@@ -724,7 +504,7 @@ contract AxelarAdapterExecutesTest is BaseTest {
                                 token: address(user), // using user for token to airdrop so it fails
                                 recipients: recipients
                             })
-                        )
+                            )
                     })
                 ) // payloadData
             ),
@@ -732,28 +512,12 @@ contract AxelarAdapterExecutesTest is BaseTest {
             amount
         );
 
-        assertEq(
-            usdc.balanceOf(address(axelarAdapterHarness)),
-            0,
-            "axelarAdapter should have 0 usdc"
-        );
+        assertEq(usdc.balanceOf(address(axelarAdapterHarness)), 0, "axelarAdapter should have 0 usdc");
         assertEq(usdc.balanceOf(user), amount, "user should all usdc");
-        assertEq(
-            weth.balanceOf(address(axelarAdapterHarness)),
-            0,
-            "axelarAdapter should have 0 weth"
-        );
+        assertEq(weth.balanceOf(address(axelarAdapterHarness)), 0, "axelarAdapter should have 0 weth");
         assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
-        assertEq(
-            usdc.balanceOf(user1),
-            0,
-            "user1 should have 0 usdc from airdrop"
-        );
-        assertEq(
-            usdc.balanceOf(user2),
-            0,
-            "user2 should have 0 usdc from airdrop"
-        );
+        assertEq(usdc.balanceOf(user1), 0, "user1 should have 0 usdc from airdrop");
+        assertEq(usdc.balanceOf(user2), 0, "user2 should have 0 usdc from airdrop");
     }
 
     function test_ReceiveERC20AirdropFromPayload() public {
@@ -780,11 +544,8 @@ contract AxelarAdapterExecutesTest is BaseTest {
                         target: address(airdropExecutor),
                         gasLimit: 200000,
                         targetData: abi.encode(
-                            AirdropPayloadExecutor.AirdropPayloadParams({
-                                token: address(usdc),
-                                recipients: recipients
-                            })
-                        )
+                            AirdropPayloadExecutor.AirdropPayloadParams({token: address(usdc), recipients: recipients})
+                            )
                     })
                 ) // payloadData
             ),
@@ -792,22 +553,10 @@ contract AxelarAdapterExecutesTest is BaseTest {
             amount
         );
 
-        assertEq(
-            usdc.balanceOf(address(axelarAdapterHarness)),
-            0,
-            "axelarAdapter should have 0 usdc"
-        );
+        assertEq(usdc.balanceOf(address(axelarAdapterHarness)), 0, "axelarAdapter should have 0 usdc");
         assertEq(usdc.balanceOf(user), 0, "user should have 0 usdc");
-        assertGt(
-            usdc.balanceOf(user1),
-            0,
-            "user1 should have > 0 usdc from airdrop"
-        );
-        assertGt(
-            usdc.balanceOf(user2),
-            0,
-            "user2 should have > 0 usdc from airdrop"
-        );
+        assertGt(usdc.balanceOf(user1), 0, "user1 should have > 0 usdc from airdrop");
+        assertGt(usdc.balanceOf(user2), 0, "user2 should have > 0 usdc from airdrop");
     }
 
     function test_ReceiveERC20FailedAirdropFromPayload() public {
@@ -838,7 +587,7 @@ contract AxelarAdapterExecutesTest is BaseTest {
                                 token: address(weth), // using weth for token to airdrop so it fails
                                 recipients: recipients
                             })
-                        )
+                            )
                     })
                 ) // payloadData
             ),
@@ -846,22 +595,10 @@ contract AxelarAdapterExecutesTest is BaseTest {
             amount
         );
 
-        assertEq(
-            usdc.balanceOf(address(axelarAdapterHarness)),
-            0,
-            "axelarAdapter should have 0 usdc"
-        );
+        assertEq(usdc.balanceOf(address(axelarAdapterHarness)), 0, "axelarAdapter should have 0 usdc");
         assertEq(usdc.balanceOf(user), amount, "user should all usdc");
-        assertEq(
-            usdc.balanceOf(user1),
-            0,
-            "user1 should have 0 usdc from airdrop"
-        );
-        assertEq(
-            usdc.balanceOf(user2),
-            0,
-            "user2 should have 0 usdc from airdrop"
-        );
+        assertEq(usdc.balanceOf(user1), 0, "user1 should have 0 usdc from airdrop");
+        assertEq(usdc.balanceOf(user2), 0, "user2 should have 0 usdc from airdrop");
     }
 
     function test_ReceiveERC20FailedAirdropPayloadFromOutOfGas() public {
@@ -888,11 +625,8 @@ contract AxelarAdapterExecutesTest is BaseTest {
                         target: address(airdropExecutor),
                         gasLimit: 200000,
                         targetData: abi.encode(
-                            AirdropPayloadExecutor.AirdropPayloadParams({
-                                token: address(usdc),
-                                recipients: recipients
-                            })
-                        )
+                            AirdropPayloadExecutor.AirdropPayloadParams({token: address(usdc), recipients: recipients})
+                            )
                     })
                 ) // payloadData
             ),
@@ -900,21 +634,9 @@ contract AxelarAdapterExecutesTest is BaseTest {
             amount
         );
 
-        assertEq(
-            usdc.balanceOf(address(axelarAdapterHarness)),
-            0,
-            "axelarAdapter should have 0 usdc"
-        );
+        assertEq(usdc.balanceOf(address(axelarAdapterHarness)), 0, "axelarAdapter should have 0 usdc");
         assertEq(usdc.balanceOf(user), amount, "user should all usdc");
-        assertEq(
-            usdc.balanceOf(user1),
-            0,
-            "user1 should have 0 usdc from airdrop"
-        );
-        assertEq(
-            usdc.balanceOf(user2),
-            0,
-            "user2 should have 0 usdc from airdrop"
-        );
+        assertEq(usdc.balanceOf(user1), 0, "user1 should have 0 usdc from airdrop");
+        assertEq(usdc.balanceOf(user2), 0, "user2 should have 0 usdc from airdrop");
     }
 }

@@ -22,10 +22,7 @@ contract AirdropPayloadExecutor is IPayloadExecutor {
     constructor() {}
 
     function onPayloadReceive(bytes memory _data) external override {
-        AirdropPayloadParams memory params = abi.decode(
-            _data,
-            (AirdropPayloadParams)
-        );
+        AirdropPayloadParams memory params = abi.decode(_data, (AirdropPayloadParams));
 
         uint256 amount = IERC20(params.token).balanceOf(address(this));
 

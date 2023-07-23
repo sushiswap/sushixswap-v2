@@ -18,24 +18,15 @@ interface ISushiXSwapV2Adapter {
         bytes targetData;
     }
 
-    function swap(
-        uint256 _amountBridged,
-        bytes calldata _swapData,
-        address _token,
-        bytes calldata _payloadData
-    ) external payable;
+    function swap(uint256 _amountBridged, bytes calldata _swapData, address _token, bytes calldata _payloadData)
+        external
+        payable;
 
-    function executePayload(
-        uint256 _amountBridged,
-        bytes calldata _payloadData,
-        address _token
-    ) external payable;
+    function executePayload(uint256 _amountBridged, bytes calldata _payloadData, address _token) external payable;
 
-    function adapterBridge(
-        bytes calldata _adapterData,
-        bytes calldata _swapDataPayload,
-        bytes calldata _payloadData
-    ) external payable;
+    function adapterBridge(bytes calldata _adapterData, bytes calldata _swapDataPayload, bytes calldata _payloadData)
+        external
+        payable;
 
     function sendMessage(bytes calldata _adapterData) external;
 }

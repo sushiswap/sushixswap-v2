@@ -22,8 +22,7 @@ contract StargateAdapterSwapAndBridgeTest is BaseTest {
     ERC20 public sushi;
     ERC20 public usdc;
 
-    address constant NATIVE_ADDRESS =
-        0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
+    address constant NATIVE_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
     address public operator = address(0xbeef);
     address public owner = address(0x420);
     address public user = address(0x4201);
@@ -41,9 +40,7 @@ contract StargateAdapterSwapAndBridgeTest is BaseTest {
         deal(address(usdc), address(operator), 1 ether);
         deal(address(sushi), address(operator), 1000 ether);
 
-        routeProcessor = IRouteProcessor(
-            constants.getAddress("mainnet.routeProcessor")
-        );
+        routeProcessor = IRouteProcessor(constants.getAddress("mainnet.routeProcessor"));
         routeProcessorHelper = new RouteProcessorHelper(
             constants.getAddress("mainnet.v2Factory"),
             constants.getAddress("mainnet.v3Factory"),
@@ -75,7 +72,7 @@ contract StargateAdapterSwapAndBridgeTest is BaseTest {
         vm.startPrank(operator);
         ERC20(address(weth)).approve(address(sushiXswap), 1 ether);
 
-        (uint256 gasNeeded, ) = stargateAdapter.getFee(
+        (uint256 gasNeeded,) = stargateAdapter.getFee(
             111, // dstChainId
             1, // functionType
             user, // receiver
@@ -93,15 +90,14 @@ contract StargateAdapterSwapAndBridgeTest is BaseTest {
             address(stargateAdapter) // to
         );
 
-        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor
-            .RouteProcessorData({
-                tokenIn: address(weth),
-                amountIn: 1 ether,
-                tokenOut: address(usdc),
-                amountOutMin: 0,
-                to: address(stargateAdapter),
-                route: computedRoute
-            });
+        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor.RouteProcessorData({
+            tokenIn: address(weth),
+            amountIn: 1 ether,
+            tokenOut: address(usdc),
+            amountOutMin: 0,
+            to: address(stargateAdapter),
+            route: computedRoute
+        });
 
         bytes memory rpd_encoded = abi.encode(rpd);
 
@@ -135,7 +131,7 @@ contract StargateAdapterSwapAndBridgeTest is BaseTest {
         // swap 1 eth to usdc and bridge
         vm.startPrank(operator);
 
-        (uint256 gasNeeded, ) = stargateAdapter.getFee(
+        (uint256 gasNeeded,) = stargateAdapter.getFee(
             111, // dstChainId
             1, // functionType
             user, // receiver
@@ -153,15 +149,14 @@ contract StargateAdapterSwapAndBridgeTest is BaseTest {
             address(stargateAdapter) // to
         );
 
-        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor
-            .RouteProcessorData({
-                tokenIn: NATIVE_ADDRESS,
-                amountIn: 1 ether,
-                tokenOut: address(usdc),
-                amountOutMin: 0,
-                to: address(stargateAdapter),
-                route: computeRoute
-            });
+        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor.RouteProcessorData({
+            tokenIn: NATIVE_ADDRESS,
+            amountIn: 1 ether,
+            tokenOut: address(usdc),
+            amountOutMin: 0,
+            to: address(stargateAdapter),
+            route: computeRoute
+        });
 
         bytes memory rpd_encoded = abi.encode(rpd);
 
@@ -197,7 +192,7 @@ contract StargateAdapterSwapAndBridgeTest is BaseTest {
         vm.startPrank(operator);
         ERC20(address(usdc)).approve(address(sushiXswap), 1000000);
 
-        (uint256 gasNeeded, ) = stargateAdapter.getFee(
+        (uint256 gasNeeded,) = stargateAdapter.getFee(
             111, // dstChainId
             1, // functionType
             user, // receiver
@@ -215,15 +210,14 @@ contract StargateAdapterSwapAndBridgeTest is BaseTest {
             address(stargateAdapter) // to
         );
 
-        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor
-            .RouteProcessorData({
-                tokenIn: address(usdc),
-                amountIn: 1000000,
-                tokenOut: address(weth),
-                amountOutMin: 0,
-                to: address(stargateAdapter),
-                route: computeRoute
-            });
+        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor.RouteProcessorData({
+            tokenIn: address(usdc),
+            amountIn: 1000000,
+            tokenOut: address(weth),
+            amountOutMin: 0,
+            to: address(stargateAdapter),
+            route: computeRoute
+        });
 
         bytes memory rpd_encoded = abi.encode(rpd);
 
@@ -258,7 +252,7 @@ contract StargateAdapterSwapAndBridgeTest is BaseTest {
         vm.startPrank(operator);
         ERC20(address(usdc)).approve(address(sushiXswap), 1000000);
 
-        (uint256 gasNeeded, ) = stargateAdapter.getFee(
+        (uint256 gasNeeded,) = stargateAdapter.getFee(
             111, // dstChainId
             1, // functionType
             user, // receiver
@@ -276,15 +270,14 @@ contract StargateAdapterSwapAndBridgeTest is BaseTest {
             address(stargateAdapter) // to
         );
 
-        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor
-            .RouteProcessorData({
-                tokenIn: address(usdc),
-                amountIn: 1000000,
-                tokenOut: NATIVE_ADDRESS,
-                amountOutMin: 0,
-                to: address(stargateAdapter),
-                route: computeRoute
-            });
+        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor.RouteProcessorData({
+            tokenIn: address(usdc),
+            amountIn: 1000000,
+            tokenOut: NATIVE_ADDRESS,
+            amountOutMin: 0,
+            to: address(stargateAdapter),
+            route: computeRoute
+        });
 
         bytes memory rpd_encoded = abi.encode(rpd);
 

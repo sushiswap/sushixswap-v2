@@ -23,8 +23,7 @@ contract CCTPAdapterSwapAndBridgeTest is BaseTest {
     ERC20 public sushi;
     ERC20 public usdc;
 
-    address constant NATIVE_ADDRESS =
-        0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
+    address constant NATIVE_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
     address public operator = address(0xbeef);
     address public owner = address(0x420);
     address public user = address(0x4201);
@@ -37,9 +36,7 @@ contract CCTPAdapterSwapAndBridgeTest is BaseTest {
         sushi = ERC20(constants.getAddress("mainnet.sushi"));
         usdc = ERC20(constants.getAddress("mainnet.usdc"));
 
-        routeProcessor = IRouteProcessor(
-            constants.getAddress("mainnet.routeProcessor")
-        );
+        routeProcessor = IRouteProcessor(constants.getAddress("mainnet.routeProcessor"));
 
         routeProcessorHelper = new RouteProcessorHelper(
             constants.getAddress("mainnet.v2Factory"),
@@ -84,15 +81,14 @@ contract CCTPAdapterSwapAndBridgeTest is BaseTest {
             address(cctpAdapter) // to
         );
 
-        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor
-            .RouteProcessorData({
-                tokenIn: address(weth),
-                amountIn: amount,
-                tokenOut: address(usdc),
-                amountOutMin: 0,
-                to: address(cctpAdapter),
-                route: computedRoute
-            });
+        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor.RouteProcessorData({
+            tokenIn: address(weth),
+            amountIn: amount,
+            tokenOut: address(usdc),
+            amountOutMin: 0,
+            to: address(cctpAdapter),
+            route: computedRoute
+        });
 
         bytes memory rpd_encoded = abi.encode(rpd);
 
@@ -118,17 +114,9 @@ contract CCTPAdapterSwapAndBridgeTest is BaseTest {
             "" // payload data
         );
 
-        assertEq(
-            usdc.balanceOf(address(cctpAdapter)),
-            0,
-            "cctpAdapter should have 0 usdc"
-        );
+        assertEq(usdc.balanceOf(address(cctpAdapter)), 0, "cctpAdapter should have 0 usdc");
         assertEq(usdc.balanceOf(user), 0, "user should have 0 usdc");
-        assertEq(
-            weth.balanceOf(address(cctpAdapter)),
-            0,
-            "cctpAdapter should have 0 weth"
-        );
+        assertEq(weth.balanceOf(address(cctpAdapter)), 0, "cctpAdapter should have 0 weth");
         assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
     }
 
@@ -149,15 +137,14 @@ contract CCTPAdapterSwapAndBridgeTest is BaseTest {
             address(cctpAdapter) // to
         );
 
-        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor
-            .RouteProcessorData({
-                tokenIn: NATIVE_ADDRESS,
-                amountIn: amount,
-                tokenOut: address(usdc),
-                amountOutMin: 0,
-                to: address(cctpAdapter),
-                route: computedRoute
-            });
+        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor.RouteProcessorData({
+            tokenIn: NATIVE_ADDRESS,
+            amountIn: amount,
+            tokenOut: address(usdc),
+            amountOutMin: 0,
+            to: address(cctpAdapter),
+            route: computedRoute
+        });
 
         bytes memory rpd_encoded = abi.encode(rpd);
 
@@ -181,17 +168,9 @@ contract CCTPAdapterSwapAndBridgeTest is BaseTest {
             "" // payload data
         );
 
-        assertEq(
-            usdc.balanceOf(address(cctpAdapter)),
-            0,
-            "cctpAdapter should have 0 usdc"
-        );
+        assertEq(usdc.balanceOf(address(cctpAdapter)), 0, "cctpAdapter should have 0 usdc");
         assertEq(usdc.balanceOf(user), 0, "user should have 0 usdc");
-        assertEq(
-            address(cctpAdapter).balance,
-            0,
-            "cctpAdapter should have 0 eth"
-        );
+        assertEq(address(cctpAdapter).balance, 0, "cctpAdapter should have 0 eth");
         assertEq(user.balance, 0, "user should have 0 eth");
     }
 
@@ -212,15 +191,14 @@ contract CCTPAdapterSwapAndBridgeTest is BaseTest {
             address(cctpAdapter) // to
         );
 
-        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor
-            .RouteProcessorData({
-                tokenIn: address(usdc),
-                amountIn: amount,
-                tokenOut: address(weth),
-                amountOutMin: 0,
-                to: address(cctpAdapter),
-                route: computedRoute
-            });
+        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor.RouteProcessorData({
+            tokenIn: address(usdc),
+            amountIn: amount,
+            tokenOut: address(weth),
+            amountOutMin: 0,
+            to: address(cctpAdapter),
+            route: computedRoute
+        });
 
         bytes memory rpd_encoded = abi.encode(rpd);
 

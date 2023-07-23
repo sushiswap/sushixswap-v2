@@ -20,8 +20,7 @@ contract SushiXSwapBaseTest is BaseTest {
     ERC20 public sushi;
     ERC20 public usdc;
 
-    address constant NATIVE_ADDRESS =
-        0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
+    address constant NATIVE_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
     address public operator = address(0xbeef);
     address public owner = address(0x420);
     address public user = address(0x4201);
@@ -39,9 +38,7 @@ contract SushiXSwapBaseTest is BaseTest {
         deal(address(usdc), address(operator), 1 ether);
         deal(address(sushi), address(operator), 1000 ether);
 
-        routeProcessor = IRouteProcessor(
-            constants.getAddress("mainnet.routeProcessor")
-        );
+        routeProcessor = IRouteProcessor(constants.getAddress("mainnet.routeProcessor"));
         routeProcessorHelper = new RouteProcessorHelper(
             constants.getAddress("mainnet.v2Factory"),
             constants.getAddress("mainnet.v3Factory"),
@@ -148,15 +145,14 @@ contract SushiXSwapBaseTest is BaseTest {
         vm.startPrank(user);
         ERC20(address(weth)).approve(address(sushiXswap), amount);
 
-        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor
-            .RouteProcessorData({
-                tokenIn: address(weth),
-                amountIn: amount,
-                tokenOut: address(usdc),
-                amountOutMin: 0,
-                to: user,
-                route: computedRoute
-            });
+        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor.RouteProcessorData({
+            tokenIn: address(weth),
+            amountIn: amount,
+            tokenOut: address(usdc),
+            amountOutMin: 0,
+            to: user,
+            route: computedRoute
+        });
 
         bytes memory rpd_encoded = abi.encode(rpd);
 
@@ -165,11 +161,7 @@ contract SushiXSwapBaseTest is BaseTest {
         vm.stopPrank();
 
         assertEq(weth.balanceOf(user), 0, "weth balance should be 0");
-        assertGt(
-            usdc.balanceOf(user),
-            0,
-            "usdc balance should be greater than 0"
-        );
+        assertGt(usdc.balanceOf(user), 0, "usdc balance should be greater than 0");
     }
 
     function testFuzz_SwapNativeToERC20(uint64 amount) public {
@@ -178,24 +170,17 @@ contract SushiXSwapBaseTest is BaseTest {
         vm.deal(user, amount);
 
         // swap eth to usdc
-        bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false,
-            false,
-            address(weth),
-            address(usdc),
-            500,
-            user
-        );
+        bytes memory computedRoute =
+            routeProcessorHelper.computeRoute(false, false, address(weth), address(usdc), 500, user);
 
-        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor
-            .RouteProcessorData({
-                tokenIn: NATIVE_ADDRESS,
-                amountIn: amount,
-                tokenOut: address(usdc),
-                amountOutMin: 0,
-                to: user,
-                route: computedRoute
-            });
+        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor.RouteProcessorData({
+            tokenIn: NATIVE_ADDRESS,
+            amountIn: amount,
+            tokenOut: address(usdc),
+            amountOutMin: 0,
+            to: user,
+            route: computedRoute
+        });
 
         bytes memory rpd_encoded = abi.encode(rpd);
 
@@ -203,10 +188,6 @@ contract SushiXSwapBaseTest is BaseTest {
         sushiXswap.swap{value: amount}(rpd_encoded);
 
         assertEq(user.balance, 0, "eth balance should be 0");
-        assertGt(
-            usdc.balanceOf(user),
-            0,
-            "usdc balance should be greater than 0"
-        );
+        assertGt(usdc.balanceOf(user), 0, "usdc balance should be greater than 0");
     }
 }

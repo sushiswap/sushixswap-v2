@@ -23,8 +23,7 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
     ERC20 public sushi;
     ERC20 public usdc;
 
-    address constant NATIVE_ADDRESS =
-        0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
+    address constant NATIVE_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
     address public operator = address(0xbeef);
     address public owner = address(0x420);
     address public user = address(0x4201);
@@ -37,9 +36,7 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
         sushi = ERC20(constants.getAddress("mainnet.sushi"));
         usdc = ERC20(constants.getAddress("mainnet.usdc"));
 
-        routeProcessor = IRouteProcessor(
-            constants.getAddress("mainnet.routeProcessor")
-        );
+        routeProcessor = IRouteProcessor(constants.getAddress("mainnet.routeProcessor"));
 
         routeProcessorHelper = new RouteProcessorHelper(
             constants.getAddress("mainnet.v2Factory"),
@@ -83,15 +80,14 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
             address(axelarAdapter) // to
         );
 
-        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor
-            .RouteProcessorData({
-                tokenIn: address(weth),
-                amountIn: amount,
-                tokenOut: address(usdc),
-                amountOutMin: 0,
-                to: address(axelarAdapter),
-                route: computedRoute
-            });
+        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor.RouteProcessorData({
+            tokenIn: address(weth),
+            amountIn: amount,
+            tokenOut: address(usdc),
+            amountOutMin: 0,
+            to: address(axelarAdapter),
+            route: computedRoute
+        });
 
         bytes memory rpd_encoded = abi.encode(rpd);
 
@@ -119,17 +115,9 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
             "" // payload data
         );
 
-        assertEq(
-            usdc.balanceOf(address(axelarAdapter)),
-            0,
-            "axelarAdapter should have 0 usdc"
-        );
+        assertEq(usdc.balanceOf(address(axelarAdapter)), 0, "axelarAdapter should have 0 usdc");
         assertEq(usdc.balanceOf(user), 0, "user should have 0 usdc");
-        assertEq(
-            weth.balanceOf(address(axelarAdapter)),
-            0,
-            "axelarAdapter should have 0 weth"
-        );
+        assertEq(weth.balanceOf(address(axelarAdapter)), 0, "axelarAdapter should have 0 weth");
         assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
     }
 
@@ -150,15 +138,14 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
             address(axelarAdapter) // to
         );
 
-        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor
-            .RouteProcessorData({
-                tokenIn: NATIVE_ADDRESS,
-                amountIn: amount,
-                tokenOut: address(usdc),
-                amountOutMin: 0,
-                to: address(axelarAdapter),
-                route: computeRoute
-            });
+        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor.RouteProcessorData({
+            tokenIn: NATIVE_ADDRESS,
+            amountIn: amount,
+            tokenOut: address(usdc),
+            amountOutMin: 0,
+            to: address(axelarAdapter),
+            route: computeRoute
+        });
 
         bytes memory rpd_encoded = abi.encode(rpd);
 
@@ -184,17 +171,9 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
             "" // payload data
         );
 
-        assertEq(
-            address(axelarAdapter).balance,
-            0,
-            "axelarAdapter should have 0 eth"
-        );
+        assertEq(address(axelarAdapter).balance, 0, "axelarAdapter should have 0 eth");
         assertEq(user.balance, 0, "user should have 0 eth");
-        assertEq(
-            usdc.balanceOf(address(axelarAdapter)),
-            0,
-            "axelarAdapter should have 0 usdc"
-        );
+        assertEq(usdc.balanceOf(address(axelarAdapter)), 0, "axelarAdapter should have 0 usdc");
         assertEq(usdc.balanceOf(user), 0, "user should have 0 usdc");
     }
 
@@ -215,15 +194,14 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
             address(axelarAdapter) // to
         );
 
-        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor
-            .RouteProcessorData({
-                tokenIn: address(usdc),
-                amountIn: amount,
-                tokenOut: NATIVE_ADDRESS,
-                amountOutMin: 0,
-                to: address(axelarAdapter),
-                route: computeRoute
-            });
+        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor.RouteProcessorData({
+            tokenIn: address(usdc),
+            amountIn: amount,
+            tokenOut: NATIVE_ADDRESS,
+            amountOutMin: 0,
+            to: address(axelarAdapter),
+            route: computeRoute
+        });
 
         bytes memory rpd_encoded = abi.encode(rpd);
 
