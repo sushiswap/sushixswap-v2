@@ -38,4 +38,4 @@ The list of all deployment addresses can be found [here](https://docs.sushi.com)
 
 ## License
 
-Unlicensed
+GPL-3.0-or-later
