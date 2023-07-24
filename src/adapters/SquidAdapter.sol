@@ -16,6 +16,7 @@ contract SquidAdapter is ISushiXSwapV2Adapter {
         squidRouter = _squidRouter;
     }
 
+    /// @inheritdoc ISushiXSwapV2Adapter
     function swap(
         uint256 _amountBridged,
         bytes calldata _swapData,
@@ -25,6 +26,7 @@ contract SquidAdapter is ISushiXSwapV2Adapter {
         revert();
     }
 
+    /// @inheritdoc ISushiXSwapV2Adapter
     function executePayload(
         uint256 _amountBridged,
         bytes calldata _payloadData,
@@ -33,6 +35,7 @@ contract SquidAdapter is ISushiXSwapV2Adapter {
         revert();
     }
 
+    /// @inheritdoc ISushiXSwapV2Adapter
     function adapterBridge(
         bytes calldata _adapterData,
         bytes calldata,
@@ -53,6 +56,7 @@ contract SquidAdapter is ISushiXSwapV2Adapter {
         squidRouter.call{value: address(this).balance}(squidRouterData);
     }
 
+    /// @inheritdoc ISushiXSwapV2Adapter
     function sendMessage(bytes calldata _adapterData) external override {
         revert();
     }

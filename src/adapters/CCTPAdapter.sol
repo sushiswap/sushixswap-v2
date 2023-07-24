@@ -2,9 +2,9 @@
 pragma solidity 0.8.10;
 
 import "../interfaces/IRouteProcessor.sol";
-import "axelar-gmp-sdk-solidity/executable/AxelarExecutable.sol";
-import "axelar-gmp-sdk-solidity/interfaces/IAxelarGasService.sol";
-import "axelar-gmp-sdk-solidity/interfaces/IAxelarGateway.sol";
+import "axelar-gmp-sdk-solidity/contracts/executable/AxelarExecutable.sol";
+import "axelar-gmp-sdk-solidity/contracts/interfaces/IAxelarGasService.sol";
+import "axelar-gmp-sdk-solidity/contracts/interfaces/IAxelarGateway.sol";
 import "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "../interfaces/ISushiXSwapV2Adapter.sol";
@@ -51,6 +51,7 @@ contract CCTPAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
         circleDestinationDomains["arbitrum"] = 3;
     }
 
+    /// @inheritdoc ISushiXSwapV2Adapter
     function swap(
         uint256 _amountBridged,
         bytes calldata _swapData,
@@ -84,6 +85,7 @@ contract CCTPAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
         }
     }
 
+    /// @inheritdoc ISushiXSwapV2Adapter
     function executePayload(
         uint256 _amountBridged,
         bytes calldata _payloadData,
@@ -94,6 +96,7 @@ contract CCTPAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
         IPayloadExecutor(pd.target).onPayloadReceive(pd.targetData);
     }
 
+    /// @inheritdoc ISushiXSwapV2Adapter
     function adapterBridge(
         bytes calldata _adapterData,
         bytes calldata _swapData,
@@ -205,6 +208,7 @@ contract CCTPAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
             to.call{value: (address(this).balance)}("");
     }
 
+    /// @inheritdoc ISushiXSwapV2Adapter
     function sendMessage(bytes calldata _adapterData) external override {
         (_adapterData);
         revert();

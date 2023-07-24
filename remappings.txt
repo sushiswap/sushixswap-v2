@@ -1,4 +1,4 @@
-axelar-gmp-sdk-solidity/=lib/axelar-gmp-sdk-solidity/contracts/
+axelar-gmp-sdk-solidity/=lib/axelar-gmp-sdk-solidity/
 ds-test/=lib/forge-std/lib/ds-test/src/
 forge-gas-snapshot/=lib/forge-gas-snapshot/src/
 forge-std/=lib/forge-std/src/
