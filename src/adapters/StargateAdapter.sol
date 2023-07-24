@@ -54,6 +54,7 @@ contract StargateAdapter is ISushiXSwapV2Adapter, IStargateReceiver {
         weth = IWETH(_weth);
     }
 
+    /// @inheritdoc ISushiXSwapV2Adapter
     function swap(
         uint256 _amountBridged,
         bytes calldata _swapData,
@@ -90,6 +91,7 @@ contract StargateAdapter is ISushiXSwapV2Adapter, IStargateReceiver {
         }
     }
 
+    /// @inheritdoc ISushiXSwapV2Adapter
     function executePayload(
         uint256 _amountBridged,
         bytes calldata _payloadData,
@@ -134,6 +136,7 @@ contract StargateAdapter is ISushiXSwapV2Adapter, IStargateReceiver {
         );
     }
 
+    /// @inheritdoc ISushiXSwapV2Adapter
     function adapterBridge(
         bytes calldata _adapterData,
         bytes calldata _swapData,
@@ -253,6 +256,7 @@ contract StargateAdapter is ISushiXSwapV2Adapter, IStargateReceiver {
             to.call{value: (address(this).balance)}("");
     }
 
+    /// @inheritdoc ISushiXSwapV2Adapter
     function sendMessage(bytes calldata _adapterData) external {
         (_adapterData);
         revert();

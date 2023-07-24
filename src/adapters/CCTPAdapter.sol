@@ -51,6 +51,7 @@ contract CCTPAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
         circleDestinationDomains["arbitrum"] = 3;
     }
 
+    /// @inheritdoc ISushiXSwapV2Adapter
     function swap(
         uint256 _amountBridged,
         bytes calldata _swapData,
@@ -84,6 +85,7 @@ contract CCTPAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
         }
     }
 
+    /// @inheritdoc ISushiXSwapV2Adapter
     function executePayload(
         uint256 _amountBridged,
         bytes calldata _payloadData,
@@ -94,6 +96,7 @@ contract CCTPAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
         IPayloadExecutor(pd.target).onPayloadReceive(pd.targetData);
     }
 
+    /// @inheritdoc ISushiXSwapV2Adapter
     function adapterBridge(
         bytes calldata _adapterData,
         bytes calldata _swapData,
@@ -205,6 +208,7 @@ contract CCTPAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
             to.call{value: (address(this).balance)}("");
     }
 
+    /// @inheritdoc ISushiXSwapV2Adapter
     function sendMessage(bytes calldata _adapterData) external override {
         (_adapterData);
         revert();

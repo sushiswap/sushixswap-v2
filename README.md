@@ -5,7 +5,7 @@
 
 This repository contains the core smart contracts for SushiXSwapV2.
 
-In-depth documentation is available at [docs.sushi.com][https://docs.sushi.com].
+In-depth documentation is available at [docs.sushi.com](https://docs.sushi.com).
 
 ## Background
 

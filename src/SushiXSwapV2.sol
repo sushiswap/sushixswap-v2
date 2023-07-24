@@ -3,6 +3,8 @@ pragma solidity 0.8.10;
 
 import "./interfaces/ISushiXSwapV2.sol";
 
+/// @title SushiXSwapV2
+/// @notice Cross-chain swaps & general message passing through adapters
 contract SushiXSwapV2 is ISushiXSwapV2, Ownable, Multicall {
     using SafeERC20 for IERC20;
 
@@ -45,18 +47,24 @@ contract SushiXSwapV2 is ISushiXSwapV2, Ownable, Multicall {
         unlocked = 1;
     }
 
-    function setPrivileged(address user, bool priviledge) external onlyOwner {
-        privilegedUsers[user] = priviledge;
+    /// @notice Set an adddress as privileged user
+    /// @param user The address to set
+    /// @param privileged The status of users's privileged status
+    function setPrivileged(address user, bool privileged) external onlyOwner {
+        privilegedUsers[user] = privileged;
     }
 
+    /// @notice pause the contract
     function pause() external onlyOwnerOrPrivilegedUser {
         paused = 2;
     }
 
+    /// @notice resume the contract from paused state
     function resume() external onlyOwnerOrPrivilegedUser {
         paused = 1;
     }
 
+    /// @inheritdoc ISushiXSwapV2
     function updateAdapterStatus(
         address _adapter,
         bool _status
@@ -64,12 +72,14 @@ contract SushiXSwapV2 is ISushiXSwapV2, Ownable, Multicall {
         approvedAdapters[_adapter] = _status;
     }
 
+    /// @inheritdoc ISushiXSwapV2
     function updateRouteProcessor(
         address newRouteProcessor
     ) external onlyOwner {
         rp = IRouteProcessor(newRouteProcessor);
     }
 
+    /// @inheritdoc ISushiXSwapV2
     function swap(bytes memory _swapData) external payable override lock {
         // just swap
         _swap(_swapData);
@@ -107,6 +117,7 @@ contract SushiXSwapV2 is ISushiXSwapV2, Ownable, Multicall {
         );
     }
 
+    /// @inheritdoc ISushiXSwapV2
     function sendMessage(
         address _adapter,
         bytes calldata _adapterData
@@ -115,6 +126,7 @@ contract SushiXSwapV2 is ISushiXSwapV2, Ownable, Multicall {
         ISushiXSwapV2Adapter(_adapter).sendMessage(_adapterData);
     }
 
+    /// @inheritdoc ISushiXSwapV2
     function bridge(
         BridgeParams calldata _bridgeParams,
         bytes calldata _swapPayload,
@@ -149,7 +161,8 @@ contract SushiXSwapV2 is ISushiXSwapV2, Ownable, Multicall {
             _bridgeParams.to
         );
     }
-
+    
+    /// @inheritdoc ISushiXSwapV2
     function swapAndBridge(
         BridgeParams calldata _bridgeParams,
         bytes calldata _swapData,
@@ -180,7 +193,9 @@ contract SushiXSwapV2 is ISushiXSwapV2, Ownable, Multicall {
         );
     }
 
-    // todo: add amount param
+    /// @notice Rescue tokens from the contract
+    /// @param _token The address of the token to rescue
+    /// @param _to The address to send the tokens to
     function rescueTokens(address _token, address _to) external onlyOwner {
         if (_token != NATIVE_ADDRESS) {
             IERC20(_token).safeTransfer(
