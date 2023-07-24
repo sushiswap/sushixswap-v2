@@ -474,7 +474,7 @@ contract StargateAdapterBridgeTest is BaseTest {
         }
     }
 
-    function test_BridgeWETHWithSwapData() public {
+    function test_BridgeERC20WithSwapData() public {
         uint32 amount = 1000001;
         vm.assume(amount > 1000000);
 

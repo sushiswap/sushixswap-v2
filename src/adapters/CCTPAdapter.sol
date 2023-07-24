@@ -2,9 +2,9 @@
 pragma solidity 0.8.10;
 
 import "../interfaces/IRouteProcessor.sol";
-import "axelar-gmp-sdk-solidity/executable/AxelarExecutable.sol";
-import "axelar-gmp-sdk-solidity/interfaces/IAxelarGasService.sol";
-import "axelar-gmp-sdk-solidity/interfaces/IAxelarGateway.sol";
+import "axelar-gmp-sdk-solidity/contracts/executable/AxelarExecutable.sol";
+import "axelar-gmp-sdk-solidity/contracts/interfaces/IAxelarGasService.sol";
+import "axelar-gmp-sdk-solidity/contracts/interfaces/IAxelarGateway.sol";
 import "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "../interfaces/ISushiXSwapV2Adapter.sol";
