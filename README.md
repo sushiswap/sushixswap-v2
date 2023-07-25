@@ -33,7 +33,7 @@ make test
 
 ## Deployments
 
-The list of all deployment addresses can be found [here](https://docs.sushi.com)
+The list of all deployment addresses can be found [here](https://docs.sushi.com) [Not yet Deployed]
 
 
 ## License
