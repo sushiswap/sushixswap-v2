@@ -15,6 +15,7 @@ contract Constants {
     setAddress("mainnet.weth", 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
     setAddress("mainnet.sushi", 0x6B3595068778DD592e39A122f4f5a5cF09C90fE2);
     setAddress("mainnet.usdc", 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48);
+    setAddress("mainnet.usdt", 0xdAC17F958D2ee523a2206206994597C13D831ec7);
 
     setAddress("mainnet.routeProcessor", 0x827179dD56d07A7eeA32e3873493835da2866976);
     setAddress("mainnet.v2Factory", 0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac);

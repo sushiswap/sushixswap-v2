@@ -6,7 +6,7 @@ import {AxelarAdapter} from "../../src/adapters/AxelarAdapter.sol";
 import {ISushiXSwapV2} from "../../src/interfaces/ISushiXSwapV2.sol";
 import {IRouteProcessor} from "../../src/interfaces/IRouteProcessor.sol";
 import {IWETH} from "../../src/interfaces/IWETH.sol";
-import {ERC20} from "openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
+import "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../../utils/BaseTest.sol";
 import "../../utils/RouteProcessorHelper.sol";
 
@@ -14,14 +14,17 @@ import {StringToBytes32, Bytes32ToString} from "../../src/utils/Bytes32String.so
 import {StringToAddress, AddressToString} from "../../src/utils/AddressString.sol";
 
 contract AxelarAdapterBridgeTest is BaseTest {
+    using SafeERC20 for IERC20;
+
     SushiXSwapV2 public sushiXswap;
     AxelarAdapter public axelarAdapter;
     IRouteProcessor public routeProcessor;
     RouteProcessorHelper public routeProcessorHelper;
 
     IWETH public weth;
-    ERC20 public sushi;
-    ERC20 public usdc;
+    IERC20 public sushi;
+    IERC20 public usdc;
+    IERC20 public usdt;
 
     address constant NATIVE_ADDRESS =
         0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
@@ -34,8 +37,9 @@ contract AxelarAdapterBridgeTest is BaseTest {
         super.setUp();
 
         weth = IWETH(constants.getAddress("mainnet.weth"));
-        sushi = ERC20(constants.getAddress("mainnet.sushi"));
-        usdc = ERC20(constants.getAddress("mainnet.usdc"));
+        sushi = IERC20(constants.getAddress("mainnet.sushi"));
+        usdc = IERC20(constants.getAddress("mainnet.usdc"));
+        usdt = IERC20(constants.getAddress("mainnet.usdt"));
 
         routeProcessor = IRouteProcessor(
             constants.getAddress("mainnet.routeProcessor")
@@ -81,7 +85,7 @@ contract AxelarAdapterBridgeTest is BaseTest {
 
         // basic usdc bridge, mint axlUSDC on otherside
         vm.startPrank(user);
-        usdc.approve(address(sushiXswap), amount);
+        usdc.safeIncreaseAllowance(address(sushiXswap), amount);
 
         sushiXswap.bridge{value: gasNeeded}(
             ISushiXSwapV2.BridgeParams({
@@ -109,6 +113,45 @@ contract AxelarAdapterBridgeTest is BaseTest {
             "axelarAdapter should have 0 usdc"
         );
         assertEq(usdc.balanceOf(user), 0, "user should have 0 usdc");
+    }
+
+    function test_BridgeUSDT() public {
+        uint32 amount = 1000000; // 1 usdt
+        uint64 gasNeeded = 0.1 ether; // eth for gas to pass
+
+        deal(address(usdt), user, amount);
+        vm.deal(user, gasNeeded);
+
+        // basic usdc bridge, mint axlUSDC on otherside
+        vm.startPrank(user);
+        usdt.safeIncreaseAllowance(address(sushiXswap), amount);
+
+        sushiXswap.bridge{value: gasNeeded}(
+            ISushiXSwapV2.BridgeParams({
+                refId: 0x0000,
+                adapter: address(axelarAdapter),
+                tokenIn: address(usdt),
+                amountIn: amount,
+                to: user,
+                adapterData: abi.encode(
+                    address(usdt), // token
+                    StringToBytes32.toBytes32("arbitrum"), // destinationChain
+                    address(axelarAdapter), // destinationAddress
+                    StringToBytes32.toBytes32("USDT"), // symbol
+                    amount, // amount
+                    user // to
+                )
+            }),
+            "", // swap payload
+            "" // payload data
+        );
+
+        assertEq(
+            usdt.balanceOf(address(axelarAdapter)),
+            0,
+            "axelarAdapter should have 0 usdt"
+        );
+        assertEq(usdt.balanceOf(user), 0, "user should have 0 usdt");
     }
 
     function test_BridgeNative() public {
@@ -158,7 +201,7 @@ contract AxelarAdapterBridgeTest is BaseTest {
 
         // basic sushi bridge, unsupported on axelar gateway so should revert
         vm.startPrank(user);
-        sushi.approve(address(sushiXswap), amount);
+        sushi.safeIncreaseAllowance(address(sushiXswap), amount);
 
         bytes4 errorSelector = bytes4(keccak256("TokenDoesNotExist(string)"));
         vm.expectRevert(abi.encodeWithSelector(errorSelector, "SUSHI"));
@@ -213,7 +256,7 @@ contract AxelarAdapterBridgeTest is BaseTest {
 
         // basic usdc bridge, mint axlUSDC on otherside
         vm.startPrank(user);
-        usdc.approve(address(sushiXswap), amount);
+        usdc.safeIncreaseAllowance(address(sushiXswap), amount);
 
         sushiXswap.bridge{value: gasNeeded}(
             ISushiXSwapV2.BridgeParams({
@@ -311,7 +354,7 @@ contract AxelarAdapterBridgeTest is BaseTest {
 
         // basic usdc bridge, mint axlUSDC on otherside
         vm.startPrank(user);
-        usdc.approve(address(sushiXswap), amount);
+        usdc.safeIncreaseAllowance(address(sushiXswap), amount);
 
         vm.expectRevert(bytes4(keccak256("NothingReceived()")));
         sushiXswap.bridge(

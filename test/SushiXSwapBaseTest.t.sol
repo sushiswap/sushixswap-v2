@@ -19,6 +19,7 @@ contract SushiXSwapBaseTest is BaseTest {
     IWETH public weth;
     ERC20 public sushi;
     ERC20 public usdc;
+    ERC20 public usdt;
 
     address constant NATIVE_ADDRESS =
         0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
@@ -33,6 +34,7 @@ contract SushiXSwapBaseTest is BaseTest {
         weth = IWETH(constants.getAddress("mainnet.weth"));
         sushi = ERC20(constants.getAddress("mainnet.sushi"));
         usdc = ERC20(constants.getAddress("mainnet.usdc"));
+        usdt = ERC20(constants.getAddress("mainnet.usdt"));
 
         vm.deal(address(operator), 100 ether);
         deal(address(weth), address(operator), 100 ether);

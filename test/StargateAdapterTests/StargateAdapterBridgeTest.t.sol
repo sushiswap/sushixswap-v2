@@ -7,7 +7,7 @@ import {ISushiXSwapV2} from "../../src/interfaces/ISushiXSwapV2.sol";
 import {IRouteProcessor} from "../../src/interfaces/IRouteProcessor.sol";
 import {IWETH} from "../../src/interfaces/IWETH.sol";
 import {IStargateFeeLibrary} from "../../src/interfaces/stargate/IStargateFeeLibrary.sol";
-import {ERC20} from "openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
+import "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../../utils/BaseTest.sol";
 import "../../utils/RouteProcessorHelper.sol";
 import {Strings} from "openzeppelin-contracts/contracts/utils/Strings.sol";
@@ -15,6 +15,8 @@ import {Strings} from "openzeppelin-contracts/contracts/utils/Strings.sol";
 import {StdUtils} from "forge-std/StdUtils.sol";
 
 contract StargateAdapterBridgeTest is BaseTest {
+    using SafeERC20 for IERC20;
+
     SushiXSwapV2 public sushiXswap;
     StargateAdapter public stargateAdapter;
     IRouteProcessor public routeProcessor;
@@ -25,8 +27,9 @@ contract StargateAdapterBridgeTest is BaseTest {
     address public stargateETHPoolAddress;
 
     IWETH public weth;
-    ERC20 public sushi;
-    ERC20 public usdc;
+    IERC20 public sushi;
+    IERC20 public usdc;
+    IERC20 public usdt;
 
     address constant NATIVE_ADDRESS =
         0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
@@ -39,8 +42,9 @@ contract StargateAdapterBridgeTest is BaseTest {
         super.setUp();
 
         weth = IWETH(constants.getAddress("mainnet.weth"));
-        sushi = ERC20(constants.getAddress("mainnet.sushi"));
-        usdc = ERC20(constants.getAddress("mainnet.usdc"));
+        sushi = IERC20(constants.getAddress("mainnet.sushi"));
+        usdc = IERC20(constants.getAddress("mainnet.usdc"));
+        usdt = IERC20(constants.getAddress("mainnet.usdt"));
 
         vm.deal(address(operator), 100 ether);
         deal(address(weth), address(operator), 100 ether);
@@ -206,6 +210,125 @@ contract StargateAdapterBridgeTest is BaseTest {
         }
     }
 
+    function testFuzz_BridgeUSDT(uint32 amount) public {
+        vm.assume(amount > 1000000); // > 1 usdt
+
+        vm.deal(user, 1 ether);
+        deal(address(usdt), user, amount);
+
+        // basic usdc bridge
+        vm.startPrank(user);
+        usdt.safeApprove(address(sushiXswap), amount);
+
+        (uint256 gasNeeded, ) = stargateAdapter.getFee(
+            110, // dstChainId
+            1, // functionType
+            user, // receiver
+            0, // gas -todo: need to figure out what proper gas input is
+            0, // dustAmount
+            "" // payload
+        );
+
+        (, uint256 eqFee, , , uint256 protocolFee, ) = stargateFeeLibrary
+            .getFees(
+                1, // srcPoolId
+                1, // dstPoolId
+                110, // dstChainId
+                address(stargateAdapter), // from
+                amount // amountSD
+            );
+
+        uint256 amountMin = amount - eqFee - protocolFee;
+
+        vm.recordLogs();
+        //todo: don't think we should be passing gasNeeded as value
+        sushiXswap.bridge{value: gasNeeded}(
+            ISushiXSwapV2.BridgeParams({
+                refId: 0x0000,
+                adapter: address(stargateAdapter),
+                tokenIn: address(usdt),
+                amountIn: amount,
+                to: user,
+                adapterData: abi.encode(
+                    110, // dstChainId - op
+                    address(usdt), // token
+                    2, // srcPoolId
+                    2, // dstPoolId
+                    amount, // amount
+                    amountMin, // amountMin,
+                    0, // dustAmount
+                    user, // receiver
+                    address(0x0), // to
+                    0 // gas
+                )
+            }),
+            "", // _swapPayload
+            "" // _payloadData
+        );
+
+        // check balances post call
+        assertEq(
+            usdt.balanceOf(address(sushiXswap)),
+            0,
+            "xswasp usdc balance should be 0"
+        );
+        assertEq(usdt.balanceOf(user), 0, "user usdc balance should be 0");
+
+        Vm.Log[] memory entries = vm.getRecordedLogs();
+        // first event from the stargate pool will be Swap
+        for (uint i = 0; i < entries.length; i++) {
+            // can get poolAddress from the stargate factory
+            if (entries[i].emitter == stargateUSDCPoolAddress) {
+                (
+                    uint16 chainId,
+                    uint256 dstPoolId,
+                    address from,
+                    uint256 amountSD,
+                    uint256 eqReward,
+                    uint256 _eqFeeEvent,
+                    uint256 _protocolFeeEvent,
+                    uint256 _lpFee
+                ) = abi.decode(
+                        entries[i].data,
+                        (
+                            uint16,
+                            uint256,
+                            address,
+                            uint256,
+                            uint256,
+                            uint256,
+                            uint256,
+                            uint256
+                        )
+                    );
+
+                assertEq(chainId, 110, "Swap event chainId should be 111");
+                assertEq(dstPoolId, 2, "Swap event dstPoolId should be 1");
+                assertEq(
+                    from,
+                    address(stargateAdapter),
+                    "Swap event from should be stargateAdapter"
+                );
+                assertEq(
+                    amountSD,
+                    amountMin,
+                    "Swap event amountSD should be amount bridged"
+                );
+                assertEq(
+                    _eqFeeEvent,
+                    eqFee,
+                    "Swap event eqFee should be polled eqFee before bridge"
+                );
+                assertEq(
+                    _protocolFeeEvent,
+                    protocolFee,
+                    "Swap event protocolFee should be polled protocolFee before bridge"
+                );
+                break;
+            }
+        }
+    }
+
     // uint64 keeps it max amount to ~18 weth
     function testFuzz_BridgeWETH(uint64 amount) public {
         vm.assume(amount > 0.1 ether);
@@ -215,7 +338,7 @@ contract StargateAdapterBridgeTest is BaseTest {
 
         // basic usdc bridge
         vm.startPrank(user);
-        ERC20(address(weth)).approve(address(sushiXswap), amount);
+        IERC20(address(weth)).approve(address(sushiXswap), amount);
 
         (uint256 gasNeeded, ) = stargateAdapter.getFee(
             111, // dstChainId
@@ -482,7 +605,7 @@ contract StargateAdapterBridgeTest is BaseTest {
 
         vm.startPrank(operator);
 
-        ERC20(address(usdc)).approve(address(sushiXswap), amount);
+        IERC20(address(usdc)).approve(address(sushiXswap), amount);
 
         bytes memory computedRoute_dst = routeProcessorHelper.computeRoute(
             false,
@@ -554,7 +677,7 @@ contract StargateAdapterBridgeTest is BaseTest {
 
         vm.startPrank(operator);
 
-        ERC20(address(usdc)).approve(address(sushiXswap), amount);
+        IERC20(address(usdc)).approve(address(sushiXswap), amount);
 
         bytes memory computedRoute_dst = routeProcessorHelper.computeRoute(
             false,

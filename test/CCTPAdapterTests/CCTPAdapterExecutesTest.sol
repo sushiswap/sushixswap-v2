@@ -52,6 +52,7 @@ contract CCTPAdapterExecutesTest is BaseTest {
     IWETH public weth;
     ERC20 public sushi;
     ERC20 public usdc;
+    ERC20 public usdt;
 
     address constant NATIVE_ADDRESS =
         0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
@@ -66,6 +67,7 @@ contract CCTPAdapterExecutesTest is BaseTest {
         weth = IWETH(constants.getAddress("mainnet.weth"));
         sushi = ERC20(constants.getAddress("mainnet.sushi"));
         usdc = ERC20(constants.getAddress("mainnet.usdc"));
+        usdt = ERC20(constants.getAddress("mainnet.usdt"));
 
         routeProcessor = IRouteProcessor(
             constants.getAddress("mainnet.routeProcessor")
