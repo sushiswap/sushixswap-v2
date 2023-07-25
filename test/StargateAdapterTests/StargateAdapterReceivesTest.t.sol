@@ -9,13 +9,15 @@ import {ISushiXSwapV2Adapter} from "../../src/interfaces/ISushiXSwapV2Adapter.so
 import {IRouteProcessor} from "../../src/interfaces/IRouteProcessor.sol";
 import {IWETH} from "../../src/interfaces/IWETH.sol";
 import {IStargateFeeLibrary} from "../../src/interfaces/stargate/IStargateFeeLibrary.sol";
-import {ERC20} from "openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
+import "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../../utils/BaseTest.sol";
 import "../../utils/RouteProcessorHelper.sol";
 
 import {StdUtils} from "forge-std/StdUtils.sol";
 
 contract StargateAdapterReceivesTest is BaseTest {
+    using SafeERC20 for IERC20;
+
     SushiXSwapV2 public sushiXswap;
     StargateAdapter public stargateAdapter;
     AirdropPayloadExecutor public airdropExecutor;
@@ -28,8 +30,9 @@ contract StargateAdapterReceivesTest is BaseTest {
     address public stargateETHPoolAddress;
 
     IWETH public weth;
-    ERC20 public sushi;
-    ERC20 public usdc;
+    IERC20 public sushi;
+    IERC20 public usdc;
+    IERC20 public usdt;
 
     address constant NATIVE_ADDRESS =
         0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
@@ -42,8 +45,9 @@ contract StargateAdapterReceivesTest is BaseTest {
         super.setUp();
 
         weth = IWETH(constants.getAddress("mainnet.weth"));
-        sushi = ERC20(constants.getAddress("mainnet.sushi"));
-        usdc = ERC20(constants.getAddress("mainnet.usdc"));
+        sushi = IERC20(constants.getAddress("mainnet.sushi"));
+        usdc = IERC20(constants.getAddress("mainnet.usdc"));
+        usdt = IERC20(constants.getAddress("mainnet.usdt"));
 
         vm.deal(address(operator), 100 ether);
         deal(address(weth), address(operator), 100 ether);
@@ -150,6 +154,108 @@ contract StargateAdapterReceivesTest is BaseTest {
             "stargateAdapter should have 0 usdc"
         );
         assertEq(usdc.balanceOf(user), 0, "user should have 0 usdc");
+        assertEq(
+            weth.balanceOf(address(stargateAdapter)),
+            0,
+            "stargateAdapter should have 0 weth"
+        );
+        assertGt(weth.balanceOf(user), 0, "user should have > 0 weth");
+    }
+
+    function test_FuzzReceiveERC20AndSwapToUSDT(uint32 amount) public {
+        vm.assume(amount > 1000000); // > 1 usdc
+
+        deal(address(usdc), address(stargateAdapter), amount); // amount adapter receives
+
+        // receive 1 usdc and swap to weth
+        bytes memory computedRoute = routeProcessorHelper.computeRoute(
+            false,
+            false,
+            address(usdc),
+            address(usdt),
+            100,
+            user
+        );
+
+        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor
+            .RouteProcessorData({
+                tokenIn: address(usdc),
+                amountIn: amount,
+                tokenOut: address(usdt),
+                amountOutMin: 0,
+                to: user,
+                route: computedRoute
+            });
+
+        bytes memory rpd_encoded = abi.encode(rpd);
+
+        bytes memory payload = abi.encode(
+            address(user), // to
+            rpd_encoded, // _swapData
+            "" // _payloadData
+        );
+
+        vm.prank(constants.getAddress("mainnet.stargateRouter"));
+        // auto sends enough gas, so no need to calculate gasNeeded & send here
+        stargateAdapter.sgReceive(0, "", 0, address(usdc), amount, payload);
+
+        assertEq(
+            usdc.balanceOf(address(stargateAdapter)),
+            0,
+            "stargateAdapter should have 0 usdc"
+        );
+        assertEq(usdc.balanceOf(user), 0, "user should have 0 usdc");
+        assertEq(
+            usdt.balanceOf(address(stargateAdapter)),
+            0,
+            "stargateAdapter should have 0 weth"
+        );
+        assertGt(usdt.balanceOf(user), 0, "user should have > 0 weth");
+    }
+
+    function test_FuzzReceiveUSDTAndSwapToERC20(uint32 amount) public {
+        vm.assume(amount > 1000000); // > 1 usdc
+
+        deal(address(usdt), address(stargateAdapter), amount); // amount adapter receives
+
+        // receive 1 usdc and swap to weth
+        bytes memory computedRoute = routeProcessorHelper.computeRoute(
+            false,
+            false,
+            address(usdt),
+            address(weth),
+            500,
+            user
+        );
+
+        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor
+            .RouteProcessorData({
+                tokenIn: address(usdt),
+                amountIn: amount,
+                tokenOut: address(weth),
+                amountOutMin: 0,
+                to: user,
+                route: computedRoute
+            });
+
+        bytes memory rpd_encoded = abi.encode(rpd);
+
+        bytes memory payload = abi.encode(
+            address(user), // to
+            rpd_encoded, // _swapData
+            "" // _payloadData
+        );
+
+        vm.prank(constants.getAddress("mainnet.stargateRouter"));
+        // auto sends enough gas, so no need to calculate gasNeeded & send here
+        stargateAdapter.sgReceive(0, "", 0, address(usdt), amount, payload);
+
+        assertEq(
+            usdt.balanceOf(address(stargateAdapter)),
+            0,
+            "stargateAdapter should have 0 usdc"
+        );
+        assertEq(usdt.balanceOf(user), 0, "user should have 0 usdc");
         assertEq(
             weth.balanceOf(address(stargateAdapter)),
             0,
@@ -418,6 +524,63 @@ contract StargateAdapterReceivesTest is BaseTest {
         assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
     }
 
+    function test_FuzzReceiveUSDTNotEnoughGasForSwap(uint32 amount) public {
+        vm.assume(amount > 1000000); // > 1 usdt
+
+        deal(address(usdt), address(stargateAdapter), amount); // amount adapter receives
+
+        // receive usdc and attempt swap to weth
+        bytes memory computedRoute = routeProcessorHelper.computeRoute(
+            false,
+            false,
+            address(usdt),
+            address(weth),
+            500,
+            user
+        );
+
+        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor
+            .RouteProcessorData({
+                tokenIn: address(usdt),
+                amountIn: amount,
+                tokenOut: address(weth),
+                amountOutMin: 0,
+                to: user,
+                route: computedRoute
+            });
+
+        bytes memory rpd_encoded = abi.encode(rpd);
+
+        bytes memory payload = abi.encode(
+            user, // to
+            rpd_encoded, // _swapData
+            "" // _payloadData
+        );
+
+        vm.prank(constants.getAddress("mainnet.stargateRouter"));
+        stargateAdapter.sgReceive{gas: 90000}(
+            0,
+            "",
+            0,
+            address(usdt),
+            amount,
+            payload
+        );
+
+        assertEq(
+            usdt.balanceOf(address(stargateAdapter)),
+            0,
+            "stargateAdapter should have 0 usdc"
+        );
+        assertEq(usdt.balanceOf(user), amount, "user should have all the usdt");
+        assertEq(
+            weth.balanceOf(address(stargateAdapter)),
+            0,
+            "stargateAdapter should have 0 weth"
+        );
+        assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
+    }
+
     function test_FuzzReceiveNativeNotEnoughGasForSwap(uint64 amount) public {
         vm.assume(amount > 0.1 ether);
 
@@ -571,6 +734,38 @@ contract StargateAdapterReceivesTest is BaseTest {
         assertEq(usdc.balanceOf(user), amount, "user should have all the usdc");
     }
 
+    function test_FuzzReceiveUSDTEnoughForGasNoSwapOrPayloadData(
+        uint32 amount
+    ) public {
+        vm.assume(amount > 1000000); // > 1 usdt
+
+        deal(address(usdt), address(stargateAdapter), amount); // amount adapter receives
+
+        // no swap data, payload empty
+        bytes memory payload = abi.encode(
+            user, // to
+            "", // _swapData
+            "" // _payloadData
+        );
+
+        vm.prank(constants.getAddress("mainnet.stargateRouter"));
+        stargateAdapter.sgReceive{gas: 200000}(
+            0,
+            "",
+            0,
+            address(usdt),
+            amount,
+            payload
+        );
+
+        assertEq(
+            usdt.balanceOf(address(stargateAdapter)),
+            0,
+            "stargateAdapter should have 0 usdt"
+        );
+        assertEq(usdt.balanceOf(user), amount, "user should have all the usdt");
+    }
+
     function test_FuzzReceiveNativeEnoughForGasNoSwapOrPayloadData(
         uint64 amount
     ) public {
@@ -696,6 +891,59 @@ contract StargateAdapterReceivesTest is BaseTest {
             "stargateAdapter should have 0 usdc"
         );
         assertEq(usdc.balanceOf(user), amount, "user should have all the usdc");
+        assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
+    }
+
+    function test_FuzzReceiveUSDTFailedSwap(uint32 amount) public {
+        vm.assume(amount > 1000000); // > 1 usdt
+
+        deal(address(usdt), address(stargateAdapter), amount); // amount adapter receives
+
+        // receive usdc and attempt swap to weth
+        bytes memory computedRoute = routeProcessorHelper.computeRoute(
+            false,
+            false,
+            address(usdt),
+            address(weth),
+            500,
+            user
+        );
+
+        // switched tokenIn to weth, and tokenOut to usdc - should fail now on swap
+        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor
+            .RouteProcessorData({
+                tokenIn: address(weth),
+                amountIn: amount,
+                tokenOut: address(usdt),
+                amountOutMin: 0,
+                to: user,
+                route: computedRoute
+            });
+
+        bytes memory rpd_encoded = abi.encode(rpd);
+
+        bytes memory payload = abi.encode(
+            user, // to
+            rpd_encoded, // _swapData
+            "" // _payloadData
+        );
+
+        vm.prank(constants.getAddress("mainnet.stargateRouter"));
+        stargateAdapter.sgReceive{gas: 200000}(
+            0,
+            "",
+            0,
+            address(usdt),
+            amount,
+            payload
+        );
+
+        assertEq(
+            usdt.balanceOf(address(stargateAdapter)),
+            0,
+            "stargateAdapter should have 0 usdc"
+        );
+        assertEq(usdt.balanceOf(user), amount, "user should have all the usdc");
         assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
     }
 
@@ -1061,6 +1309,90 @@ contract StargateAdapterReceivesTest is BaseTest {
         );
     }
 
+    function test_ReceiveERC20AndSwapToUSDTAndAirdropUSDTFromPayload()
+        public
+    {
+        uint32 amount = 1000001;
+        vm.assume(amount > 1000000); // > 1 usdc
+
+        deal(address(usdc), address(stargateAdapter), amount); // amount adapter receives
+
+        // receive 1 usdc and swap to weth
+        bytes memory computedRoute = routeProcessorHelper.computeRoute(
+            false,
+            false,
+            address(usdc),
+            address(usdt),
+            100,
+            address(airdropExecutor)
+        );
+
+        // airdrop all the weth to two addresses
+        address user1 = address(0x4203);
+        address user2 = address(0x4204);
+        address[] memory recipients = new address[](2);
+        recipients[0] = user1;
+        recipients[1] = user2;
+
+        vm.prank(constants.getAddress("mainnet.stargateRouter"));
+        // auto sends enough gas, so no need to calculate gasNeeded & send here
+        stargateAdapter.sgReceive(
+            0,
+            "",
+            0,
+            address(usdc),
+            amount,
+            abi.encode(
+                address(user), // to
+                abi.encode(
+                    IRouteProcessor.RouteProcessorData({
+                        tokenIn: address(usdc),
+                        amountIn: amount,
+                        tokenOut: address(usdt),
+                        amountOutMin: 0,
+                        to: address(airdropExecutor),
+                        route: computedRoute
+                    })
+                ), // swap data
+                abi.encode(
+                    ISushiXSwapV2Adapter.PayloadData({
+                        target: address(airdropExecutor),
+                        gasLimit: 200000,
+                        targetData: abi.encode(
+                            AirdropPayloadExecutor.AirdropPayloadParams({
+                                token: address(usdt),
+                                recipients: recipients
+                            })
+                        )
+                    })
+                ) // payloadData
+            )
+        );
+
+        assertEq(
+            usdc.balanceOf(address(stargateAdapter)),
+            0,
+            "stargateAdapter should have 0 usdc"
+        );
+        assertEq(usdc.balanceOf(user), 0, "user should have 0 usdc");
+        assertEq(
+            usdt.balanceOf(address(stargateAdapter)),
+            0,
+            "stargateAdapter should have 0 usdt"
+        );
+        assertEq(usdt.balanceOf(user), 0, "user should have 0 usdt");
+        assertGt(
+            usdt.balanceOf(user1),
+            0,
+            "user1 should have > 0 usdt from airdrop"
+        );
+        assertGt(
+            usdt.balanceOf(user2),
+            0,
+            "user2 should have > 0 usdt from airdrop"
+        );
+    }
+
     function test_ReceiveERC20AndSwapToERC20AndFailedAirdropERC20FromPayload()
         public
     {
@@ -1209,6 +1541,63 @@ contract StargateAdapterReceivesTest is BaseTest {
             usdc.balanceOf(user2),
             0,
             "user2 should have > 0 usdc from airdrop"
+        );
+    }
+
+    function test_ReceiveUSDTAndAirdropFromPayload() public {
+        uint32 amount = 1000001;
+        vm.assume(amount > 1000000); // > 1 usdt
+
+        deal(address(usdt), address(stargateAdapter), amount); // amount adapter receives
+
+        // airdrop all the weth to two addresses
+        address user1 = address(0x4203);
+        address user2 = address(0x4204);
+        address[] memory recipients = new address[](2);
+        recipients[0] = user1;
+        recipients[1] = user2;
+
+        vm.prank(constants.getAddress("mainnet.stargateRouter"));
+        // auto sends enough gas, so no need to calculate gasNeeded & send here
+        stargateAdapter.sgReceive(
+            0,
+            "",
+            0,
+            address(usdt),
+            amount,
+            abi.encode(
+                address(user), // to
+                "", // swap data
+                abi.encode(
+                    ISushiXSwapV2Adapter.PayloadData({
+                        target: address(airdropExecutor),
+                        gasLimit: 200000,
+                        targetData: abi.encode(
+                            AirdropPayloadExecutor.AirdropPayloadParams({
+                                token: address(usdt),
+                                recipients: recipients
+                            })
+                        )
+                    })
+                ) // payload data
+            )
+        );
+
+        assertEq(
+            usdt.balanceOf(address(stargateAdapter)),
+            0,
+            "stargateAdapter should have 0 usdt"
+        );
+        assertEq(usdt.balanceOf(user), 0, "user should have 0 usdt");
+        assertGt(
+            usdt.balanceOf(user1),
+            0,
+            "user1 should have > 0 usdt from airdrop"
+        );
+        assertGt(
+            usdt.balanceOf(user2),
+            0,
+            "user2 should have > 0 usdt from airdrop"
         );
     }
 
