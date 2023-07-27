@@ -103,7 +103,9 @@ contract SushiXSwapV2 is ISushiXSwapV2, Ownable, Multicall {
             IERC20(rpd.tokenIn).safeIncreaseAllowance(address(rp), rpd.amountIn);
         }
 
-        rp.processRoute(
+        rp.processRoute{
+            value: rpd.amountIn
+        }(
             rpd.tokenIn,
             rpd.amountIn,
             rpd.tokenOut,
