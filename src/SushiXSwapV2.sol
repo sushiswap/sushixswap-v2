@@ -96,18 +96,14 @@ contract SushiXSwapV2 is ISushiXSwapV2, Ownable, Multicall {
         if (rpd.tokenIn != NATIVE_ADDRESS) {
             IERC20(rpd.tokenIn).safeTransferFrom(
                 msg.sender,
-                address(this),
+                address(rp),
                 rpd.amountIn
             );
-        } else {
-            weth.deposit{value: rpd.amountIn}();
-            rpd.tokenIn = address(weth);
         }
 
-        // increase token approval to RP
-        IERC20(rpd.tokenIn).safeIncreaseAllowance(address(rp), rpd.amountIn);
-
-        rp.processRoute(
+        rp.processRoute{
+            value: rpd.tokenIn == NATIVE_ADDRESS ? rpd.amountIn : 0
+        }(
             rpd.tokenIn,
             rpd.amountIn,
             rpd.tokenOut,

@@ -116,7 +116,7 @@ contract CCTPAdapterExecutesTest is BaseTest {
 
         // receives 1 minted USDC and swap to weth
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false,
+            true,
             false,
             address(usdc),
             address(weth),
@@ -172,7 +172,7 @@ contract CCTPAdapterExecutesTest is BaseTest {
 
         // receives 1 minted USDC and swap to weth
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false,
+            true,
             false,
             address(usdc),
             address(weth),
@@ -232,7 +232,7 @@ contract CCTPAdapterExecutesTest is BaseTest {
 
         // receives 1 minted USDC and swap to weth
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false,
+            true,
             false,
             address(usdc),
             address(weth),
@@ -288,7 +288,7 @@ contract CCTPAdapterExecutesTest is BaseTest {
 
         // receives 1 minted USDC and swap to weth
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false,
+            true,
             false,
             address(usdc),
             address(weth),
@@ -378,17 +378,16 @@ contract CCTPAdapterExecutesTest is BaseTest {
 
         deal(address(usdc), address(cctpAdapterHarness), amount); // cctp adapter receives USDC
 
-        // receives 1 minted USDC and swap to weth
+        // switched tokenIn to weth, and tokenOut to usdc - should fail now on swap
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
+            true,
             false,
-            false,
-            address(usdc),
             address(weth),
+            address(usdc),
             500,
             user
         );
 
-        // switched tokenIn to weth, and tokenOut to usdc - should fail now on swap
         IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor
             .RouteProcessorData({
                 tokenIn: address(weth),
@@ -435,7 +434,7 @@ contract CCTPAdapterExecutesTest is BaseTest {
 
         // receives 1 minted USDC and swap to weth
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false,
+            true,
             false,
             address(usdc),
             address(weth),
@@ -489,7 +488,7 @@ contract CCTPAdapterExecutesTest is BaseTest {
 
         // receives 1 minted USDC and swap to weth
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false,
+            true,
             false,
             address(usdc),
             address(weth),
@@ -545,7 +544,7 @@ contract CCTPAdapterExecutesTest is BaseTest {
 
         // receive 1 usdc and swap to weth
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false,
+            true,
             false,
             address(usdc),
             address(weth),
@@ -625,7 +624,7 @@ contract CCTPAdapterExecutesTest is BaseTest {
 
         // receive 1 usdc and swap to weth
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false,
+            true,
             false,
             address(usdc),
             address(weth),

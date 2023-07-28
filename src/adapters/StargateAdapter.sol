@@ -65,15 +65,18 @@ contract StargateAdapter is ISushiXSwapV2Adapter, IStargateReceiver {
             _swapData,
             (IRouteProcessor.RouteProcessorData)
         );
-        if (_token == sgeth) {
-            weth.deposit{value: _amountBridged}();
-        }
-        // increase token approval to RP
-        IERC20(rpd.tokenIn).safeIncreaseAllowance(address(rp), _amountBridged);
 
-        rp.processRoute(
+        // send tokens to RP
+        if (_token != sgeth) {
+            IERC20(rpd.tokenIn).safeTransfer(
+                address(rp),
+                _amountBridged
+            );
+        }
+
+        rp.processRoute{value: _token == sgeth ? _amountBridged : 0}(
             rpd.tokenIn,
-            _amountBridged != 0 ? _amountBridged : rpd.amountIn,
+            _amountBridged,
             rpd.tokenOut,
             rpd.amountOutMin,
             rpd.to,
@@ -96,15 +99,17 @@ contract StargateAdapter is ISushiXSwapV2Adapter, IStargateReceiver {
         uint256 _amountBridged,
         bytes calldata _payloadData,
         address _token
-    ) external payable override {
-        // send tokens to payload executor
-        if (_token == sgeth) {
-            weth.deposit{value: _amountBridged}();
-            _token = address(weth);
-        }
+    ) external payable override {        
         PayloadData memory pd = abi.decode(_payloadData, (PayloadData));
-        IERC20(_token).safeTransfer(pd.target, _amountBridged);
-        IPayloadExecutor(pd.target).onPayloadReceive(pd.targetData);
+
+        if (_token != sgeth) {
+            IERC20(_token).safeTransfer(
+                pd.target,
+                _amountBridged
+            );
+        }
+
+        IPayloadExecutor(pd.target).onPayloadReceive{value: _token == sgeth ? _amountBridged : 0}(pd.targetData);
     }
 
     /// @notice Get the fees to be paid in native token for the swap

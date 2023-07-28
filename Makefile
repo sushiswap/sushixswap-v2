@@ -18,5 +18,6 @@ coverage:
 	forge coverage
 coverage-info:
 	forge coverage --report debug
-
+deploy:
+	forge script ./script/DeploySushiXSwapV2.s.sol --broadcast --slow --optimize --optimizer-runs 999999 --names --verify --rpc-url ${RPC_URL} --chain ${CHAIN_ID} --etherscan-api-key ${ETHERSCAN_API_KEY}
 .PHONY: test
