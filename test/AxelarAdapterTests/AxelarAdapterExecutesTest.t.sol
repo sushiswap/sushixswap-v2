@@ -115,7 +115,7 @@ contract AxelarAdapterExecutesTest is BaseTest {
 
         // receive 1 USDC and swap to weth
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false,
+            true,
             false,
             address(usdc),
             address(weth),
@@ -171,7 +171,7 @@ contract AxelarAdapterExecutesTest is BaseTest {
 
         // receive 1 USDC and swap to weth
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false,
+            true,
             false,
             address(usdt),
             address(usdc),
@@ -228,7 +228,7 @@ contract AxelarAdapterExecutesTest is BaseTest {
 
         // receive 1 USDC and swap to weth
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false,
+            true,
             false,
             address(usdc),
             address(weth),
@@ -289,7 +289,7 @@ contract AxelarAdapterExecutesTest is BaseTest {
 
         // receive 1 USDC and swap to weth
         bytes memory computedRoute = routeProcessorHelper.computeRouteNativeOut(
-            false,
+            true,
             false,
             address(usdc),
             address(weth),
@@ -343,7 +343,7 @@ contract AxelarAdapterExecutesTest is BaseTest {
 
         // receive 1 USDC and swap to weth
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false,
+            true,
             false,
             address(usdc),
             address(weth),
@@ -398,7 +398,7 @@ contract AxelarAdapterExecutesTest is BaseTest {
 
         // receive 1 USDC and swap to weth
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false,
+            true,
             false,
             address(usdt),
             address(usdc),
@@ -455,7 +455,7 @@ contract AxelarAdapterExecutesTest is BaseTest {
 
         // receive 1 USDC and swap to weth
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false,
+            true,
             false,
             address(usdc),
             address(weth),
@@ -547,17 +547,16 @@ contract AxelarAdapterExecutesTest is BaseTest {
 
         deal(address(usdc), address(axelarAdapterHarness), amount); // axelar adapter receives USDC
 
-        // receive 1 USDC and swap to weth
+        // switched tokenIn to weth, and tokenOut to usdc - should fail now on swap
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
+            true,
             false,
-            false,
-            address(usdc),
             address(weth),
+            address(usdc),
             500,
             user
         );
 
-        // switched tokenIn to weth, and tokenOut to usdc - should fail now on swap
         IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor
             .RouteProcessorData({
                 tokenIn: address(weth),
@@ -605,7 +604,7 @@ contract AxelarAdapterExecutesTest is BaseTest {
 
         // receive 1 USDC and swap to weth
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false,
+            true,
             false,
             address(usdc),
             address(weth),
@@ -660,7 +659,7 @@ contract AxelarAdapterExecutesTest is BaseTest {
 
         // receive 1 USDC and swap to weth
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false,
+            true,
             false,
             address(usdc),
             address(weth),
@@ -719,7 +718,7 @@ contract AxelarAdapterExecutesTest is BaseTest {
 
         // receive 1 usdc and swap to weth
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false,
+            true,
             false,
             address(usdc),
             address(weth),
@@ -800,7 +799,7 @@ contract AxelarAdapterExecutesTest is BaseTest {
 
         // receive 1 usdc and swap to weth
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false,
+            true,
             false,
             address(usdc),
             address(weth),

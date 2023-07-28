@@ -75,9 +75,10 @@ contract StargateAdapterSwapAndBridgeTest is BaseTest {
     }
 
     function test_SwapFromERC20ToERC20AndBridge() public {
+        uint64 amount = 1 ether;
         // basic swap 1 weth to usdc and bridge
-        vm.startPrank(operator);
-        IERC20(address(weth)).safeIncreaseAllowance(address(sushiXswap), 1 ether);
+        deal(address(weth), user, amount);
+        vm.deal(user, 0.1 ether);
 
         (uint256 gasNeeded, ) = stargateAdapter.getFee(
             111, // dstChainId
@@ -89,7 +90,7 @@ contract StargateAdapterSwapAndBridgeTest is BaseTest {
         );
 
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false, // rpHasToken
+            true, // rpHasToken
             false, // isV2
             address(weth), // tokenIn
             address(usdc), // tokenOut
@@ -100,7 +101,7 @@ contract StargateAdapterSwapAndBridgeTest is BaseTest {
         IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor
             .RouteProcessorData({
                 tokenIn: address(weth),
-                amountIn: 1 ether,
+                amountIn: amount,
                 tokenOut: address(usdc),
                 amountOutMin: 0,
                 to: address(stargateAdapter),
@@ -109,12 +110,15 @@ contract StargateAdapterSwapAndBridgeTest is BaseTest {
 
         bytes memory rpd_encoded = abi.encode(rpd);
 
+        vm.startPrank(user);
+        IERC20(address(weth)).safeIncreaseAllowance(address(sushiXswap), amount);
+
         sushiXswap.swapAndBridge{value: gasNeeded}(
             ISushiXSwapV2.BridgeParams({
                 refId: 0x0000,
                 adapter: address(stargateAdapter),
                 tokenIn: address(weth),
-                amountIn: 1 ether,
+                amountIn: amount,
                 to: user,
                 adapterData: abi.encode(
                     111, // dstChainId - op
@@ -133,6 +137,13 @@ contract StargateAdapterSwapAndBridgeTest is BaseTest {
             "", // _swapPayload
             "" // _payloadData
         );
+
+        assertEq(usdc.balanceOf(user), 0, "user should have 0 usdc");
+        assertEq(usdc.balanceOf(address(sushiXswap)), 0, "xswap should have 0 usdc");
+        assertEq(usdc.balanceOf(address(stargateAdapter)), 0, "stargateAdapter should have 0 usdc");
+        assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
+        assertEq(weth.balanceOf(address(sushiXswap)), 0, "xSwap should have 0 weth");
+        assertEq(weth.balanceOf(address(stargateAdapter)), 0, "stargateAdapter should have 0 weth");
     }
 
     function test_SwapFromUSDTToERC20AndBridge(uint32 amount) public {
@@ -151,7 +162,7 @@ contract StargateAdapterSwapAndBridgeTest is BaseTest {
         );
 
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false, // rpHasToken
+            true, // rpHasToken
             false, // isV2
             address(usdt), // tokenIn
             address(usdc), // tokenOut
@@ -198,6 +209,13 @@ contract StargateAdapterSwapAndBridgeTest is BaseTest {
             "", // _swapPayload
             "" // _payloadData
         );
+
+        assertEq(usdt.balanceOf(user), 0, "user should have 0 usdt");
+        assertEq(usdt.balanceOf(address(sushiXswap)), 0, "xswap should have 0 usdt");
+        assertEq(usdt.balanceOf(address(stargateAdapter)), 0, "stargateAdapter should have 0 usdt");
+        assertEq(usdc.balanceOf(user), 0, "user should have 0 usdc");
+        assertEq(usdc.balanceOf(address(sushiXswap)), 0, "xSwap should have 0 usdc");
+        assertEq(usdc.balanceOf(address(stargateAdapter)), 0, "stargateAdapter should have 0 usdc");
     }
 
     function test_SwapFromERC20ToUSDTAndBridge(uint32 amount) public {
@@ -216,7 +234,7 @@ contract StargateAdapterSwapAndBridgeTest is BaseTest {
         );
 
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false, // rpHasToken
+            true, // rpHasToken
             false, // isV2
             address(usdc), // tokenIn
             address(usdt), // tokenOut
@@ -263,11 +281,20 @@ contract StargateAdapterSwapAndBridgeTest is BaseTest {
             "", // _swapPayload
             "" // _payloadData
         );
+
+        assertEq(usdc.balanceOf(user), 0, "user should have 0 usdc");
+        assertEq(usdc.balanceOf(address(sushiXswap)), 0, "xswap should have 0 usdc");
+        assertEq(usdc.balanceOf(address(stargateAdapter)), 0, "stargateAdapter should have 0 usdc");
+        assertEq(usdt.balanceOf(user), 0, "user should have 0 usdt");
+        assertEq(usdt.balanceOf(address(sushiXswap)), 0, "xSwap should have 0 usdt");
+        assertEq(usdt.balanceOf(address(stargateAdapter)), 0, "stargateAdapter should have 0 usdt");
     }
 
     function test_SwapFromNativeToERC20AndBridge() public {
-        // swap 1 eth to usdc and bridge
-        vm.startPrank(operator);
+        uint64 amount = 1 ether;
+        
+        uint256 valueToSend = uint256(amount) + 0.1 ether;
+        vm.deal(user, valueToSend);
 
         (uint256 gasNeeded, ) = stargateAdapter.getFee(
             111, // dstChainId
@@ -278,10 +305,9 @@ contract StargateAdapterSwapAndBridgeTest is BaseTest {
             "" // payload
         );
 
-        bytes memory computeRoute = routeProcessorHelper.computeRoute(
-            false, // rpHasToken
+        bytes memory computeRoute = routeProcessorHelper.computeRouteNativeIn(
+            address(weth), // wrapToken
             false, // isV2
-            address(weth), // tokenIn
             address(usdc), // tokenOut
             500, // fee
             address(stargateAdapter) // to
@@ -290,7 +316,7 @@ contract StargateAdapterSwapAndBridgeTest is BaseTest {
         IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor
             .RouteProcessorData({
                 tokenIn: NATIVE_ADDRESS,
-                amountIn: 1 ether,
+                amountIn: amount,
                 tokenOut: address(usdc),
                 amountOutMin: 0,
                 to: address(stargateAdapter),
@@ -298,14 +324,14 @@ contract StargateAdapterSwapAndBridgeTest is BaseTest {
             });
 
         bytes memory rpd_encoded = abi.encode(rpd);
-
-        uint256 valueNeeded = gasNeeded + 1 ether;
-        sushiXswap.swapAndBridge{value: valueNeeded}(
+        
+        vm.startPrank(user);
+        sushiXswap.swapAndBridge{value: valueToSend}(
             ISushiXSwapV2.BridgeParams({
                 refId: 0x0000,
                 adapter: address(stargateAdapter),
-                tokenIn: address(weth), // doesn't matter what you put for bridge params when swapping first
-                amountIn: 1 ether,
+                tokenIn: NATIVE_ADDRESS,
+                amountIn: amount,
                 to: user,
                 adapterData: abi.encode(
                     111, // dstChainId - op
@@ -324,12 +350,20 @@ contract StargateAdapterSwapAndBridgeTest is BaseTest {
             "", // _swapPayload
             "" // _payloadData
         );
+
+        assertEq(user.balance, 0, "user should have 0 native");
+        assertEq(address(sushiXswap).balance, 0, "xswap should have 0 native");
+        assertEq(address(stargateAdapter).balance, 0, "stargateAdapter should have 0 native");
+        assertEq(usdc.balanceOf(user), 0, "user should have 0 usdc");
+        assertEq(usdc.balanceOf(address(sushiXswap)), 0, "xSwap should have 0 usdc");
+        assertEq(usdc.balanceOf(address(stargateAdapter)), 0, "stargateAdapter should have 0 usdc");
     }
 
     function test_SwapFromERC20ToWethAndBridge() public {
+        uint32 amount = 1000000;
         // swap 1 usdc to eth and bridge
-        vm.startPrank(operator);
-        IERC20(address(usdc)).safeIncreaseAllowance(address(sushiXswap), 1000000);
+        deal(address(usdc), user, amount);
+        vm.deal(user, 0.1 ether);
 
         (uint256 gasNeeded, ) = stargateAdapter.getFee(
             111, // dstChainId
@@ -341,7 +375,7 @@ contract StargateAdapterSwapAndBridgeTest is BaseTest {
         );
 
         bytes memory computeRoute = routeProcessorHelper.computeRoute(
-            false, // rpHasToken
+            true, // rpHasToken
             false, // isV2
             address(usdc), // tokenIn
             address(weth), // tokenOut
@@ -352,7 +386,7 @@ contract StargateAdapterSwapAndBridgeTest is BaseTest {
         IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor
             .RouteProcessorData({
                 tokenIn: address(usdc),
-                amountIn: 1000000,
+                amountIn: amount,
                 tokenOut: address(weth),
                 amountOutMin: 0,
                 to: address(stargateAdapter),
@@ -361,12 +395,15 @@ contract StargateAdapterSwapAndBridgeTest is BaseTest {
 
         bytes memory rpd_encoded = abi.encode(rpd);
 
+        vm.startPrank(user);
+        IERC20(address(usdc)).safeIncreaseAllowance(address(sushiXswap), amount);
+
         sushiXswap.swapAndBridge{value: gasNeeded}(
             ISushiXSwapV2.BridgeParams({
                 refId: 0x0000,
                 adapter: address(stargateAdapter),
-                tokenIn: address(weth), // doesn't matter for bridge params with swapAndBridge
-                amountIn: 1 ether,
+                tokenIn: address(usdc),
+                amountIn: amount,
                 to: user,
                 adapterData: abi.encode(
                     111, // dstChainId - op
@@ -385,12 +422,21 @@ contract StargateAdapterSwapAndBridgeTest is BaseTest {
             "", // _swapPayload
             "" // _payloadData
         );
+
+        assertEq(usdc.balanceOf(user), 0, "user should have 0 usdc");
+        assertEq(usdc.balanceOf(address(sushiXswap)), 0, "xswap should have 0 usdc");
+        assertEq(usdc.balanceOf(address(stargateAdapter)), 0, "stargateAdapter should have 0 usdc");
+        assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
+        assertEq(weth.balanceOf(address(sushiXswap)), 0, "xSwap should have 0 weth");
+        assertEq(weth.balanceOf(address(stargateAdapter)), 0, "stargateAdapter should have 0 weth");
     }
 
     function test_RevertWhen_SwapToNativeAndBridge() public {
         // swap 1 usdc to eth and bridge
-        vm.startPrank(operator);
-        IERC20(address(usdc)).safeIncreaseAllowance(address(sushiXswap), 1000000);
+        uint64 amount = 1 ether;
+
+        deal(address(usdc), user, amount);
+        vm.deal(user, 0.1 ether);
 
         (uint256 gasNeeded, ) = stargateAdapter.getFee(
             111, // dstChainId
@@ -402,7 +448,7 @@ contract StargateAdapterSwapAndBridgeTest is BaseTest {
         );
 
         bytes memory computeRoute = routeProcessorHelper.computeRouteNativeOut(
-            false, // rpHasToken
+            true, // rpHasToken
             false, // isV2
             address(usdc), // tokenIn
             address(weth), // tokenOut
@@ -422,13 +468,16 @@ contract StargateAdapterSwapAndBridgeTest is BaseTest {
 
         bytes memory rpd_encoded = abi.encode(rpd);
 
+        vm.startPrank(user);
+        IERC20(address(usdc)).safeIncreaseAllowance(address(sushiXswap), amount);
+
         vm.expectRevert(bytes4(keccak256("RpSentNativeIn()")));
         sushiXswap.swapAndBridge{value: gasNeeded}(
             ISushiXSwapV2.BridgeParams({
                 refId: 0x0000,
                 adapter: address(stargateAdapter),
-                tokenIn: address(weth), // doesn't matter for bridge params with swapAndBridge
-                amountIn: 1 ether,
+                tokenIn: address(usdc), // doesn't matter for bridge params with swapAndBridge
+                amountIn: amount,
                 to: user,
                 adapterData: abi.encode(
                     111, // dstChainId - op

@@ -118,7 +118,7 @@ contract StargateAdapterReceivesTest is BaseTest {
 
         // receive 1 usdc and swap to weth
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false,
+            true,
             false,
             address(usdc),
             address(weth),
@@ -169,7 +169,7 @@ contract StargateAdapterReceivesTest is BaseTest {
 
         // receive 1 usdc and swap to weth
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false,
+            true,
             false,
             address(usdc),
             address(usdt),
@@ -220,7 +220,7 @@ contract StargateAdapterReceivesTest is BaseTest {
 
         // receive 1 usdc and swap to weth
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false,
+            true,
             false,
             address(usdt),
             address(weth),
@@ -271,18 +271,17 @@ contract StargateAdapterReceivesTest is BaseTest {
         vm.deal(stargateRouter, amount); // amount for sgReceive
 
         // receive 1 usdc and swap to weth
-        bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false,
-            false,
-            address(weth),
-            address(usdc),
-            500,
-            user
+        bytes memory computedRoute = routeProcessorHelper.computeRouteNativeIn(
+            address(weth), // wrapToken
+            false, // isV2
+            address(usdc), // tokenOut
+            500, // fee
+            user // to
         );
 
         IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor
             .RouteProcessorData({
-                tokenIn: address(weth),
+                tokenIn: NATIVE_ADDRESS,
                 amountIn: amount,
                 tokenOut: address(usdc),
                 amountOutMin: 0,
@@ -342,7 +341,7 @@ contract StargateAdapterReceivesTest is BaseTest {
 
         // receive 1 usdc and swap to weth
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false,
+            true,
             false,
             address(usdc),
             address(weth),
@@ -403,18 +402,17 @@ contract StargateAdapterReceivesTest is BaseTest {
         vm.deal(stargateRouter, amount + dustAmount); // amount for sgReceive
 
         // receive 1 usdc and swap to weth
-        bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false,
-            false,
-            address(weth),
-            address(usdc),
-            500,
-            user
+        bytes memory computedRoute = routeProcessorHelper.computeRouteNativeIn(
+            address(weth), // wrapToken
+            false, // isV2
+            address(usdc), // tokenOut
+            500, // fee
+            user // to
         );
 
         IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor
             .RouteProcessorData({
-                tokenIn: address(weth),
+                tokenIn: NATIVE_ADDRESS,
                 amountIn: amount,
                 tokenOut: address(usdc),
                 amountOutMin: 0,
@@ -474,7 +472,7 @@ contract StargateAdapterReceivesTest is BaseTest {
 
         // receive usdc and attempt swap to weth
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false,
+            true,
             false,
             address(usdc),
             address(weth),
@@ -531,7 +529,7 @@ contract StargateAdapterReceivesTest is BaseTest {
 
         // receive usdc and attempt swap to weth
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false,
+            true,
             false,
             address(usdt),
             address(weth),
@@ -588,7 +586,7 @@ contract StargateAdapterReceivesTest is BaseTest {
 
         // receive native (sgETH) and attempt swap to usdc
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false,
+            true,
             false,
             address(usdc),
             address(weth),
@@ -651,7 +649,7 @@ contract StargateAdapterReceivesTest is BaseTest {
 
         // receive usdc & dust and attempt to swap to weth
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false,
+            true,
             false,
             address(usdc),
             address(weth),
@@ -846,17 +844,16 @@ contract StargateAdapterReceivesTest is BaseTest {
 
         deal(address(usdc), address(stargateAdapter), amount); // amount adapter receives
 
-        // receive usdc and attempt swap to weth
+        // switched tokenIn to weth, and tokenOut to usdc - should fail now on swap
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
+            true,
             false,
-            false,
-            address(usdc),
             address(weth),
+            address(usdc),
             500,
             user
         );
 
-        // switched tokenIn to weth, and tokenOut to usdc - should fail now on swap
         IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor
             .RouteProcessorData({
                 tokenIn: address(weth),
@@ -901,7 +898,7 @@ contract StargateAdapterReceivesTest is BaseTest {
 
         // receive usdc and attempt swap to weth
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false,
+            true,
             false,
             address(usdt),
             address(weth),
@@ -954,7 +951,7 @@ contract StargateAdapterReceivesTest is BaseTest {
 
         // receive usdc and attempt swap to weth
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false,
+            true,
             false,
             address(usdc),
             address(weth),
@@ -1012,7 +1009,7 @@ contract StargateAdapterReceivesTest is BaseTest {
 
         // receive usdc and attempt swap to weth
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false,
+            true,
             false,
             address(usdc),
             address(weth),
@@ -1071,7 +1068,7 @@ contract StargateAdapterReceivesTest is BaseTest {
 
         // receive native (sgETH) and attempt swap to usdc
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false,
+            true,
             false,
             address(weth),
             address(usdc),
@@ -1125,7 +1122,7 @@ contract StargateAdapterReceivesTest is BaseTest {
 
         // receive usdc and attempt swap to weth
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false,
+            true,
             false,
             address(usdc),
             address(weth),
@@ -1178,7 +1175,7 @@ contract StargateAdapterReceivesTest is BaseTest {
 
         // receive native (sgETH) and attempt swap to usdc
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false,
+            true,
             false,
             address(weth),
             address(usdc),
@@ -1235,7 +1232,7 @@ contract StargateAdapterReceivesTest is BaseTest {
 
         // receive 1 usdc and swap to weth
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false,
+            true,
             false,
             address(usdc),
             address(weth),
@@ -1319,7 +1316,7 @@ contract StargateAdapterReceivesTest is BaseTest {
 
         // receive 1 usdc and swap to weth
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false,
+            true,
             false,
             address(usdc),
             address(usdt),
@@ -1403,7 +1400,7 @@ contract StargateAdapterReceivesTest is BaseTest {
 
         // receive 1 usdc and swap to weth
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false,
+            true,
             false,
             address(usdc),
             address(weth),
@@ -1631,7 +1628,7 @@ contract StargateAdapterReceivesTest is BaseTest {
                         gasLimit: 200000,
                         targetData: abi.encode(
                             AirdropPayloadExecutor.AirdropPayloadParams({
-                                token: address(weth),
+                                token: NATIVE_ADDRESS,
                                 recipients: recipients
                             })
                         )
@@ -1641,26 +1638,20 @@ contract StargateAdapterReceivesTest is BaseTest {
         );
 
         assertEq(
-            weth.balanceOf(address(stargateAdapter)),
-            0,
-            "stargateAdapter should have 0 weth"
-        );
-        assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
-        assertGt(
-            weth.balanceOf(user1),
-            0,
-            "user1 should have > 0 weth from airdrop"
-        );
-        assertGt(
-            weth.balanceOf(user2),
-            0,
-            "user2 should have > 0 weth from airdrop"
-        );
-        assertEq(user.balance, 0, "user should have 0 native");
-        assertEq(
             address(stargateAdapter).balance,
             0,
-            "stargateAdapter should have 0 weth"
+            "stargateAdapter should have 0 native"
+        );
+        assertEq(user.balance, 0, "user should have 0 native");
+        assertGt(
+            user1.balance,
+            0,
+            "user1 should have > 0 native from airdrop"
+        );
+        assertGt(
+            user2.balance,
+            0,
+            "user2 should have > 0 native from airdrop"
         );
     }
 

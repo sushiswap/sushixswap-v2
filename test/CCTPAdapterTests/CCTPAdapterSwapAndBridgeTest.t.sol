@@ -78,7 +78,7 @@ contract CCTPAdapterSwapAndBridgeTest is BaseTest {
 
         // swap 1 weth to usdc and bridge
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false, // rpHasToken
+            true, // rpHasToken
             false, // isV2
             address(weth), // tokenIn
             address(usdc), // tokenOut
@@ -142,10 +142,9 @@ contract CCTPAdapterSwapAndBridgeTest is BaseTest {
         vm.deal(user, valueToSend);
 
         // swap 1 weth to usdc and bridge
-        bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false, // rpHasToken
+        bytes memory computedRoute = routeProcessorHelper.computeRouteNativeIn(
+            address(weth), // wrapToken
             false, // isV2
-            address(weth), // tokenIn
             address(usdc), // tokenOut
             500, // fee
             address(cctpAdapter) // to
@@ -168,7 +167,7 @@ contract CCTPAdapterSwapAndBridgeTest is BaseTest {
             ISushiXSwapV2.BridgeParams({
                 refId: 0x0000,
                 adapter: address(cctpAdapter),
-                tokenIn: address(weth), // doesn't matter what you put here
+                tokenIn: NATIVE_ADDRESS, // doesn't matter what you put here
                 amountIn: amount,
                 to: user,
                 adapterData: abi.encode(
@@ -206,7 +205,7 @@ contract CCTPAdapterSwapAndBridgeTest is BaseTest {
 
         // swap 1 weth to usdc and bridge
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false, // rpHasToken
+            true, // rpHasToken
             false, // isV2
             address(usdc), // tokenIn
             address(weth), // tokenOut

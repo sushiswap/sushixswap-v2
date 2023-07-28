@@ -79,7 +79,7 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
         vm.deal(user, gasNeeded);
 
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false, // rpHasToken
+            true, // rpHasToken
             false, // isV2
             address(weth), // tokenIn
             address(usdc), // tokenOut
@@ -146,7 +146,7 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
         vm.deal(user, gasNeeded);
 
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false, // rpHasToken
+            true, // rpHasToken
             false, // isV2
             address(usdt), // tokenIn
             address(usdc), // tokenOut
@@ -212,10 +212,9 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
         uint256 valueToSend = amount + gasNeeded;
         vm.deal(user, valueToSend);
 
-        bytes memory computeRoute = routeProcessorHelper.computeRoute(
-            false, // rpHasToken
+        bytes memory computeRoute = routeProcessorHelper.computeRouteNativeIn(
+            address(weth), // wrapToken
             false, // isV2
-            address(weth), // tokenIn
             address(usdc), // tokenOut
             500, // fee
             address(axelarAdapter) // to
@@ -238,7 +237,7 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
             ISushiXSwapV2.BridgeParams({
                 refId: 0x0000,
                 adapter: address(axelarAdapter),
-                tokenIn: address(weth), // doesn't matter what you put for bridge params when swapping first
+                tokenIn: NATIVE_ADDRESS, // doesn't matter what you put for bridge params when swapping first
                 amountIn: amount,
                 to: user,
                 adapterData: abi.encode(
@@ -278,7 +277,7 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
         vm.deal(user, gasNeeded);
 
         bytes memory computeRoute = routeProcessorHelper.computeRouteNativeOut(
-            false, // rpHasToken
+            true, // rpHasToken
             false, // isV2
             address(usdc), // tokenIn
             address(weth), // tokenOut

@@ -29,6 +29,9 @@ contract RouteProcessorHelper {
   address public immutable rp;
   address public immutable weth;
 
+  address constant NATIVE_ADDRESS =
+        0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
+
   constructor (address _v2Factory, address _v3Factory, address _rp, address _weth) {
     v2Factory = IUniswapV2Factory(_v2Factory);
     v3Factory = IUniswapV3Factory(_v3Factory);
@@ -63,6 +66,51 @@ contract RouteProcessorHelper {
     route = abi.encodePacked(
       uint8(rpHasToken ? 0x01 : 0x02), // 0x01 for pre-transfer to rp & 0x02 for transferFrom msg.sender
       tokenIn,
+      uint8(0x01), // always does 1 route
+      uint16(0xffff), // always does full amount
+      uint8(isV2 ? 0x00 : 0x01), // poolType (0 = v2, 1 = v3)
+      pair,
+      direction,
+      to
+    );
+  }
+
+  function computeRouteNativeIn(address wrapToken, bool isV2, address tokenOut, uint24 fee, address to) public view returns (bytes memory route) {
+    address pair;
+    address token0;
+    address token1;
+    uint8 direction;
+
+    if (isV2) {
+      pair = v2Factory.getPair(wrapToken, tokenOut);
+      token0 = IUniswapV2Pair(pair).token0();
+      token1 = IUniswapV2Pair(pair).token1();
+    } else {
+      pair = v3Factory.getPool(wrapToken, tokenOut, fee);
+      token0 = IUniswapV3Pool(pair).token0();
+      token1 = IUniswapV3Pool(pair).token1();
+    }
+
+    if (token0 == wrapToken) {
+      direction = uint8(0x01);
+    } else {
+      direction = uint8(0x00);
+    }
+
+    route = abi.encodePacked(
+      uint8(0x03), // 0x03 processNative cmd code
+      uint8(0x01), // 1 route
+      uint16(0xffff), // full amount
+      uint8(0x02), // wrapNative pool type
+      uint8(0x01), // wrap direction (deposit)
+      rp, // to
+      wrapToken,
+      uint8(0x01)  // processMyErc20
+    );
+
+    route = abi.encodePacked(
+      route,
+      wrapToken,  // tokenIn
       uint8(0x01), // always does 1 route
       uint16(0xffff), // always does full amount
       uint8(isV2 ? 0x00 : 0x01), // poolType (0 = v2, 1 = v3)

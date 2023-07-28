@@ -139,7 +139,7 @@ contract SushiXSwapBaseTest is BaseTest {
 
         // basic swap weth to usdc
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            false, // rpHasToken
+            true, // rpHasToken
             false, // isV2
             address(weth), // tokenIn
             address(usdc), // tokenOut
@@ -180,10 +180,9 @@ contract SushiXSwapBaseTest is BaseTest {
         vm.deal(user, amount);
 
         // swap eth to usdc
-        bytes memory computedRoute = routeProcessorHelper.computeRoute(
+        bytes memory computedRoute = routeProcessorHelper.computeRouteNativeIn(
+            address(weth), // wrapToken
             false,
-            false,
-            address(weth),
             address(usdc),
             500,
             user
