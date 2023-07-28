@@ -79,7 +79,7 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
         vm.deal(user, gasNeeded);
 
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            true, // rpHasToken
+            false, // rpHasToken
             false, // isV2
             address(weth), // tokenIn
             address(usdc), // tokenOut
@@ -146,7 +146,7 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
         vm.deal(user, gasNeeded);
 
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            true, // rpHasToken
+            false, // rpHasToken
             false, // isV2
             address(usdt), // tokenIn
             address(usdc), // tokenOut
@@ -277,7 +277,7 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
         vm.deal(user, gasNeeded);
 
         bytes memory computeRoute = routeProcessorHelper.computeRouteNativeOut(
-            true, // rpHasToken
+            false, // rpHasToken
             false, // isV2
             address(usdc), // tokenIn
             address(weth), // tokenOut

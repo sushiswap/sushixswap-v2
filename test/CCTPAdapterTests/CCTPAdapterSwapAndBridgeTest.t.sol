@@ -78,7 +78,7 @@ contract CCTPAdapterSwapAndBridgeTest is BaseTest {
 
         // swap 1 weth to usdc and bridge
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            true, // rpHasToken
+            false, // rpHasToken
             false, // isV2
             address(weth), // tokenIn
             address(usdc), // tokenOut
@@ -205,7 +205,7 @@ contract CCTPAdapterSwapAndBridgeTest is BaseTest {
 
         // swap 1 weth to usdc and bridge
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            true, // rpHasToken
+            false, // rpHasToken
             false, // isV2
             address(usdc), // tokenIn
             address(weth), // tokenOut

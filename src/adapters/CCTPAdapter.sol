@@ -63,8 +63,8 @@ contract CCTPAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
             (IRouteProcessor.RouteProcessorData)
         );
 
-        // send USDC to RP
-        nativeUSDC.safeTransfer(address(rp), _amountBridged);
+        // increase token approval to RP
+        nativeUSDC.safeIncreaseAllowance(address(rp), _amountBridged);
 
         rp.processRoute(
             rpd.tokenIn,

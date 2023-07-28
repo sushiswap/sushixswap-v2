@@ -90,7 +90,7 @@ contract StargateAdapterSwapAndBridgeTest is BaseTest {
         );
 
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            true, // rpHasToken
+            false, // rpHasToken
             false, // isV2
             address(weth), // tokenIn
             address(usdc), // tokenOut
@@ -162,7 +162,7 @@ contract StargateAdapterSwapAndBridgeTest is BaseTest {
         );
 
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            true, // rpHasToken
+            false, // rpHasToken
             false, // isV2
             address(usdt), // tokenIn
             address(usdc), // tokenOut
@@ -234,7 +234,7 @@ contract StargateAdapterSwapAndBridgeTest is BaseTest {
         );
 
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            true, // rpHasToken
+            false, // rpHasToken
             false, // isV2
             address(usdc), // tokenIn
             address(usdt), // tokenOut
@@ -375,7 +375,7 @@ contract StargateAdapterSwapAndBridgeTest is BaseTest {
         );
 
         bytes memory computeRoute = routeProcessorHelper.computeRoute(
-            true, // rpHasToken
+            false, // rpHasToken
             false, // isV2
             address(usdc), // tokenIn
             address(weth), // tokenOut
@@ -448,7 +448,7 @@ contract StargateAdapterSwapAndBridgeTest is BaseTest {
         );
 
         bytes memory computeRoute = routeProcessorHelper.computeRouteNativeOut(
-            true, // rpHasToken
+            false, // rpHasToken
             false, // isV2
             address(usdc), // tokenIn
             address(weth), // tokenOut

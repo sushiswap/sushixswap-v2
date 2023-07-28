@@ -57,8 +57,8 @@ contract AxelarAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
             (IRouteProcessor.RouteProcessorData)
         );
         
-        // send tokens to RP
-        IERC20(rpd.tokenIn).safeTransfer(address(rp), _amountBridged);
+        // increase token approval to RP
+        IERC20(_token).safeIncreaseAllowance(address(rp), _amountBridged);
 
         rp.processRoute(
             rpd.tokenIn,

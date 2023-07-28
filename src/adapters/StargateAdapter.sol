@@ -68,10 +68,8 @@ contract StargateAdapter is ISushiXSwapV2Adapter, IStargateReceiver {
 
         // send tokens to RP
         if (_token != sgeth) {
-            IERC20(rpd.tokenIn).safeTransfer(
-                address(rp),
-                _amountBridged
-            );
+            // increase token approval to RP
+            IERC20(_token).safeIncreaseAllowance(address(rp), _amountBridged);
         }
 
         rp.processRoute{value: _token == sgeth ? _amountBridged : 0}(
