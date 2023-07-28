@@ -1,0 +1,24 @@
+Ethereum 
+-------------
+SushiXSwapV2 -> 0x5cA5abC25EFAA03DD44FCaa58984944037518764
+StargateAdapter -> 0xE823fC46a315D535868C2b9386EE49311760c534
+
+
+Arbitrum 
+-------------
+SushiXSwapV2 -> 0x467353f11d5af616247f2ff86cc47c46c5ac6652
+StargateAdapter -> 0x363546aa001719e2301233daad11a6e5a101e2de
+
+
+Optimism
+-------------
+SushiXSwapV2 -> 0x22bf9fc792Ed5975Eec29FB608E7138E2E6A16d1
+StargateAdapter -> 0x8E4638eefee96732C56291fBF48bBB98725c6b31
+
+
+Polygon
+--------------
+SushiXSwapV2 -> 0x1cF5bbfEC4783651a90ddF148c94D622Ac05e4a0
+StargateAdapter -> 0xc8b48a44F79E5ef07d34f5bDe69E79397f105ae8
+
+
