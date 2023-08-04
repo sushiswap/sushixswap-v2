@@ -118,6 +118,7 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
                     user // to
                 )
             }),
+            user, // _refundAddress
             rpd_encoded, // swap data
             "", // swap payload data
             "" // payload data
@@ -185,6 +186,7 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
                     user // to
                 )
             }),
+            user, // _refundAddress
             rpd_encoded, // swap data
             "", // swap payload data
             "" // payload data
@@ -249,6 +251,7 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
                     user // to
                 )
             }),
+            user, // _refundAddress
             rpd_encoded, // swap data
             "", // swap payload data
             "" // payload data
@@ -317,6 +320,7 @@ contract AxelarAdapterSwapAndBridgeTest is BaseTest {
                     user // to
                 )
             }),
+            user, // _refundAddress
             rpd_encoded, // swap data
             "", // swap payload data
             "" // payload data

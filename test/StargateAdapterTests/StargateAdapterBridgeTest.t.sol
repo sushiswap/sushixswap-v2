@@ -143,6 +143,7 @@ contract StargateAdapterBridgeTest is BaseTest {
                     0 // gas
                 )
             }),
+            user, // _refundAddress
             "", // _swapPayload
             "" // _payloadData
         );
@@ -262,6 +263,7 @@ contract StargateAdapterBridgeTest is BaseTest {
                     0 // gas
                 )
             }),
+            user, // _refundAddress
             "", // _swapPayload
             "" // _payloadData
         );
@@ -382,6 +384,7 @@ contract StargateAdapterBridgeTest is BaseTest {
                     0 // gas
                 )
             }),
+            user, // _refundAddress
             "", // _swapPayload
             "" // _payloadData
         );
@@ -502,6 +505,7 @@ contract StargateAdapterBridgeTest is BaseTest {
                         0 // gas
                     )
                 }),
+                user, // _refundAddress
                 "", // _swapPayload
                 "" // _payloadData
             );
@@ -665,6 +669,7 @@ contract StargateAdapterBridgeTest is BaseTest {
                     gasForSwap // gas
                 )
             }),
+            user, // _refundAddress
             rpd_encoded_dst, // _swapPayload
             "" // _payloadData
         );
@@ -738,6 +743,7 @@ contract StargateAdapterBridgeTest is BaseTest {
                     insufficientGasForDst // gas
                 )
             }),
+            user, // _refundAddress
             rpd_encoded_dst, // _swapPayload
             "" // _payloadData
         );

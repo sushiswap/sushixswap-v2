@@ -48,6 +48,7 @@ interface ISushiXSwapV2Adapter {
     /// @param _payloadData The payload data to pass to pass through bridge
     function adapterBridge(
         bytes calldata _adapterData,
+        address _refundAddress,
         bytes calldata _swapDataPayload,
         bytes calldata _payloadData
     ) external payable;

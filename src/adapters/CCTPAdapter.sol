@@ -79,7 +79,9 @@ contract CCTPAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
         if (_payloadData.length > 0) {
             PayloadData memory pd = abi.decode(_payloadData, (PayloadData));
             try
-                IPayloadExecutor(pd.target).onPayloadReceive(pd.targetData)
+                IPayloadExecutor(pd.target).onPayloadReceive{gas: pd.gasLimit}(
+                    pd.targetData
+                )
             {} catch (bytes memory) {
                 revert();
             }
@@ -94,12 +96,15 @@ contract CCTPAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
     ) external payable override {
         PayloadData memory pd = abi.decode(_payloadData, (PayloadData));
         nativeUSDC.safeTransfer(pd.target, _amountBridged);
-        IPayloadExecutor(pd.target).onPayloadReceive(pd.targetData);
+        IPayloadExecutor(pd.target).onPayloadReceive{gas: pd.gasLimit}(
+            pd.targetData
+        );
     }
 
     /// @inheritdoc ISushiXSwapV2Adapter
     function adapterBridge(
         bytes calldata _adapterData,
+        address _refundAddress,
         bytes calldata _swapData,
         bytes calldata _payloadData
     ) external payable override {
@@ -141,7 +146,7 @@ contract CCTPAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
             Bytes32ToString.toTrimmedString(params.destinationChain),
             AddressToString.toString(params.destinationAddress),
             payload,
-            payable(tx.origin) // refund address
+            payable(_refundAddress) // refund address
         );
 
         // send message w/ paylod to the gateway contract

@@ -38,6 +38,7 @@ contract SquidAdapter is ISushiXSwapV2Adapter {
     /// @inheritdoc ISushiXSwapV2Adapter
     function adapterBridge(
         bytes calldata _adapterData,
+        address,
         bytes calldata,
         bytes calldata
     ) external payable override {

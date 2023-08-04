@@ -50,21 +50,25 @@ interface ISushiXSwapV2 {
 
     /// @notice Perform a bridge through passed adapter in _bridgeParams
     /// @param _bridgeParams The bridge data for the function call
+    /// @param _refundAddress The address to refund excess funds to
     /// @param _swapPayload The swap data payload to pass to adapter
     /// @param _payloadData The payload data to pass to adapter
     function bridge(
         BridgeParams calldata _bridgeParams,
+        address _refundAddress,
         bytes calldata _swapPayload,
         bytes calldata _payloadData
     ) external payable;
     
     /// @notice Perform a swap then bridge through passed adapter in _bridgeParams
     /// @param _bridgeParams The bridge data for the function call
+    /// @param _refundAddress The address to refund excess funds to
     /// @param _swapData The swap data to pass to RouteProcessor
     /// @param _swapPayload The swap data payload to pass to adapter
     /// @param _payloadData The payload data to pass to adapter
     function swapAndBridge(
         BridgeParams calldata _bridgeParams,
+        address _refundAddress,
         bytes calldata _swapData,
         bytes calldata _swapPayload,
         bytes calldata _payloadData

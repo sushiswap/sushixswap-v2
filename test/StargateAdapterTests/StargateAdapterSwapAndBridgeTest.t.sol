@@ -133,7 +133,8 @@ contract StargateAdapterSwapAndBridgeTest is BaseTest {
                     0 // gas
                 )
             }),
-            rpd_encoded,
+            user, // _refundAddress
+            rpd_encoded, // _swapData
             "", // _swapPayload
             "" // _payloadData
         );
@@ -205,7 +206,8 @@ contract StargateAdapterSwapAndBridgeTest is BaseTest {
                     0 // gas
                 )
             }),
-            rpd_encoded,
+            user, // _refundAddress
+            rpd_encoded, // _swapData
             "", // _swapPayload
             "" // _payloadData
         );
@@ -277,7 +279,8 @@ contract StargateAdapterSwapAndBridgeTest is BaseTest {
                     0 // gas
                 )
             }),
-            rpd_encoded,
+            user, // _refundAddress
+            rpd_encoded, // _swapData
             "", // _swapPayload
             "" // _payloadData
         );
@@ -292,8 +295,9 @@ contract StargateAdapterSwapAndBridgeTest is BaseTest {
 
     function test_SwapFromNativeToERC20AndBridge() public {
         uint64 amount = 1 ether;
+        uint64 gasAmount = 0.1 ether;
         
-        uint256 valueToSend = uint256(amount) + 0.1 ether;
+        uint256 valueToSend = uint256(amount) + gasAmount;
         vm.deal(user, valueToSend);
 
         (uint256 gasNeeded, ) = stargateAdapter.getFee(
@@ -346,12 +350,14 @@ contract StargateAdapterSwapAndBridgeTest is BaseTest {
                     0 // gas
                 )
             }),
-            rpd_encoded,
+            user, // _refundAddress
+            rpd_encoded, // _swapData
             "", // _swapPayload
             "" // _payloadData
         );
 
-        assertEq(user.balance, 0, "user should have 0 native");
+        assertGt(user.balance, 0, "user should have refund amount of native");
+        assertLt(user.balance, gasAmount, "user should not have more than gas sent of native");
         assertEq(address(sushiXswap).balance, 0, "xswap should have 0 native");
         assertEq(address(stargateAdapter).balance, 0, "stargateAdapter should have 0 native");
         assertEq(usdc.balanceOf(user), 0, "user should have 0 usdc");
@@ -418,7 +424,8 @@ contract StargateAdapterSwapAndBridgeTest is BaseTest {
                     0 // gas
                 )
             }),
-            rpd_encoded,
+            user, // _refundAddress
+            rpd_encoded, // _swapData
             "", // _swapPayload
             "" // _payloadData
         );
@@ -492,7 +499,8 @@ contract StargateAdapterSwapAndBridgeTest is BaseTest {
                     0 // gas
                 )
             }),
-            rpd_encoded,
+            user, // _refundAddress
+            rpd_encoded, // _swapData
             "", // _swapPayload
             "" // _payloadData
         );
