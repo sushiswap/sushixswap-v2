@@ -21,6 +21,8 @@ contract SushiXSwapV2 is ISushiXSwapV2, Ownable, Multicall {
     uint8 private unlocked = 1;
     uint8 private paused = 1;
 
+    error IncorrectoAmountIn();
+
     constructor(IRouteProcessor _rp, address _weth) {
         rp = _rp;
         weth = IWETH(_weth);

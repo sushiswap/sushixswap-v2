@@ -31,6 +31,7 @@ contract CCTPAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
     }
 
     error NoUSDCToBridge();
+    error NotUSDC();
 
     constructor(
         address _axelarGateway,
@@ -58,6 +59,8 @@ contract CCTPAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
         address _token,
         bytes calldata _payloadData
     ) external payable override {
+        if (_token != address(nativeUSDC)) revert NotUSDC();
+
         IRouteProcessor.RouteProcessorData memory rpd = abi.decode(
             _swapData,
             (IRouteProcessor.RouteProcessorData)
@@ -94,6 +97,8 @@ contract CCTPAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
         bytes calldata _payloadData,
         address _token
     ) external payable override {
+        if (_token != address(nativeUSDC)) revert NotUSDC();
+        
         PayloadData memory pd = abi.decode(_payloadData, (PayloadData));
         nativeUSDC.safeTransfer(pd.target, _amountBridged);
         IPayloadExecutor(pd.target).onPayloadReceive{gas: pd.gasLimit}(
