@@ -21,8 +21,6 @@ contract SushiXSwapV2 is ISushiXSwapV2, Ownable, Multicall {
     uint8 private unlocked = 1;
     uint8 private paused = 1;
 
-    error IncorrectoAmountIn();
-
     constructor(IRouteProcessor _rp, address _weth) {
         rp = _rp;
         weth = IWETH(_weth);
@@ -150,15 +148,6 @@ contract SushiXSwapV2 is ISushiXSwapV2, Ownable, Multicall {
         ISushiXSwapV2Adapter(_bridgeParams.adapter).adapterBridge{
             value: address(this).balance
         }(_bridgeParams.adapterData, _refundAddress, _swapPayload, _payloadData);
-
-        emit SushiXSwapOnSrc(
-            _bridgeParams.refId,
-            msg.sender,
-            _bridgeParams.adapter,
-            _bridgeParams.tokenIn,
-            _bridgeParams.amountIn,
-            _bridgeParams.to
-        );
     }
     
     /// @inheritdoc ISushiXSwapV2
@@ -182,15 +171,6 @@ contract SushiXSwapV2 is ISushiXSwapV2, Ownable, Multicall {
         ISushiXSwapV2Adapter(_bridgeParams.adapter).adapterBridge{
             value: address(this).balance
         }(_bridgeParams.adapterData, _refundAddress, _swapPayload, _payloadData);
-
-        emit SushiXSwapOnSrc(
-            _bridgeParams.refId,
-            msg.sender,
-            _bridgeParams.adapter,
-            _bridgeParams.tokenIn,
-            _bridgeParams.amountIn,
-            _bridgeParams.to
-        );
     }
 
     /// @notice Rescue tokens from the contract
