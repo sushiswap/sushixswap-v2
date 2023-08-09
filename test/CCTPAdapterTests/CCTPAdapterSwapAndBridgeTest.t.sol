@@ -115,6 +115,7 @@ contract CCTPAdapterSwapAndBridgeTest is BaseTest {
                     user // to
                 )
             }),
+            user, // _refundAddress
             rpd_encoded, // swap data
             "", // swap payload
             "" // payload data
@@ -177,6 +178,7 @@ contract CCTPAdapterSwapAndBridgeTest is BaseTest {
                     user // to
                 )
             }),
+            user, // _refundAddress
             rpd_encoded, // swap data
             "", // swap payload
             "" // payload data
@@ -243,6 +245,7 @@ contract CCTPAdapterSwapAndBridgeTest is BaseTest {
                     user // to
                 )
             }),
+            user, // _refundAddress
             rpd_encoded, // swap data
             "", // swap payload
             "" // payload data

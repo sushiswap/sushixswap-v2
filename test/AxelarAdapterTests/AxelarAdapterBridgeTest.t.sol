@@ -103,6 +103,7 @@ contract AxelarAdapterBridgeTest is BaseTest {
                     user // to
                 )
             }),
+            user, // _refundAddress
             "", // swap payload
             "" // payload data
         );
@@ -142,6 +143,7 @@ contract AxelarAdapterBridgeTest is BaseTest {
                     user // to
                 )
             }),
+            user, // _refundAddress
             "", // swap payload
             "" // payload data
         );
@@ -180,6 +182,7 @@ contract AxelarAdapterBridgeTest is BaseTest {
                     user
                 )
             }),
+            user, // _refundAddress
             "", // swap payload
             "" // payload data
         );
@@ -221,6 +224,7 @@ contract AxelarAdapterBridgeTest is BaseTest {
                     user // to
                 )
             }),
+            user, // _refundAddress
             "", // swap payload
             "" // payload data
         );
@@ -274,6 +278,7 @@ contract AxelarAdapterBridgeTest is BaseTest {
                     user // to
                 )
             }),
+            user, // _refundAddress
             rpd_encoded_dst, // swap payload
             "" // payload data
         );
@@ -333,10 +338,11 @@ contract AxelarAdapterBridgeTest is BaseTest {
                     user
                 )
             }),
+            user, // _refundAddress
             rpd_encoded_dst, // swap payload
             "" // payload data
         );
-
+        
         assertEq(
             address(axelarAdapter).balance,
             0,
@@ -373,6 +379,7 @@ contract AxelarAdapterBridgeTest is BaseTest {
                     user // to
                 )
             }),
+            user, // _refundAddress
             "", // swap payload
             "" // payload data
         );
@@ -406,6 +413,7 @@ contract AxelarAdapterBridgeTest is BaseTest {
                     user
                 )
             }),
+            user, // _refundAddress
             "", // swap payload
             "" // payload data
         );

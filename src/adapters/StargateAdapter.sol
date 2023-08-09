@@ -68,10 +68,7 @@ contract StargateAdapter is ISushiXSwapV2Adapter, IStargateReceiver {
 
         // send tokens to RP
         if (_token != sgeth) {
-            IERC20(rpd.tokenIn).safeTransfer(
-                address(rp),
-                _amountBridged
-            );
+            IERC20(rpd.tokenIn).safeTransfer(address(rp), _amountBridged);
         }
 
         rp.processRoute{value: _token == sgeth ? _amountBridged : 0}(
@@ -87,7 +84,9 @@ contract StargateAdapter is ISushiXSwapV2Adapter, IStargateReceiver {
         if (_payloadData.length > 0) {
             PayloadData memory pd = abi.decode(_payloadData, (PayloadData));
             try
-                IPayloadExecutor(pd.target).onPayloadReceive(pd.targetData)
+                IPayloadExecutor(pd.target).onPayloadReceive{gas: pd.gasLimit}(
+                    pd.targetData
+                )
             {} catch (bytes memory) {
                 revert();
             }
@@ -99,17 +98,17 @@ contract StargateAdapter is ISushiXSwapV2Adapter, IStargateReceiver {
         uint256 _amountBridged,
         bytes calldata _payloadData,
         address _token
-    ) external payable override {        
+    ) external payable override {
         PayloadData memory pd = abi.decode(_payloadData, (PayloadData));
 
         if (_token != sgeth) {
-            IERC20(_token).safeTransfer(
-                pd.target,
-                _amountBridged
-            );
+            IERC20(_token).safeTransfer(pd.target, _amountBridged);
         }
 
-        IPayloadExecutor(pd.target).onPayloadReceive{value: _token == sgeth ? _amountBridged : 0}(pd.targetData);
+        IPayloadExecutor(pd.target).onPayloadReceive{
+            gas: pd.gasLimit,
+            value: _token == sgeth ? _amountBridged : 0
+        }(pd.targetData);
     }
 
     /// @notice Get the fees to be paid in native token for the swap
@@ -144,6 +143,7 @@ contract StargateAdapter is ISushiXSwapV2Adapter, IStargateReceiver {
     /// @inheritdoc ISushiXSwapV2Adapter
     function adapterBridge(
         bytes calldata _adapterData,
+        address _refundAddress,
         bytes calldata _swapData,
         bytes calldata _payloadData
     ) external payable override {
@@ -185,7 +185,7 @@ contract StargateAdapter is ISushiXSwapV2Adapter, IStargateReceiver {
             params.dstChainId,
             params.srcPoolId,
             params.dstPoolId,
-            payable(tx.origin), // refund address
+            payable(_refundAddress), // refund address
             params.amount,
             params.amountMin,
             IStargateRouter.lzTxObj(

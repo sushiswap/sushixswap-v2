@@ -125,6 +125,7 @@ contract SushiXSwapV2 is ISushiXSwapV2, Ownable, Multicall {
     /// @inheritdoc ISushiXSwapV2
     function bridge(
         BridgeParams calldata _bridgeParams,
+        address _refundAddress,
         bytes calldata _swapPayload,
         bytes calldata _payloadData
     )
@@ -146,21 +147,13 @@ contract SushiXSwapV2 is ISushiXSwapV2, Ownable, Multicall {
 
         ISushiXSwapV2Adapter(_bridgeParams.adapter).adapterBridge{
             value: address(this).balance
-        }(_bridgeParams.adapterData, _swapPayload, _payloadData);
-
-        emit SushiXSwapOnSrc(
-            _bridgeParams.refId,
-            msg.sender,
-            _bridgeParams.adapter,
-            _bridgeParams.tokenIn,
-            _bridgeParams.amountIn,
-            _bridgeParams.to
-        );
+        }(_bridgeParams.adapterData, _refundAddress, _swapPayload, _payloadData);
     }
     
     /// @inheritdoc ISushiXSwapV2
     function swapAndBridge(
         BridgeParams calldata _bridgeParams,
+        address _refundAddress,
         bytes calldata _swapData,
         bytes calldata _swapPayload,
         bytes calldata _payloadData
@@ -177,16 +170,7 @@ contract SushiXSwapV2 is ISushiXSwapV2, Ownable, Multicall {
 
         ISushiXSwapV2Adapter(_bridgeParams.adapter).adapterBridge{
             value: address(this).balance
-        }(_bridgeParams.adapterData, _swapPayload, _payloadData);
-
-        emit SushiXSwapOnSrc(
-            _bridgeParams.refId,
-            msg.sender,
-            _bridgeParams.adapter,
-            _bridgeParams.tokenIn,
-            _bridgeParams.amountIn,
-            _bridgeParams.to
-        );
+        }(_bridgeParams.adapterData, _refundAddress, _swapPayload, _payloadData);
     }
 
     /// @notice Rescue tokens from the contract

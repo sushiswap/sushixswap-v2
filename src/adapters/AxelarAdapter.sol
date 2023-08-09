@@ -56,7 +56,7 @@ contract AxelarAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
             _swapData,
             (IRouteProcessor.RouteProcessorData)
         );
-        
+
         // send tokens to RP
         IERC20(rpd.tokenIn).safeTransfer(address(rp), _amountBridged);
 
@@ -73,7 +73,9 @@ contract AxelarAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
         if (_payloadData.length > 0) {
             PayloadData memory pd = abi.decode(_payloadData, (PayloadData));
             try
-                IPayloadExecutor(pd.target).onPayloadReceive(pd.targetData)
+                IPayloadExecutor(pd.target).onPayloadReceive{gas: pd.gasLimit}(
+                    pd.targetData
+                )
             {} catch (bytes memory) {
                 revert();
             }
@@ -88,12 +90,15 @@ contract AxelarAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
     ) external payable override {
         PayloadData memory pd = abi.decode(_payloadData, (PayloadData));
         IERC20(_token).safeTransfer(pd.target, _amountBridged);
-        IPayloadExecutor(pd.target).onPayloadReceive(pd.targetData);
+        IPayloadExecutor(pd.target).onPayloadReceive{gas: pd.gasLimit}(
+            pd.targetData
+        );
     }
 
     /// @inheritdoc ISushiXSwapV2Adapter
     function adapterBridge(
         bytes calldata _adapterData,
+        address _refundAddress,
         bytes calldata _swapData,
         bytes calldata _payloadData
     ) external payable override {
@@ -127,7 +132,7 @@ contract AxelarAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
             payload,
             Bytes32ToString.toTrimmedString(params.symbol),
             params.amount,
-            payable(tx.origin) // refund address
+            payable(_refundAddress) // refund address
         );
 
         // sendToken and message w/ payload to the gateway contract
