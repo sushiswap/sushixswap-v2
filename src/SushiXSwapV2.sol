@@ -5,7 +5,7 @@ import "./interfaces/ISushiXSwapV2.sol";
 
 /// @title SushiXSwapV2
 /// @notice Cross-chain swaps & general message passing through adapters
-contract SushiXSwapV2 is ISushiXSwapV2, Ownable, Multicall {
+contract SushiXSwapV2 is ISushiXSwapV2, Ownable {
     using SafeERC20 for IERC20;
 
     IRouteProcessor public rp;
