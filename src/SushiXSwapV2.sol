@@ -183,7 +183,7 @@ contract SushiXSwapV2 is ISushiXSwapV2, Ownable {
                 IERC20(_token).balanceOf(address(this))
             );
         } else {
-            payable(_to).transfer(address(this).balance);
+            _to.call{value: (address(this).balance)}("");
         }
     }
 }
