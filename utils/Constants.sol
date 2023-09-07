@@ -16,6 +16,7 @@ contract Constants {
     setAddress("mainnet.sushi", 0x6B3595068778DD592e39A122f4f5a5cF09C90fE2);
     setAddress("mainnet.usdc", 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48);
     setAddress("mainnet.usdt", 0xdAC17F958D2ee523a2206206994597C13D831ec7);
+    setAddress("mainnet.link", 0x514910771AF9Ca656af840dff83E8264EcF986CA);
 
     setAddress("mainnet.routeProcessor", 0x827179dD56d07A7eeA32e3873493835da2866976);
     setAddress("mainnet.v2Factory", 0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac);
@@ -35,6 +36,8 @@ contract Constants {
     setAddress("mainnet.cctpTokenMessenger", 0xBd3fa81B58Ba92a82136038B25aDec7066af3155);
 
     setAddress("mainnet.squidRouter", 0xce16F69375520ab01377ce7B88f5BA8C48F8D666);
+
+    setAddress("mainnet.ccipRouter", 0xE561d5E02207fb5eB32cca20a699E0d8919a1476);
   } 
 
   function initAddressLabels(Vm vm) public {

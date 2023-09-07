@@ -9,6 +9,8 @@ import "ccip/contracts/src/v0.8/ccip/applications/CCIPReceiver.sol";
 import "ccip/contracts/src/v0.8/ccip/interfaces/IRouterClient.sol";
 import "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 
+import {console2} from "forge-std/console2.sol";
+
 contract CCIPAdapter is ISushiXSwapV2Adapter, CCIPReceiver {
     using SafeERC20 for IERC20;
 
@@ -98,6 +100,12 @@ contract CCIPAdapter is ISushiXSwapV2Adapter, CCIPReceiver {
     }
 
     //getFee function -> router.getFee
+    function getFee(
+      uint64 chainId,
+      Client.EVM2AnyMessage calldata evm2AnyMessage
+    ) public returns (uint256 fees) {
+      fees = router.getFee(chainId, evm2AnyMessage); 
+    }
 
     /// @inheritdoc ISushiXSwapV2Adapter
     function adapterBridge(
@@ -128,6 +136,8 @@ contract CCIPAdapter is ISushiXSwapV2Adapter, CCIPReceiver {
           if (params.gasLimit < 100000) revert InsufficientGas();
           payload = abi.encode(params.to, _swapData, _payloadData);
         }
+
+        console2.logBytes(payload);
 
         // build ccip message
         Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(
@@ -246,7 +256,7 @@ contract CCIPAdapter is ISushiXSwapV2Adapter, CCIPReceiver {
           tokenAmounts: tokenAmounts, // the amount and type of token being transferred
           extraArgs: Client._argsToBytes(
             // additional arguments, setting gas limit and non-strict sequencing mode
-            Client.EVMExtraArgsV1({gasLimit: _gasLimit})
+            Client.EVMExtraArgsV1({gasLimit: _gasLimit, strict: false})
           ),
           feeToken: _feeTokenAddress
         });
