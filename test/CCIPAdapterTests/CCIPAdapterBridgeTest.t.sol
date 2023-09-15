@@ -22,6 +22,7 @@ contract CCIPAdapterBridgeTest is BaseTest {
     IERC20 public sushi;
     IERC20 public usdc;
     IERC20 public usdt;
+    IERC20 public snxUSD;
 
     uint64 op_chainId = 3734403246176062136; // OP
 
@@ -39,6 +40,7 @@ contract CCIPAdapterBridgeTest is BaseTest {
         sushi = IERC20(constants.getAddress("mainnet.sushi"));
         usdc = IERC20(constants.getAddress("mainnet.usdc"));
         usdt = IERC20(constants.getAddress("mainnet.usdt"));
+        snxUSD = IERC20(constants.getAddress("mainnet.snxUSD"));
 
         routeProcessor = IRouteProcessor(
             constants.getAddress("mainnet.routeProcessor")
@@ -80,30 +82,30 @@ contract CCIPAdapterBridgeTest is BaseTest {
     }
 
     function test_BridgeERC20() public {
-        uint32 amount = 1000000; // 1 usdc
+        uint256 amount = 1 ether; // 1 snxUSD
         uint64 feeNeeded = 0.1 ether; // eth for gas to pass
 
         // poll the chainlink fee
 
-        deal(address(usdc), user, amount);
+        deal(address(snxUSD), user, amount);
         vm.deal(user, feeNeeded);
 
-        // basic usdc bridge, mint axlUSDC on otherside
+        // basic usdc bridge, mint snxUSD on otherside
         vm.startPrank(user);
-        usdc.safeIncreaseAllowance(address(sushiXswap), amount);
+        snxUSD.safeIncreaseAllowance(address(sushiXswap), amount);
 
         sushiXswap.bridge{value: feeNeeded}(
             ISushiXSwapV2.BridgeParams({
                 refId: 0x0000,
                 adapter: address(ccipAdapter),
-                tokenIn: address(usdc),
+                tokenIn: address(snxUSD),
                 amountIn: amount,
                 to: user,
                 adapterData: abi.encode(
                     op_chainId, // chainId
                     user,    // receiver 
                     user,    // to
-                    address(usdc), // token
+                    address(snxUSD), // token
                     amount, // amount
                     150000  // gasLimit
                 )
@@ -114,10 +116,10 @@ contract CCIPAdapterBridgeTest is BaseTest {
         );
 
         assertEq(
-            usdc.balanceOf(address(ccipAdapter)),
+            snxUSD.balanceOf(address(ccipAdapter)),
             0,
-            "ccipAdapter should have 0 usdc"
+            "ccipAdapter should have 0 snxUSD"
         );
-        assertEq(usdc.balanceOf(user), 0, "user should have 0 usdc");
+        assertEq(snxUSD.balanceOf(user), 0, "user should have 0 snxUSD");
     }
 }
