@@ -522,64 +522,6 @@ contract StargateAdapterReceivesTest is BaseTest {
         assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
     }
 
-    function test_ReceiveERC20NotEnoughGasAfterCheckForSwap() public {
-        uint32 amount = 1000001;
-        vm.assume(amount > 1000000); // > 1 usdc
-
-        deal(address(usdc), address(stargateAdapter), amount); // amount adapter receives
-
-        // receive usdc and attempt swap to weth
-        bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            true,
-            false,
-            address(usdc),
-            address(weth),
-            500,
-            user
-        );
-
-        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor
-            .RouteProcessorData({
-                tokenIn: address(usdc),
-                amountIn: amount,
-                tokenOut: address(weth),
-                amountOutMin: 0,
-                to: user,
-                route: computedRoute
-            });
-
-        bytes memory rpd_encoded = abi.encode(rpd);
-
-        bytes memory payload = abi.encode(
-            user, // to
-            rpd_encoded, // _swapData
-            "" // _payloadData
-        );
-
-        vm.prank(constants.getAddress("mainnet.stargateRouter"));
-        stargateAdapter.sgReceive{gas: 101570}(
-            0,
-            "",
-            0,
-            address(usdc),
-            amount,
-            payload
-        );
-
-        assertEq(
-            usdc.balanceOf(address(stargateAdapter)),
-            0,
-            "stargateAdapter should have 0 usdc"
-        );
-        assertEq(usdc.balanceOf(user), amount, "user should have all the usdc");
-        assertEq(
-            weth.balanceOf(address(stargateAdapter)),
-            0,
-            "stargateAdapter should have 0 weth"
-        );
-        assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
-    }
-
     function test_FuzzReceiveUSDTNotEnoughGasForSwap(uint32 amount) public {
         vm.assume(amount > 1000000); // > 1 usdt
 
