@@ -12,3 +12,7 @@
 [submodule "lib/axelar-gmp-sdk-solidity"]
 	path = lib/axelar-gmp-sdk-solidity
 	url = https://github.com/axelarnetwork/axelar-gmp-sdk-solidity
+[submodule "lib/forge-deploy"]
+	path = lib/forge-deploy
+	url = https://github.com/0xmasayoshi/forge-deploy
+	branch = v0.0.1
