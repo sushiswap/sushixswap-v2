@@ -155,26 +155,22 @@ contract StargateAdapter is ISushiXSwapV2Adapter, IStargateReceiver {
         if (params.token == NATIVE_ADDRESS) {
             // RP should not send native in, since we won't know the exact amount to bridge
             if (params.amount == 0) revert RpSentNativeIn();
-            IStargateEthVault(sgeth).deposit{value: params.amount}();
-            params.token = sgeth;
         } else if (params.token == address(weth)) {
             // this case is for when rp sends weth in
             if (params.amount == 0)
                 params.amount = weth.balanceOf(address(this));
             weth.withdraw(params.amount);
-            IStargateEthVault(sgeth).deposit{value: params.amount}();
-            params.token = sgeth;
+        } else {
+            if (params.amount == 0)
+                params.amount = IERC20(params.token).balanceOf(address(this));
+
+            IERC20(params.token).safeApprove(
+                address(stargateRouter),
+                params.amount
+            );
         }
 
-        if (params.amount == 0)
-            params.amount = IERC20(params.token).balanceOf(address(this));
-
-        IERC20(params.token).safeApprove(
-            address(stargateRouter),
-            params.amount
-        );
-
-        bytes memory payload = bytes("");
+        bytes memory payload = bytes("0x");
         if (_swapData.length > 0 || _payloadData.length > 0) {
             /// @dev dst gas should be more than 100k
             if (params.gas < 100000) revert InsufficientGas();

@@ -188,8 +188,8 @@ contract StargateAdapterBridgeTest is BaseTest {
                 assertEq(dstPoolId, 1, "Swap event dstPoolId should be 1");
                 assertEq(
                     from,
-                    address(stargateAdapter),
-                    "Swap event from should be stargateAdapter"
+                    address(stargateAdapter.stargateRouter()),
+                    "Swap event from should be stargateRouter"
                 );
                 assertEq(
                     amountSD,
@@ -308,8 +308,8 @@ contract StargateAdapterBridgeTest is BaseTest {
                 assertEq(dstPoolId, 2, "Swap event dstPoolId should be 1");
                 assertEq(
                     from,
-                    address(stargateAdapter),
-                    "Swap event from should be stargateAdapter"
+                    address(stargateAdapter.stargateRouter()),
+                    "Swap event from should be stargateRouter"
                 );
                 assertEq(
                     amountSD,
@@ -429,8 +429,8 @@ contract StargateAdapterBridgeTest is BaseTest {
                 assertEq(dstPoolId, 13, "Swap event dstPoolId should be 13");
                 assertEq(
                     from,
-                    address(stargateAdapter),
-                    "Swap event from should be stargateAdapter"
+                    address(stargateAdapter.stargateRouter()),
+                    "Swap event from should be stargateRouter"
                 );
                 assertEq(
                     amountSD,
@@ -578,8 +578,8 @@ contract StargateAdapterBridgeTest is BaseTest {
                 assertEq(dstPoolId, 13, "Swap event dstPoolId should be 13");
                 assertEq(
                     from,
-                    address(stargateAdapter),
-                    "Swap event from should be stargateAdapter"
+                    address(stargateAdapter.stargateRouter()),
+                    "Swap event from should be stargateRouter"
                 );
                 assertEq(
                     amountSD,
