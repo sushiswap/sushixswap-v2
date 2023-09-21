@@ -84,6 +84,7 @@ contract StargateAdapterReceivesTest is BaseTest {
         // setup stargate adapter
         stargateAdapter = new StargateAdapter(
             constants.getAddress("mainnet.stargateRouter"),
+            constants.getAddress("mainnet.stargateComposer"),
             constants.getAddress("mainnet.stargateWidget"),
             constants.getAddress("mainnet.sgeth"),
             constants.getAddress("mainnet.routeProcessor"),

@@ -23,9 +23,10 @@ contract DeploySushiXSwapV2 is Script {
     
     // deploy stargate adapter
     address stargateRouter = vm.envAddress("STARGATE_ROUTER_ADDRESS");
+    address stargateComposer = vm.envAddress("STARGATE_COMPOSER_ADDRESS");
     address stargateWidget = vm.envAddress("STARGATE_WIDGET_ADDRESS");
     address sgETH = vm.envAddress("SG_ETH_ADDRESS");
-    StargateAdapter stargateAdapter = new StargateAdapter(stargateRouter, stargateWidget, sgETH, routeProcesser, weth);
+    StargateAdapter stargateAdapter = new StargateAdapter(stargateRouter, stargateComposer, stargateWidget, sgETH, routeProcesser, weth);
 
     // attach stargate & squid adapter
     sushiXSwap.updateAdapterStatus(address(stargateAdapter), true);
