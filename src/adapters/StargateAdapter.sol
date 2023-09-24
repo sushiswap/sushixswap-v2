@@ -170,7 +170,7 @@ contract StargateAdapter is ISushiXSwapV2Adapter, IStargateReceiver {
             );
         }
 
-        bytes memory payload = bytes("0x");
+        bytes memory payload = bytes("");
         if (_swapData.length > 0 || _payloadData.length > 0) {
             /// @dev dst gas should be more than 100k
             if (params.gas < 100000) revert InsufficientGas();
