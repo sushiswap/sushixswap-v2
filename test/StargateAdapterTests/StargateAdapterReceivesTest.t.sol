@@ -25,7 +25,7 @@ contract StargateAdapterReceivesTest is BaseTest {
     RouteProcessorHelper public routeProcessorHelper;
 
     IStargateFeeLibrary public stargateFeeLibrary;
-    address public stargateRouter;
+    address public stargateComposer;
     address public stargateUSDCPoolAddress;
     address public stargateETHPoolAddress;
 
@@ -67,7 +67,7 @@ contract StargateAdapterReceivesTest is BaseTest {
         stargateFeeLibrary = IStargateFeeLibrary(
             constants.getAddress("mainnet.stargateFeeLibrary")
         );
-        stargateRouter = constants.getAddress("mainnet.stargateRouter");
+        stargateComposer = constants.getAddress("mainnet.stargateComposer");
         stargateUSDCPoolAddress = constants.getAddress(
             "mainnet.stargateUSDCPool"
         );
@@ -83,7 +83,7 @@ contract StargateAdapterReceivesTest is BaseTest {
 
         // setup stargate adapter
         stargateAdapter = new StargateAdapter(
-            constants.getAddress("mainnet.stargateRouter"),
+            constants.getAddress("mainnet.stargateComposer"),
             constants.getAddress("mainnet.stargateWidget"),
             constants.getAddress("mainnet.sgeth"),
             constants.getAddress("mainnet.routeProcessor"),
@@ -97,7 +97,7 @@ contract StargateAdapterReceivesTest is BaseTest {
         vm.stopPrank();
     }
 
-    function test_RevertWhen_ReceivedCallFromNonStargateRouter() public {
+    function test_RevertWhen_ReceivedCallFromNonStargateComposer() public {
         vm.prank(owner);
         vm.expectRevert();
         stargateAdapter.sgReceive{gas: 200000}(
@@ -144,7 +144,7 @@ contract StargateAdapterReceivesTest is BaseTest {
             "" // _payloadData
         );
 
-        vm.prank(constants.getAddress("mainnet.stargateRouter"));
+        vm.prank(constants.getAddress("mainnet.stargateComposer"));
         // auto sends enough gas, so no need to calculate gasNeeded & send here
         stargateAdapter.sgReceive(0, "", 0, address(usdc), amount, payload);
 
@@ -195,7 +195,7 @@ contract StargateAdapterReceivesTest is BaseTest {
             "" // _payloadData
         );
 
-        vm.prank(constants.getAddress("mainnet.stargateRouter"));
+        vm.prank(constants.getAddress("mainnet.stargateComposer"));
         // auto sends enough gas, so no need to calculate gasNeeded & send here
         stargateAdapter.sgReceive(0, "", 0, address(usdc), amount, payload);
 
@@ -246,7 +246,7 @@ contract StargateAdapterReceivesTest is BaseTest {
             "" // _payloadData
         );
 
-        vm.prank(constants.getAddress("mainnet.stargateRouter"));
+        vm.prank(constants.getAddress("mainnet.stargateComposer"));
         // auto sends enough gas, so no need to calculate gasNeeded & send here
         stargateAdapter.sgReceive(0, "", 0, address(usdt), amount, payload);
 
@@ -268,7 +268,7 @@ contract StargateAdapterReceivesTest is BaseTest {
     function test_FuzzReceiveNativeAndSwapToERC20(uint64 amount) public {
         vm.assume(amount > 0.1 ether);
 
-        vm.deal(stargateRouter, amount); // amount for sgReceive
+        vm.deal(stargateComposer, amount); // amount for sgReceive
 
         // receive 1 usdc and swap to weth
         bytes memory computedRoute = routeProcessorHelper.computeRouteNativeIn(
@@ -297,7 +297,7 @@ contract StargateAdapterReceivesTest is BaseTest {
             "" // _payloadData
         );
 
-        vm.startPrank(constants.getAddress("mainnet.stargateRouter"));
+        vm.startPrank(constants.getAddress("mainnet.stargateComposer"));
         address(stargateAdapter).call{value: amount}("");
         // auto sends enough gas, so no need to calculate gasNeeded & send here
         stargateAdapter.sgReceive(
@@ -337,7 +337,7 @@ contract StargateAdapterReceivesTest is BaseTest {
         vm.assume(dustAmount > 0.001 ether);
 
         deal(address(usdc), address(stargateAdapter), amount); // amount adapter receives
-        vm.deal(stargateRouter, dustAmount); // dust for sgReceive
+        vm.deal(stargateComposer, dustAmount); // dust for sgReceive
 
         // receive 1 usdc and swap to weth
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
@@ -367,7 +367,7 @@ contract StargateAdapterReceivesTest is BaseTest {
             "" // _payloadData
         );
 
-        vm.startPrank(constants.getAddress("mainnet.stargateRouter"));
+        vm.startPrank(constants.getAddress("mainnet.stargateComposer"));
         address(stargateAdapter).call{value: dustAmount}("");
         // auto sends enough gas, so no need to calculate gasNeeded & send here
         stargateAdapter.sgReceive(0, "", 0, address(usdc), amount, payload);
@@ -399,7 +399,7 @@ contract StargateAdapterReceivesTest is BaseTest {
         amount = uint64(bound(amount, 0.1 ether, 10 ether));
         dustAmount = uint64(bound(dustAmount, 0.001 ether, 0.1 ether));
 
-        vm.deal(stargateRouter, amount + dustAmount); // amount for sgReceive
+        vm.deal(stargateComposer, amount + dustAmount); // amount for sgReceive
 
         // receive 1 usdc and swap to weth
         bytes memory computedRoute = routeProcessorHelper.computeRouteNativeIn(
@@ -428,7 +428,7 @@ contract StargateAdapterReceivesTest is BaseTest {
             "" // _payloadData
         );
 
-        vm.startPrank(constants.getAddress("mainnet.stargateRouter"));
+        vm.startPrank(constants.getAddress("mainnet.stargateComposer"));
         address(stargateAdapter).call{value: (amount + dustAmount)}("");
         // auto sends enough gas, so no need to calculate gasNeeded & send here
         stargateAdapter.sgReceive(
@@ -498,7 +498,7 @@ contract StargateAdapterReceivesTest is BaseTest {
             "" // _payloadData
         );
 
-        vm.prank(constants.getAddress("mainnet.stargateRouter"));
+        vm.prank(constants.getAddress("mainnet.stargateComposer"));
         stargateAdapter.sgReceive{gas: 90000}(
             0,
             "",
@@ -555,7 +555,7 @@ contract StargateAdapterReceivesTest is BaseTest {
             "" // _payloadData
         );
 
-        vm.prank(constants.getAddress("mainnet.stargateRouter"));
+        vm.prank(constants.getAddress("mainnet.stargateComposer"));
         stargateAdapter.sgReceive{gas: 90000}(
             0,
             "",
@@ -582,7 +582,7 @@ contract StargateAdapterReceivesTest is BaseTest {
     function test_FuzzReceiveNativeNotEnoughGasForSwap(uint64 amount) public {
         vm.assume(amount > 0.1 ether);
 
-        vm.deal(stargateRouter, amount); // amount for sgReceive
+        vm.deal(stargateComposer, amount); // amount for sgReceive
 
         // receive native (sgETH) and attempt swap to usdc
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
@@ -612,7 +612,7 @@ contract StargateAdapterReceivesTest is BaseTest {
             "" // _payloadData
         );
 
-        vm.startPrank(constants.getAddress("mainnet.stargateRouter"));
+        vm.startPrank(constants.getAddress("mainnet.stargateComposer"));
         address(stargateAdapter).call{value: amount}("");
         stargateAdapter.sgReceive{gas: 90000}(
             0,
@@ -645,7 +645,7 @@ contract StargateAdapterReceivesTest is BaseTest {
         vm.assume(dustAmount > 0.001 ether);
 
         deal(address(usdc), address(stargateAdapter), amount); // amount adapter receives
-        vm.deal(stargateRouter, dustAmount); // dust for sgReceive
+        vm.deal(stargateComposer, dustAmount); // dust for sgReceive
 
         // receive usdc & dust and attempt to swap to weth
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
@@ -675,7 +675,7 @@ contract StargateAdapterReceivesTest is BaseTest {
             "" // _payloadData
         );
 
-        vm.startPrank(constants.getAddress("mainnet.stargateRouter"));
+        vm.startPrank(constants.getAddress("mainnet.stargateComposer"));
         address(stargateAdapter).call{value: dustAmount}("");
         stargateAdapter.sgReceive{gas: 90000}(
             0,
@@ -714,7 +714,7 @@ contract StargateAdapterReceivesTest is BaseTest {
             "" // _payloadData
         );
 
-        vm.prank(constants.getAddress("mainnet.stargateRouter"));
+        vm.prank(constants.getAddress("mainnet.stargateComposer"));
         stargateAdapter.sgReceive{gas: 200000}(
             0,
             "",
@@ -746,7 +746,7 @@ contract StargateAdapterReceivesTest is BaseTest {
             "" // _payloadData
         );
 
-        vm.prank(constants.getAddress("mainnet.stargateRouter"));
+        vm.prank(constants.getAddress("mainnet.stargateComposer"));
         stargateAdapter.sgReceive{gas: 200000}(
             0,
             "",
@@ -769,7 +769,7 @@ contract StargateAdapterReceivesTest is BaseTest {
     ) public {
         vm.assume(amount > 0.1 ether);
 
-        vm.deal(stargateRouter, amount); // amount for sgReceive
+        vm.deal(stargateComposer, amount); // amount for sgReceive
 
         // no swap data, payload empty
         bytes memory payload = abi.encode(
@@ -778,7 +778,7 @@ contract StargateAdapterReceivesTest is BaseTest {
             "" // _payloadData
         );
 
-        vm.startPrank(constants.getAddress("mainnet.stargateRouter"));
+        vm.startPrank(constants.getAddress("mainnet.stargateComposer"));
         address(stargateAdapter).call{value: amount}("");
         stargateAdapter.sgReceive{gas: 200000}(
             0,
@@ -804,7 +804,7 @@ contract StargateAdapterReceivesTest is BaseTest {
         vm.assume(amount > 1000000); // > 1 usdc
         vm.assume(dustAmount > 0.1 ether);
 
-        vm.deal(stargateRouter, dustAmount); // dust for sgReceive
+        vm.deal(stargateComposer, dustAmount); // dust for sgReceive
         deal(address(usdc), address(stargateAdapter), amount); // amount adapter receives
 
         // no swap data, payload empty
@@ -814,7 +814,7 @@ contract StargateAdapterReceivesTest is BaseTest {
             "" // _payloadData
         );
 
-        vm.startPrank(constants.getAddress("mainnet.stargateRouter"));
+        vm.startPrank(constants.getAddress("mainnet.stargateComposer"));
         address(stargateAdapter).call{value: dustAmount}("");
         stargateAdapter.sgReceive{gas: 200000}(
             0,
@@ -872,7 +872,7 @@ contract StargateAdapterReceivesTest is BaseTest {
             "" // _payloadData
         );
 
-        vm.prank(constants.getAddress("mainnet.stargateRouter"));
+        vm.prank(constants.getAddress("mainnet.stargateComposer"));
         stargateAdapter.sgReceive{gas: 200000}(
             0,
             "",
@@ -925,7 +925,7 @@ contract StargateAdapterReceivesTest is BaseTest {
             "" // _payloadData
         );
 
-        vm.prank(constants.getAddress("mainnet.stargateRouter"));
+        vm.prank(constants.getAddress("mainnet.stargateComposer"));
         stargateAdapter.sgReceive{gas: 200000}(
             0,
             "",
@@ -978,7 +978,7 @@ contract StargateAdapterReceivesTest is BaseTest {
             "" // _payloadData
         );
 
-        vm.prank(constants.getAddress("mainnet.stargateRouter"));
+        vm.prank(constants.getAddress("mainnet.stargateComposer"));
         stargateAdapter.sgReceive{gas: 120000}(
             0,
             "",
@@ -1004,7 +1004,7 @@ contract StargateAdapterReceivesTest is BaseTest {
         vm.assume(amount > 1000000); // > 1 usdc
         vm.assume(dustAmount > 0.1 ether);
 
-        vm.deal(stargateRouter, dustAmount); // dust for sgReceive
+        vm.deal(stargateComposer, dustAmount); // dust for sgReceive
         deal(address(usdc), address(stargateAdapter), amount); // amount adapter receives
 
         // receive usdc and attempt swap to weth
@@ -1036,7 +1036,7 @@ contract StargateAdapterReceivesTest is BaseTest {
             "" // _payloadData
         );
 
-        vm.startPrank(constants.getAddress("mainnet.stargateRouter"));
+        vm.startPrank(constants.getAddress("mainnet.stargateComposer"));
         address(stargateAdapter).call{value: dustAmount}("");
         stargateAdapter.sgReceive{gas: 200000}(
             0,
@@ -1067,7 +1067,7 @@ contract StargateAdapterReceivesTest is BaseTest {
         vm.assume(amount > 1000000); // > 1 usdc
         vm.assume(dustAmount > 0.1 ether);
 
-        vm.deal(stargateRouter, dustAmount); // dust for sgReceive
+        vm.deal(stargateComposer, dustAmount); // dust for sgReceive
         deal(address(usdc), address(stargateAdapter), amount); // amount adapter receives
 
         // receive usdc and attempt swap to weth
@@ -1099,7 +1099,7 @@ contract StargateAdapterReceivesTest is BaseTest {
             "" // _payloadData
         );
 
-        vm.startPrank(constants.getAddress("mainnet.stargateRouter"));
+        vm.startPrank(constants.getAddress("mainnet.stargateComposer"));
         address(stargateAdapter).call{value: dustAmount}("");
         stargateAdapter.sgReceive{gas: 101570}(
             0,
@@ -1127,7 +1127,7 @@ contract StargateAdapterReceivesTest is BaseTest {
     function test_FuzzReceiveNativeFailedSwap(uint64 amount) public {
         vm.assume(amount > 0.1 ether);
 
-        vm.deal(stargateRouter, amount); // amount for sgReceive
+        vm.deal(stargateComposer, amount); // amount for sgReceive
 
         // receive native (sgETH) and attempt swap to usdc
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
@@ -1158,7 +1158,7 @@ contract StargateAdapterReceivesTest is BaseTest {
             "" // _payloadData
         );
 
-        vm.startPrank(constants.getAddress("mainnet.stargateRouter"));
+        vm.startPrank(constants.getAddress("mainnet.stargateComposer"));
         address(stargateAdapter).call{value: amount}("");
         stargateAdapter.sgReceive{gas: 200000}(
             0,
@@ -1212,7 +1212,7 @@ contract StargateAdapterReceivesTest is BaseTest {
             "" // _payloadData
         );
 
-        vm.prank(constants.getAddress("mainnet.stargateRouter"));
+        vm.prank(constants.getAddress("mainnet.stargateComposer"));
         stargateAdapter.sgReceive{gas: 200000}(
             0,
             "",
@@ -1234,7 +1234,7 @@ contract StargateAdapterReceivesTest is BaseTest {
     function test_FuzzReceiveNativeFailSwapSlippageCheck(uint64 amount) public {
         vm.assume(amount > 0.1 ether);
 
-        vm.deal(stargateRouter, amount); // amount for sgReceive
+        vm.deal(stargateComposer, amount); // amount for sgReceive
 
         // receive native (sgETH) and attempt swap to usdc
         bytes memory computedRoute = routeProcessorHelper.computeRoute(
@@ -1265,7 +1265,7 @@ contract StargateAdapterReceivesTest is BaseTest {
             "" // _payloadData
         );
 
-        vm.startPrank(constants.getAddress("mainnet.stargateRouter"));
+        vm.startPrank(constants.getAddress("mainnet.stargateComposer"));
         address(stargateAdapter).call{value: amount}("");
         stargateAdapter.sgReceive{gas: 200000}(
             0,
@@ -1310,7 +1310,7 @@ contract StargateAdapterReceivesTest is BaseTest {
         recipients[0] = user1;
         recipients[1] = user2;
 
-        vm.prank(constants.getAddress("mainnet.stargateRouter"));
+        vm.prank(constants.getAddress("mainnet.stargateComposer"));
         // auto sends enough gas, so no need to calculate gasNeeded & send here
         stargateAdapter.sgReceive(
             0,
@@ -1392,7 +1392,7 @@ contract StargateAdapterReceivesTest is BaseTest {
         recipients[0] = user1;
         recipients[1] = user2;
 
-        vm.prank(constants.getAddress("mainnet.stargateRouter"));
+        vm.prank(constants.getAddress("mainnet.stargateComposer"));
         // auto sends enough gas, so no need to calculate gasNeeded & send here
         stargateAdapter.sgReceive(
             0,
@@ -1476,7 +1476,7 @@ contract StargateAdapterReceivesTest is BaseTest {
         recipients[0] = user1;
         recipients[1] = user2;
 
-        vm.prank(constants.getAddress("mainnet.stargateRouter"));
+        vm.prank(constants.getAddress("mainnet.stargateComposer"));
         // auto sends enough gas, so no need to calculate gasNeeded & send here
         stargateAdapter.sgReceive(
             0,
@@ -1558,7 +1558,7 @@ contract StargateAdapterReceivesTest is BaseTest {
         recipients[0] = user1;
         recipients[1] = user2;
 
-        vm.prank(constants.getAddress("mainnet.stargateRouter"));
+        vm.prank(constants.getAddress("mainnet.stargateComposer"));
         // auto sends enough gas, so no need to calculate gasNeeded & send here
         stargateAdapter.sgReceive(
             0,
@@ -1615,7 +1615,7 @@ contract StargateAdapterReceivesTest is BaseTest {
         recipients[0] = user1;
         recipients[1] = user2;
 
-        vm.prank(constants.getAddress("mainnet.stargateRouter"));
+        vm.prank(constants.getAddress("mainnet.stargateComposer"));
         // auto sends enough gas, so no need to calculate gasNeeded & send here
         stargateAdapter.sgReceive(
             0,
@@ -1672,7 +1672,7 @@ contract StargateAdapterReceivesTest is BaseTest {
         recipients[0] = user1;
         recipients[1] = user2;
 
-        vm.startPrank(constants.getAddress("mainnet.stargateRouter"));
+        vm.startPrank(constants.getAddress("mainnet.stargateComposer"));
         // auto sends enough gas, so no need to calculate gasNeeded & send here
         stargateAdapter.sgReceive(
             0,
@@ -1721,7 +1721,7 @@ contract StargateAdapterReceivesTest is BaseTest {
         recipients[0] = user1;
         recipients[1] = user2;
 
-        vm.prank(constants.getAddress("mainnet.stargateRouter"));
+        vm.prank(constants.getAddress("mainnet.stargateComposer"));
         // auto sends enough gas, so no need to calculate gasNeeded & send here
         stargateAdapter.sgReceive(
             0,
@@ -1778,7 +1778,7 @@ contract StargateAdapterReceivesTest is BaseTest {
         recipients[0] = user1;
         recipients[1] = user2;
 
-        vm.prank(constants.getAddress("mainnet.stargateRouter"));
+        vm.prank(constants.getAddress("mainnet.stargateComposer"));
         // auto sends enough gas, so no need to calculate gasNeeded & send here
         stargateAdapter.sgReceive{gas: 120000}(
             0,

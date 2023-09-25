@@ -79,7 +79,7 @@ contract StargateAdapterBridgeTest is BaseTest {
 
         // setup stargate adapter
         stargateAdapter = new StargateAdapter(
-            constants.getAddress("mainnet.stargateRouter"),
+            constants.getAddress("mainnet.stargateComposer"),
             constants.getAddress("mainnet.stargateWidget"),
             constants.getAddress("mainnet.sgeth"),
             constants.getAddress("mainnet.routeProcessor"),
@@ -188,8 +188,8 @@ contract StargateAdapterBridgeTest is BaseTest {
                 assertEq(dstPoolId, 1, "Swap event dstPoolId should be 1");
                 assertEq(
                     from,
-                    address(stargateAdapter.stargateRouter()),
-                    "Swap event from should be stargateRouter"
+                    address(stargateAdapter.stargateComposer()),
+                    "Swap event from should be stargateComposer"
                 );
                 assertEq(
                     amountSD,
@@ -308,8 +308,8 @@ contract StargateAdapterBridgeTest is BaseTest {
                 assertEq(dstPoolId, 2, "Swap event dstPoolId should be 1");
                 assertEq(
                     from,
-                    address(stargateAdapter.stargateRouter()),
-                    "Swap event from should be stargateRouter"
+                    address(stargateAdapter.stargateComposer()),
+                    "Swap event from should be stargateComposer"
                 );
                 assertEq(
                     amountSD,
@@ -429,8 +429,8 @@ contract StargateAdapterBridgeTest is BaseTest {
                 assertEq(dstPoolId, 13, "Swap event dstPoolId should be 13");
                 assertEq(
                     from,
-                    address(stargateAdapter.stargateRouter()),
-                    "Swap event from should be stargateRouter"
+                    address(stargateAdapter.stargateComposer()),
+                    "Swap event from should be stargateComposer"
                 );
                 assertEq(
                     amountSD,
@@ -578,8 +578,8 @@ contract StargateAdapterBridgeTest is BaseTest {
                 assertEq(dstPoolId, 13, "Swap event dstPoolId should be 13");
                 assertEq(
                     from,
-                    address(stargateAdapter.stargateRouter()),
-                    "Swap event from should be stargateRouter"
+                    address(stargateAdapter.stargateComposer()),
+                    "Swap event from should be stargateComposer"
                 );
                 assertEq(
                     amountSD,
