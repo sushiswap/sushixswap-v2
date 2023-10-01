@@ -158,13 +158,14 @@ contract AxelarAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
         string memory tokenSymbol,
         uint256 amount
     ) internal override {
+        uint256 gasLeft = gasleft();
         (address to, bytes memory _swapData, bytes memory _payloadData) = abi
             .decode(payload, (address, bytes, bytes));
         address _token = gateway.tokenAddresses(tokenSymbol);
 
         uint256 reserveGas = 100000;
 
-        if (gasleft() < reserveGas) {
+        if (gasLeft < reserveGas) {
             IERC20(_token).safeTransfer(to, amount);
 
             /// @dev transfer any native token
@@ -175,7 +176,7 @@ contract AxelarAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
         }
 
         // 100000 -> exit gas
-        uint256 limit = gasleft() - reserveGas;
+        uint256 limit = gasLeft - reserveGas;
 
         if (_swapData.length > 0) {
             try
