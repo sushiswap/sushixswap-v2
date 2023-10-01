@@ -212,7 +212,6 @@ contract StargateAdapter is ISushiXSwapV2Adapter, IStargateReceiver {
         uint256 amountLD,
         bytes memory payload
     ) external {
-        uint256 gasLeft = gasleft();
         if (msg.sender != address(stargateRouter)) revert NotStargateRouter();
 
         (address to, bytes memory _swapData, bytes memory _payloadData) = abi
@@ -220,7 +219,7 @@ contract StargateAdapter is ISushiXSwapV2Adapter, IStargateReceiver {
 
         uint256 reserveGas = 100000;
 
-        if (gasLeft < reserveGas) {
+        if (gasleft() < reserveGas) {
             if (_token != sgeth) {
                 IERC20(_token).safeTransfer(to, amountLD);
             }
@@ -233,7 +232,7 @@ contract StargateAdapter is ISushiXSwapV2Adapter, IStargateReceiver {
         }
 
         // 100000 -> exit gas
-        uint256 limit = gasLeft - reserveGas;
+        uint256 limit = gasleft() - reserveGas;
 
         if (_swapData.length > 0) {
             try

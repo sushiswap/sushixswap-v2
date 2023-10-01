@@ -18,18 +18,6 @@ interface ISushiXSwapV2 {
         bytes adapterData;
     }
 
-    event BridgeOnSource(
-        bytes2 indexed refId,
-        address indexed sender,
-        address indexed adapter
-    );
-
-    event SwapAndBridgeOnSource(
-        bytes2 indexed refId,
-        address indexed sender,
-        address indexed adapter
-    );
-
     /// @notice Update Adapter status to enable or disable for use
     /// @param _adapter The address of the adapter to update
     /// @param _status The status to set the adapter to

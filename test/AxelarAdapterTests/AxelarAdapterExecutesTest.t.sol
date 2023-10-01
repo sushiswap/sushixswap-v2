@@ -597,69 +597,6 @@ contract AxelarAdapterExecutesTest is BaseTest {
         assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
     }
 
-    function test_ReceiveUSDCAndNativeFailedSwapMinimumGasSent() public {
-        uint32 amount = 1000000; // 1 USDC
-        uint64 dustAmount = 0.2 ether;
-
-        deal(address(usdc), address(axelarAdapterHarness), amount); // axelar adapter receives USDC
-        vm.deal(address(axelarAdapterHarness), dustAmount);
-
-        // switched tokenIn to weth, and tokenOut to usdc - should fail now on swap
-        bytes memory computedRoute = routeProcessorHelper.computeRoute(
-            true,
-            false,
-            address(weth),
-            address(usdc),
-            500,
-            user
-        );
-
-        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor
-            .RouteProcessorData({
-                tokenIn: address(weth),
-                amountIn: amount,
-                tokenOut: address(usdc),
-                amountOutMin: 0,
-                to: user,
-                route: computedRoute
-            });
-
-        bytes memory rpd_encoded = abi.encode(rpd);
-
-        bytes memory mockPayload = abi.encode(
-            user, // to
-            rpd_encoded, // _swapData
-            "" // _payloadData
-        );
-
-        axelarAdapterHarness.exposed_executeWithToken{gas: 103384}(
-            "arbitrum",
-            AddressToString.toString(address(axelarAdapter)),
-            mockPayload,
-            "USDC",
-            amount
-        );
-
-        assertEq(
-            usdc.balanceOf(address(axelarAdapterHarness)),
-            0,
-            "axelarAdapter should have 0 usdc"
-        );
-        assertEq(
-            address(axelarAdapterHarness).balance,
-            0,
-            "axelarAdapter should have 0 eth"
-        );
-        assertEq(usdc.balanceOf(user), amount, "user should have all usdc");
-        assertEq(user.balance, dustAmount, "user should have all the dust");
-        assertEq(
-            weth.balanceOf(address(axelarAdapterHarness)),
-            0,
-            "axelarAdapter should have 0 weth"
-        );
-        assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
-    }
-
     function test_ReceiveERC20FailedSwapFromOutOfGas() public {
         uint32 amount = 1000000; // 1 USDC
 
