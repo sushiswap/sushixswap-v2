@@ -98,7 +98,7 @@ contract CCTPAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
         address _token
     ) external payable override {
         if (_token != address(nativeUSDC)) revert NotUSDC();
-
+        
         PayloadData memory pd = abi.decode(_payloadData, (PayloadData));
         nativeUSDC.safeTransfer(pd.target, _amountBridged);
         IPayloadExecutor(pd.target).onPayloadReceive{gas: pd.gasLimit}(
@@ -169,7 +169,6 @@ contract CCTPAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
         string memory /*sourceAddress*/,
         bytes calldata payload
     ) internal override {
-        uint256 gasLeft = gasleft();
         (
             address to,
             uint256 amount,
@@ -179,7 +178,7 @@ contract CCTPAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
 
         uint256 reserveGas = 100000;
 
-        if (gasLeft < reserveGas) {
+        if (gasleft() < reserveGas) {
             nativeUSDC.safeTransfer(to, amount);
 
             /// @dev transfer any native token
@@ -191,7 +190,7 @@ contract CCTPAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
         }
 
         // 100000 -> exit gas
-        uint256 limit = gasLeft - reserveGas;
+        uint256 limit = gasleft() - reserveGas;
 
         if (_swapData.length > 0) {
             try
