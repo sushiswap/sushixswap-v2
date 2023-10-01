@@ -148,6 +148,12 @@ contract SushiXSwapV2 is ISushiXSwapV2, Ownable {
         ISushiXSwapV2Adapter(_bridgeParams.adapter).adapterBridge{
             value: address(this).balance
         }(_bridgeParams.adapterData, _refundAddress, _swapPayload, _payloadData);
+
+        emit BridgeOnSource(
+            _bridgeParams.refId,
+            msg.sender,
+            _bridgeParams.adapter
+        );
     }
     
     /// @inheritdoc ISushiXSwapV2
@@ -171,6 +177,12 @@ contract SushiXSwapV2 is ISushiXSwapV2, Ownable {
         ISushiXSwapV2Adapter(_bridgeParams.adapter).adapterBridge{
             value: address(this).balance
         }(_bridgeParams.adapterData, _refundAddress, _swapPayload, _payloadData);
+
+        emit SwapAndBridgeOnSource(
+            _bridgeParams.refId,
+            msg.sender,
+            _bridgeParams.adapter
+        );
     }
 
     /// @notice Rescue tokens from the contract
