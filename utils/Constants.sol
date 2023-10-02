@@ -21,7 +21,7 @@ contract Constants {
     setAddress("mainnet.v2Factory", 0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac);
     setAddress("mainnet.v3Factory", 0xbACEB8eC6b9355Dfc0269C18bac9d6E2Bdc29C4F);
 
-    setAddress("mainnet.stargateRouter", 0x8731d54E9D02c286767d56ac03e8037C07e01e98);
+    setAddress("mainnet.stargateComposer", 0xeCc19E177d24551aA7ed6Bc6FE566eCa726CC8a9);
     setAddress("mainnet.stargateWidget", 0x76d4d68966728894961AA3DDC1d5B0e45668a5A6);
     setAddress("mainnet.stargateFactory", 0x06D538690AF257Da524f25D0CD52fD85b1c2173E);
     setAddress("mainnet.stargateFeeLibrary", 0x8C3085D9a554884124C998CDB7f6d7219E9C1e6F);

@@ -14,7 +14,7 @@ import "../interfaces/stargate/IStargateEthVault.sol";
 contract StargateAdapter is ISushiXSwapV2Adapter, IStargateReceiver {
     using SafeERC20 for IERC20;
 
-    IStargateRouter public immutable stargateRouter;
+    IStargateRouter public immutable stargateComposer;
     IStargateWidget public immutable stargateWidget;
     address public immutable sgeth;
     IRouteProcessor public immutable rp;
@@ -37,17 +37,17 @@ contract StargateAdapter is ISushiXSwapV2Adapter, IStargateReceiver {
     }
 
     error InsufficientGas();
-    error NotStargateRouter();
+    error NotStargateComposer();
     error RpSentNativeIn();
 
     constructor(
-        address _stargateRouter,
+        address _stargateComposer,
         address _stargateWidget,
         address _sgeth,
         address _rp,
         address _weth
     ) {
-        stargateRouter = IStargateRouter(_stargateRouter);
+        stargateComposer = IStargateRouter(_stargateComposer);
         stargateWidget = IStargateWidget(_stargateWidget);
         sgeth = _sgeth;
         rp = IRouteProcessor(_rp);
@@ -127,7 +127,7 @@ contract StargateAdapter is ISushiXSwapV2Adapter, IStargateReceiver {
         uint256 _dustAmount,
         bytes memory _payload
     ) external view returns (uint256 a, uint256 b) {
-        (a, b) = stargateRouter.quoteLayerZeroFee(
+        (a, b) = stargateComposer.quoteLayerZeroFee(
             _dstChainId,
             _functionType,
             abi.encodePacked(_receiver),
@@ -155,24 +155,20 @@ contract StargateAdapter is ISushiXSwapV2Adapter, IStargateReceiver {
         if (params.token == NATIVE_ADDRESS) {
             // RP should not send native in, since we won't know the exact amount to bridge
             if (params.amount == 0) revert RpSentNativeIn();
-            IStargateEthVault(sgeth).deposit{value: params.amount}();
-            params.token = sgeth;
         } else if (params.token == address(weth)) {
             // this case is for when rp sends weth in
             if (params.amount == 0)
                 params.amount = weth.balanceOf(address(this));
             weth.withdraw(params.amount);
-            IStargateEthVault(sgeth).deposit{value: params.amount}();
-            params.token = sgeth;
+        } else {
+            if (params.amount == 0)
+                params.amount = IERC20(params.token).balanceOf(address(this));
+
+            IERC20(params.token).safeApprove(
+                address(stargateComposer),
+                params.amount
+            );
         }
-
-        if (params.amount == 0)
-            params.amount = IERC20(params.token).balanceOf(address(this));
-
-        IERC20(params.token).safeApprove(
-            address(stargateRouter),
-            params.amount
-        );
 
         bytes memory payload = bytes("");
         if (_swapData.length > 0 || _payloadData.length > 0) {
@@ -181,7 +177,7 @@ contract StargateAdapter is ISushiXSwapV2Adapter, IStargateReceiver {
             payload = abi.encode(params.to, _swapData, _payloadData);
         }
 
-        stargateRouter.swap{value: address(this).balance}(
+        stargateComposer.swap{value: address(this).balance}(
             params.dstChainId,
             params.srcPoolId,
             params.dstPoolId,
@@ -213,7 +209,7 @@ contract StargateAdapter is ISushiXSwapV2Adapter, IStargateReceiver {
         bytes memory payload
     ) external {
         uint256 gasLeft = gasleft();
-        if (msg.sender != address(stargateRouter)) revert NotStargateRouter();
+        if (msg.sender != address(stargateComposer)) revert NotStargateComposer();
 
         (address to, bytes memory _swapData, bytes memory _payloadData) = abi
             .decode(payload, (address, bytes, bytes));
