@@ -17,7 +17,8 @@ contract Constants {
     setAddress("mainnet.usdc", 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48);
     setAddress("mainnet.usdt", 0xdAC17F958D2ee523a2206206994597C13D831ec7);
     setAddress("mainnet.link", 0x514910771AF9Ca656af840dff83E8264EcF986CA);
-    setAddress("mainnet.snxUSD", 0xb2F30A7C980f052f02563fb518dcc39e6bf38175);
+    setAddress("mainnet.rStableCoin", 0x183015a9bA6fF60230fdEaDc3F43b3D788b13e21);
+    setAddress("mainnet.betsToken", 0x94025780a1aB58868D9B2dBBB775f44b32e8E6e5);
 
     setAddress("mainnet.routeProcessor", 0x827179dD56d07A7eeA32e3873493835da2866976);
     setAddress("mainnet.v2Factory", 0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac);
