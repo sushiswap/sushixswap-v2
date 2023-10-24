@@ -198,7 +198,7 @@ contract AxelarAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
         }
 
         if (IERC20(_token).balanceOf(address(this)) > 0)
-            IERC20(_token).safeTransfer(to, amount);
+            IERC20(_token).safeTransfer(to, IERC20(_token).balanceOf(address(this)));
 
         /// @dev transfer any native token received as dust to the to address
         if (address(this).balance > 0)
