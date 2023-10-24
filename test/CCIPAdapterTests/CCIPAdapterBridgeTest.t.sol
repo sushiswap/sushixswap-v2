@@ -10,6 +10,9 @@ import "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../../utils/BaseTest.sol";
 import "../../utils/RouteProcessorHelper.sol";
 
+import {IOwnerAndAllowListManager} from "./interfaces/IOwnerAndAllowListManager.sol";
+
+
 contract CCIPAdapterBridgeTest is BaseTest {
     using SafeERC20 for IERC20;
 
@@ -71,6 +74,23 @@ contract CCIPAdapterBridgeTest is BaseTest {
         sushiXswap.updateAdapterStatus(address(ccipAdapter), true);
 
         vm.stopPrank();
+
+
+        // turn off allowlist on Evm2EvmOnRamp
+        IOwnerAndAllowListManager onRamp = IOwnerAndAllowListManager(
+            constants.getAddress("mainnet.evm2evmOnRamp")
+        );
+        IOwnerAndAllowListManager burnMintPool = IOwnerAndAllowListManager(
+            constants.getAddress("mainnet.burnMintTokenPool")
+        );
+        vm.prank(onRamp.owner());
+        onRamp.setAllowListEnabled(false);
+        vm.prank(burnMintPool.owner());
+        address[] memory removeList = new address[](1);
+        removeList[0] = address(0x0);
+        address[] memory addList = new address[](1);
+        addList[0] = address(ccipAdapter);
+        burnMintPool.applyAllowListUpdates(removeList, addList);
     }
 
     function test_RevertWhen_SendingMessage() public {

@@ -40,6 +40,8 @@ contract Constants {
     setAddress("mainnet.squidRouter", 0xce16F69375520ab01377ce7B88f5BA8C48F8D666);
 
     setAddress("mainnet.ccipRouter", 0xE561d5E02207fb5eB32cca20a699E0d8919a1476);
+    setAddress("mainnet.evm2evmOnRamp", 0x0f27c8532457b66D6037141DEB0ed479Dad04B3c);
+    setAddress("mainnet.burnMintTokenPool", 0xf0D19c04f04382048fC9ad157C529CeB2c7be823);
   } 
 
   function initAddressLabels(Vm vm) public {
