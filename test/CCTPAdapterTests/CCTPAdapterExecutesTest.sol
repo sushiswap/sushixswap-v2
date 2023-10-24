@@ -163,6 +163,60 @@ contract CCTPAdapterExecutesTest is BaseTest {
         assertGt(weth.balanceOf(user), 0, "user should have > 0 weth");
     }
 
+    function test_ReceiveExtraUSDCSwapToERC20UserReceivesExtra() public {
+        uint32 amount = 1000000; // 1 usdc
+
+        deal(address(usdc), address(cctpAdapterHarness), amount + 1); // cctp adapter receives USDC
+
+        // receives 1 minted USDC and swap to weth
+        bytes memory computedRoute = routeProcessorHelper.computeRoute(
+            true,
+            false,
+            address(usdc),
+            address(weth),
+            500,
+            user
+        );
+
+        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor
+            .RouteProcessorData({
+                tokenIn: address(usdc),
+                amountIn: amount,
+                tokenOut: address(weth),
+                amountOutMin: 0,
+                to: user,
+                route: computedRoute
+            });
+
+        bytes memory rpd_encoded = abi.encode(rpd);
+
+        bytes memory mockPayload = abi.encode(
+            user, // to
+            amount, // amount of usdc bridged
+            rpd_encoded, // _swapData
+            "" // _payloadData
+        );
+
+        cctpAdapterHarness.exposed_execute(
+            "arbitrum",
+            AddressToString.toString(address(cctpAdapter)),
+            mockPayload
+        );
+
+        assertEq(
+            usdc.balanceOf(address(cctpAdapterHarness)),
+            0,
+            "cctp adapter should have 0 usdc"
+        );
+        assertEq(usdc.balanceOf(user), 1, "user should have extra usdc");
+        assertEq(
+            weth.balanceOf(address(cctpAdapterHarness)),
+            0,
+            "cctp adapter should have 0 weth"
+        );
+        assertGt(weth.balanceOf(user), 0, "user should have > 0 weth");
+    }
+
     function test_ReceiveUSDCAndNativeSwapToERC20() public {
         uint32 amount = 1000000; // 1 usdc
         uint64 nativeAmount = 0.001 ether;
