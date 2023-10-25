@@ -104,7 +104,7 @@ contract CCIPAdapter is ISushiXSwapV2Adapter, CCIPReceiver {
       bytes calldata _adapterData,
       bytes calldata _swapData,
       bytes calldata _payloadData
-    ) public returns (uint256 fees) {
+    ) public view returns (uint256 fees) {
       CCIPBridgeParams memory params = abi.decode(
         _adapterData,
         (CCIPBridgeParams)
@@ -130,6 +130,36 @@ contract CCIPAdapter is ISushiXSwapV2Adapter, CCIPReceiver {
       );
 
       fees = router.getFee(params.destinationChain, evm2AnyMessage); 
+    }
+
+    function buildEvm2AnyMessage(
+      bytes calldata _adapterData,
+      bytes calldata _swapData,
+      bytes calldata _payloadData
+    ) public pure returns (Client.EVM2AnyMessage memory evm2AnyMessage) {
+      CCIPBridgeParams memory params = abi.decode(
+        _adapterData,
+        (CCIPBridgeParams)
+      );
+
+      if (params.amount == 0)
+        params.amount = 1000;
+      
+      // build swapData and payloadData for CCIPMessage
+      bytes memory payload = bytes("");
+      if (_swapData.length > 0 || _payloadData.length > 0) {
+        payload = abi.encode(params.to, _swapData, _payloadData);
+      }
+
+      // build ccip message
+      evm2AnyMessage = _buildCCIPMessage(
+        params.receiver,
+        payload,
+        params.token,
+        params.amount,
+        address(0), // native payment token
+        params.gasLimit
+      );
     }
 
     /// @inheritdoc ISushiXSwapV2Adapter

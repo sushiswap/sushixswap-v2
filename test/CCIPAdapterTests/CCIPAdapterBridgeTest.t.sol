@@ -112,6 +112,8 @@ contract CCIPAdapterBridgeTest is BaseTest {
         assertGt(fees, 0, "fees should be greater than 0");
     }
 
+    // todo: test build evm2AnyMessage
+
     function testFuzz_BridgeERC20(uint64 amount) public {
         vm.assume(amount > 0.1 ether);
 
