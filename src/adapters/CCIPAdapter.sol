@@ -101,12 +101,35 @@ contract CCIPAdapter is ISushiXSwapV2Adapter, CCIPReceiver {
 
     //getFee function -> router.getFee
     function getFee(
-      uint64 chainId,
-      Client.EVM2AnyMessage calldata evm2AnyMessage
+      bytes calldata _adapterData,
+      bytes calldata _swapData,
+      bytes calldata _payloadData
     ) public returns (uint256 fees) {
-      // todo: let's update this to be similar to adapterBridge params
-      // then we create the EVM2AnyMessage to use to get the fee
-      fees = router.getFee(chainId, evm2AnyMessage); 
+      CCIPBridgeParams memory params = abi.decode(
+        _adapterData,
+        (CCIPBridgeParams)
+      );
+
+      if (params.amount == 0)
+        params.amount = 1000;
+      
+      // build swapData and payloadData for CCIPMessage
+      bytes memory payload = bytes("");
+      if (_swapData.length > 0 || _payloadData.length > 0) {
+        payload = abi.encode(params.to, _swapData, _payloadData);
+      }
+
+      // build ccip message
+      Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(
+        params.receiver,
+        payload,
+        params.token,
+        params.amount,
+        address(0), // native payment token
+        params.gasLimit
+      );
+
+      fees = router.getFee(params.destinationChain, evm2AnyMessage); 
     }
 
     /// @inheritdoc ISushiXSwapV2Adapter
@@ -138,8 +161,6 @@ contract CCIPAdapter is ISushiXSwapV2Adapter, CCIPReceiver {
           if (params.gasLimit < 100000) revert InsufficientGas();
           payload = abi.encode(params.to, _swapData, _payloadData);
         }
-
-        console2.logBytes(payload);
 
         // build ccip message
         Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(

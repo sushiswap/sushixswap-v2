@@ -12,7 +12,6 @@ import "../../utils/RouteProcessorHelper.sol";
 
 import {IOwnerAndAllowListManager} from "./interfaces/IOwnerAndAllowListManager.sol";
 
-
 contract CCIPAdapterBridgeTest is BaseTest {
     using SafeERC20 for IERC20;
 
@@ -75,7 +74,6 @@ contract CCIPAdapterBridgeTest is BaseTest {
 
         vm.stopPrank();
 
-
         // turn off allowlist on Evm2EvmOnRamp
         IOwnerAndAllowListManager onRamp = IOwnerAndAllowListManager(
             constants.getAddress("mainnet.evm2evmOnRamp")
@@ -100,14 +98,32 @@ contract CCIPAdapterBridgeTest is BaseTest {
     }
 
     function test_getFee() public {
-      //uint256 fees = ccipAdapter.getFee(op_chainId, )
+        bytes memory adapterData = abi.encode(
+            polygon_chainId, // chainId
+            user, // receiver
+            address(ccipAdapter), // to
+            address(betsToken), // token
+            0.1 ether, // amount
+            150000 // gasLimit
+        );
+
+        uint256 fees = ccipAdapter.getFee(adapterData, "", "");
+
+        assertGt(fees, 0, "fees should be greater than 0");
     }
 
     function testFuzz_BridgeERC20(uint64 amount) public {
         vm.assume(amount > 0.1 ether);
-        uint64 gasNeeded = 0.1 ether; // eth for gas to pass
 
-        // todo: poll the chainlink fee
+        bytes memory adapterData = abi.encode(
+            polygon_chainId, // chainId
+            user, // receiver
+            address(ccipAdapter), // to
+            address(betsToken), // token
+            amount, // amount
+            150000 // gasLimit
+        );
+        uint256 gasNeeded = ccipAdapter.getFee(adapterData, "", "");
 
         deal(address(betsToken), user, amount);
         vm.deal(user, gasNeeded);
@@ -123,14 +139,7 @@ contract CCIPAdapterBridgeTest is BaseTest {
                 tokenIn: address(betsToken),
                 amountIn: amount,
                 to: user,
-                adapterData: abi.encode(
-                    polygon_chainId, // chainId
-                    user,    // receiver 
-                    user,    // to
-                    address(betsToken), // token
-                    amount, // amount
-                    150000  // gasLimit
-                )
+                adapterData: adapterData
             }),
             user, // _refundAddress
             "", // swap payload
@@ -143,6 +152,102 @@ contract CCIPAdapterBridgeTest is BaseTest {
             "ccipAdapter should have 0 betsToken"
         );
         assertEq(betsToken.balanceOf(user), 0, "user should have 0 betsToken");
+    }
+
+    function test_RevertWhen_BridgeERC20WithNotEnoughNativeForFees() public {
+        uint64 amount = 0.1 ether;
+
+        bytes memory adapterData = abi.encode(
+            polygon_chainId, // chainId
+            user, // receiver
+            address(ccipAdapter), // to
+            address(betsToken), // token
+            amount, // amount
+            150000 // gasLimit
+        );
+        uint256 gasNeeded = ccipAdapter.getFee(adapterData, "", "");
+
+        deal(address(betsToken), user, amount);
+        vm.deal(user, gasNeeded);
+
+        // basic betsToken bridge, mint betsToken on otherside
+        vm.startPrank(user);
+        betsToken.safeIncreaseAllowance(address(sushiXswap), amount);
+
+        bytes4 selector = bytes4(keccak256("NotEnoughNativeForFees(uint256,uint256)"));
+        vm.expectRevert(abi.encodeWithSelector(selector, 100, gasNeeded));
+        sushiXswap.bridge{value: 100}(
+            ISushiXSwapV2.BridgeParams({
+                refId: 0x0000,
+                adapter: address(ccipAdapter),
+                tokenIn: address(betsToken),
+                amountIn: amount,
+                to: user,
+                adapterData: adapterData
+            }),
+            user, // _refundAddress
+            "", // swap payload
+            "" // payload data
+        );
+    }
+
+    // todo: revert when gas limit not enough
+    function test_RevertWhen_BridgeERC20WithInsufficentGas() public {
+        uint64 amount = 0.1 ether;
+
+        bytes memory adapterData = abi.encode(
+            polygon_chainId, // chainId
+            user, // receiver
+            address(ccipAdapter), // to
+            address(betsToken), // token
+            amount, // amount
+            500 // gasLimit
+        );
+
+        bytes memory computedRoute_dst = routeProcessorHelper.computeRoute(
+            false,
+            false,
+            address(betsToken),
+            address(usdc),
+            3000,
+            user
+        );
+
+        IRouteProcessor.RouteProcessorData memory rpd_dst = IRouteProcessor
+            .RouteProcessorData({
+                tokenIn: address(betsToken),
+                amountIn: 0,
+                tokenOut: address(usdc),
+                amountOutMin: 0,
+                to: user,
+                route: computedRoute_dst
+            });
+
+        bytes memory rpd_encoded_dst = abi.encode(rpd_dst);
+
+        uint256 gasNeeded = ccipAdapter.getFee(adapterData, rpd_encoded_dst, "");
+
+        deal(address(betsToken), user, amount);
+        vm.deal(user, gasNeeded);
+
+        // basic betsToken bridge, mint betsToken on otherside
+        vm.startPrank(user);
+        betsToken.safeIncreaseAllowance(address(sushiXswap), amount);
+
+        vm.expectRevert(bytes4(keccak256("InsufficientGas()")));
+        sushiXswap.bridge{value: gasNeeded}(
+            ISushiXSwapV2.BridgeParams({
+                refId: 0x0000,
+                adapter: address(ccipAdapter),
+                tokenIn: address(betsToken),
+                amountIn: amount,
+                to: user,
+                adapterData: adapterData
+            }),
+            user, // _refundAddress
+            rpd_encoded_dst, // swap payload
+            "" // payload data
+        );
     }
 
     function test_RevertWhen_BridgeUnsupportedERC20() public {
@@ -166,11 +271,11 @@ contract CCIPAdapterBridgeTest is BaseTest {
                 to: user,
                 adapterData: abi.encode(
                     polygon_chainId, // chainId
-                    user,    // receiver 
-                    user,    // to
+                    user, // receiver
+                    user, // to
                     address(sushi), // token
                     amount, // amount
-                    150000  // gasLimit
+                    150000 // gasLimit
                 )
             }),
             user, // _refundAddress
@@ -181,12 +286,16 @@ contract CCIPAdapterBridgeTest is BaseTest {
 
     function testFuzz_BridgeERC20WithSwapData(uint64 amount) public {
         vm.assume(amount > 0.1 ether);
-        uint64 gasNeeded = 0.1 ether; // eth for gas to pass
+        
 
-        // todo: poll the chainlink fee
-
-        deal(address(betsToken), user, amount);
-        vm.deal(user, gasNeeded);
+        bytes memory adapterData = abi.encode(
+            polygon_chainId, // chainId
+            user, // receiver
+            address(ccipAdapter), // to
+            address(betsToken), // token
+            amount, // amount
+            150000 // gasLimit
+        );
 
         bytes memory computedRoute_dst = routeProcessorHelper.computeRoute(
             false,
@@ -209,6 +318,11 @@ contract CCIPAdapterBridgeTest is BaseTest {
 
         bytes memory rpd_encoded_dst = abi.encode(rpd_dst);
 
+        uint256 gasNeeded = ccipAdapter.getFee(adapterData, rpd_encoded_dst, "");
+
+        deal(address(betsToken), user, amount);
+        vm.deal(user, gasNeeded);
+
         // basic betsToken bridge, mint betsToken on otherside
         vm.startPrank(user);
         betsToken.safeIncreaseAllowance(address(sushiXswap), amount);
@@ -220,14 +334,7 @@ contract CCIPAdapterBridgeTest is BaseTest {
                 tokenIn: address(betsToken),
                 amountIn: amount,
                 to: user,
-                adapterData: abi.encode(
-                    polygon_chainId, // chainId
-                    user,    // receiver 
-                    user,    // to
-                    address(betsToken), // token
-                    amount, // amount
-                    150000  // gasLimit
-                )
+                adapterData: adapterData
             }),
             user, // _refundAddress
             rpd_encoded_dst, // swap payload
@@ -263,11 +370,11 @@ contract CCIPAdapterBridgeTest is BaseTest {
                 to: user,
                 adapterData: abi.encode(
                     polygon_chainId, // chainId
-                    user,    // receiver 
-                    user,    // to
+                    user, // receiver
+                    user, // to
                     address(betsToken), // token
                     amount, // amount
-                    150000  // gasLimit
+                    150000 // gasLimit
                 )
             }),
             user, // _refundAddress
