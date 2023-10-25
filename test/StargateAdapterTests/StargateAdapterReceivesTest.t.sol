@@ -162,6 +162,57 @@ contract StargateAdapterReceivesTest is BaseTest {
         assertGt(weth.balanceOf(user), 0, "user should have > 0 weth");
     }
 
+    function test_FuzzReceiveExtraERC20AndSwapToERC20UserReceivesExtra(uint32 amount) public {
+        vm.assume(amount > 1000000); // > 1 usdc
+
+        deal(address(usdc), address(stargateAdapter), amount + 1); // amount adapter receives
+
+        // receive 1 usdc and swap to weth
+        bytes memory computedRoute = routeProcessorHelper.computeRoute(
+            true,
+            false,
+            address(usdc),
+            address(weth),
+            500,
+            user
+        );
+
+        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor
+            .RouteProcessorData({
+                tokenIn: address(usdc),
+                amountIn: amount,
+                tokenOut: address(weth),
+                amountOutMin: 0,
+                to: user,
+                route: computedRoute
+            });
+
+        bytes memory rpd_encoded = abi.encode(rpd);
+
+        bytes memory payload = abi.encode(
+            address(user), // to
+            rpd_encoded, // _swapData
+            "" // _payloadData
+        );
+
+        vm.prank(constants.getAddress("mainnet.stargateComposer"));
+        // auto sends enough gas, so no need to calculate gasNeeded & send here
+        stargateAdapter.sgReceive(0, "", 0, address(usdc), amount, payload);
+
+        assertEq(
+            usdc.balanceOf(address(stargateAdapter)),
+            0,
+            "stargateAdapter should have 0 usdc"
+        );
+        assertEq(usdc.balanceOf(user), 1, "user should have extra usdc");
+        assertEq(
+            weth.balanceOf(address(stargateAdapter)),
+            0,
+            "stargateAdapter should have 0 weth"
+        );
+        assertGt(weth.balanceOf(user), 0, "user should have > 0 weth");
+    }
+
     function test_FuzzReceiveERC20AndSwapToUSDT(uint32 amount) public {
         vm.assume(amount > 1000000); // > 1 usdc
 

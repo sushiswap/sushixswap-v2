@@ -251,7 +251,7 @@ contract StargateAdapter is ISushiXSwapV2Adapter, IStargateReceiver {
         } else {}
 
         if (IERC20(_token).balanceOf(address(this)) > 0 && _token != sgeth)
-            IERC20(_token).safeTransfer(to, amountLD);
+            IERC20(_token).safeTransfer(to, IERC20(_token).balanceOf(address(this)));
 
         /// @dev transfer any native token received as dust to the to address
         if (address(this).balance > 0)

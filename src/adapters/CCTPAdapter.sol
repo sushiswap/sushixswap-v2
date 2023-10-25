@@ -213,7 +213,7 @@ contract CCTPAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
         }
 
         if (nativeUSDC.balanceOf(address(this)) > 0)
-            nativeUSDC.safeTransfer(to, amount);
+            nativeUSDC.safeTransfer(to, nativeUSDC.balanceOf(address(this)));
 
         /// @dev transfer any native token received as dust to the to address
         if (address(this).balance > 0)

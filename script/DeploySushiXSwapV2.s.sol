@@ -4,7 +4,7 @@ pragma solidity 0.8.10;
 import "forge-std/Script.sol";
 import "../src/SushiXSwapV2.sol";
 import "../src/adapters/StargateAdapter.sol";
-
+import "../src/adapters/AxelarAdapter.sol";
 import "../src/interfaces/IRouteProcessor.sol";
 
 contract DeploySushiXSwapV2 is Script {
@@ -27,8 +27,14 @@ contract DeploySushiXSwapV2 is Script {
     address sgETH = vm.envAddress("SG_ETH_ADDRESS");
     StargateAdapter stargateAdapter = new StargateAdapter(stargateComposer, stargateWidget, sgETH, routeProcesser, weth);
 
-    // attach stargate & squid adapter
+    // deploy axelar adapter
+    address axelarGateway = vm.envAddress("AXELAR_GATEWAY_ADDRESS");
+    address axelarGasService = vm.envAddress("AXELAR_GAS_SERVICE_ADDRESS");
+    AxelarAdapter axelarAdapter = new AxelarAdapter(axelarGateway, axelarGasService, routeProcesser, weth);
+
+    // attach stargate & axelar adapter
     sushiXSwap.updateAdapterStatus(address(stargateAdapter), true);
+    sushiXSwap.updateAdapterStatus(address(axelarAdapter), true);
 
     // transfer ownership to owner
     // set operators
