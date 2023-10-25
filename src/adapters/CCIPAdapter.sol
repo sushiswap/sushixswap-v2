@@ -104,6 +104,8 @@ contract CCIPAdapter is ISushiXSwapV2Adapter, CCIPReceiver {
       uint64 chainId,
       Client.EVM2AnyMessage calldata evm2AnyMessage
     ) public returns (uint256 fees) {
+      // todo: let's update this to be similar to adapterBridge params
+      // then we create the EVM2AnyMessage to use to get the fee
       fees = router.getFee(chainId, evm2AnyMessage); 
     }
 
@@ -225,7 +227,7 @@ contract CCIPAdapter is ISushiXSwapV2Adapter, CCIPReceiver {
 
         // if IERC20 balance transfer to to
         if (IERC20(token).balanceOf(address(this)) > 0)
-          IERC20(token).safeTransfer(to, amount);
+          IERC20(token).safeTransfer(to, IERC20(token).balanceOf(address(this)));
 
         // @dev transfer any native token leftover to the to address
         if (address(this).balance > 0)

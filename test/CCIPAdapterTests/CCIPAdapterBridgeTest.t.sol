@@ -103,20 +103,20 @@ contract CCIPAdapterBridgeTest is BaseTest {
       //uint256 fees = ccipAdapter.getFee(op_chainId, )
     }
 
-    function test_BridgeERC20() public {
-        uint256 amount = 1 ether; // 1 betsToken
-        uint64 feeNeeded = 0.1 ether; // eth for gas to pass
+    function testFuzz_BridgeERC20(uint64 amount) public {
+        vm.assume(amount > 0.1 ether);
+        uint64 gasNeeded = 0.1 ether; // eth for gas to pass
 
-        // poll the chainlink fee
+        // todo: poll the chainlink fee
 
         deal(address(betsToken), user, amount);
-        vm.deal(user, feeNeeded);
+        vm.deal(user, gasNeeded);
 
-        // basic usdc bridge, mint betsToken on otherside
+        // basic betsToken bridge, mint betsToken on otherside
         vm.startPrank(user);
         betsToken.safeIncreaseAllowance(address(sushiXswap), amount);
 
-        sushiXswap.bridge{value: feeNeeded}(
+        sushiXswap.bridge{value: gasNeeded}(
             ISushiXSwapV2.BridgeParams({
                 refId: 0x0000,
                 adapter: address(ccipAdapter),
@@ -143,5 +143,136 @@ contract CCIPAdapterBridgeTest is BaseTest {
             "ccipAdapter should have 0 betsToken"
         );
         assertEq(betsToken.balanceOf(user), 0, "user should have 0 betsToken");
+    }
+
+    function test_RevertWhen_BridgeUnsupportedERC20() public {
+        uint64 amount = 0.1 ether;
+        uint64 gasNeeded = 0.1 ether;
+
+        deal(address(sushi), user, amount);
+        vm.deal(user, gasNeeded);
+
+        // try to bridge sushi (unsupported token)
+        vm.startPrank(user);
+        sushi.safeIncreaseAllowance(address(sushiXswap), amount);
+
+        vm.expectRevert();
+        sushiXswap.bridge{value: gasNeeded}(
+            ISushiXSwapV2.BridgeParams({
+                refId: 0x0000,
+                adapter: address(ccipAdapter),
+                tokenIn: address(sushi),
+                amountIn: amount,
+                to: user,
+                adapterData: abi.encode(
+                    polygon_chainId, // chainId
+                    user,    // receiver 
+                    user,    // to
+                    address(sushi), // token
+                    amount, // amount
+                    150000  // gasLimit
+                )
+            }),
+            user, // _refundAddress
+            "", // swap payload
+            "" // payload data
+        );
+    }
+
+    function testFuzz_BridgeERC20WithSwapData(uint64 amount) public {
+        vm.assume(amount > 0.1 ether);
+        uint64 gasNeeded = 0.1 ether; // eth for gas to pass
+
+        // todo: poll the chainlink fee
+
+        deal(address(betsToken), user, amount);
+        vm.deal(user, gasNeeded);
+
+        bytes memory computedRoute_dst = routeProcessorHelper.computeRoute(
+            false,
+            false,
+            address(betsToken),
+            address(usdc),
+            3000,
+            user
+        );
+
+        IRouteProcessor.RouteProcessorData memory rpd_dst = IRouteProcessor
+            .RouteProcessorData({
+                tokenIn: address(betsToken),
+                amountIn: 0,
+                tokenOut: address(usdc),
+                amountOutMin: 0,
+                to: user,
+                route: computedRoute_dst
+            });
+
+        bytes memory rpd_encoded_dst = abi.encode(rpd_dst);
+
+        // basic betsToken bridge, mint betsToken on otherside
+        vm.startPrank(user);
+        betsToken.safeIncreaseAllowance(address(sushiXswap), amount);
+
+        sushiXswap.bridge{value: gasNeeded}(
+            ISushiXSwapV2.BridgeParams({
+                refId: 0x0000,
+                adapter: address(ccipAdapter),
+                tokenIn: address(betsToken),
+                amountIn: amount,
+                to: user,
+                adapterData: abi.encode(
+                    polygon_chainId, // chainId
+                    user,    // receiver 
+                    user,    // to
+                    address(betsToken), // token
+                    amount, // amount
+                    150000  // gasLimit
+                )
+            }),
+            user, // _refundAddress
+            rpd_encoded_dst, // swap payload
+            "" // payload data
+        );
+
+        assertEq(
+            betsToken.balanceOf(address(ccipAdapter)),
+            0,
+            "ccipAdapter should have 0 betsToken"
+        );
+        assertEq(betsToken.balanceOf(user), 0, "user should have 0 betsToken");
+    }
+
+    function test_RevertWhen_BridgeERC20WithNoGasPassed() public {
+        uint64 amount = 0.1 ether;
+        uint64 gasNeeded = 0.1 ether; // eth for gas to pass
+
+        deal(address(betsToken), user, amount);
+        vm.deal(user, gasNeeded);
+
+        // basic betsToken bridge, mint betsToken on otherside
+        vm.startPrank(user);
+        betsToken.safeIncreaseAllowance(address(sushiXswap), amount);
+
+        vm.expectRevert();
+        sushiXswap.bridge(
+            ISushiXSwapV2.BridgeParams({
+                refId: 0x0000,
+                adapter: address(ccipAdapter),
+                tokenIn: address(betsToken),
+                amountIn: amount,
+                to: user,
+                adapterData: abi.encode(
+                    polygon_chainId, // chainId
+                    user,    // receiver 
+                    user,    // to
+                    address(betsToken), // token
+                    amount, // amount
+                    150000  // gasLimit
+                )
+            }),
+            user, // _refundAddress
+            "", // swap payload
+            "" // payload data
+        );
     }
 }
