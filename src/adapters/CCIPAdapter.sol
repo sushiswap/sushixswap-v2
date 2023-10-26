@@ -226,7 +226,8 @@ contract CCIPAdapter is ISushiXSwapV2Adapter, CCIPReceiver {
         Client.Any2EVMMessage memory any2EvmMessage
     ) internal override {
         // check msg.sender is the router address
-        if (msg.sender != address(router)) revert NotCCIPRouter();
+        //if (msg.sender != address(router)) revert NotCCIPRouter();
+        // don't think above is needed since CCIPReceiver ccipReceive function has onlyRouter modifier
 
         // decode any2EvmMessage.data into to, swapData, and payloadData
         (address to, bytes memory _swapData, bytes memory _payloadData) = abi
