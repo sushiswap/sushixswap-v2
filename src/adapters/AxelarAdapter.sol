@@ -143,6 +143,9 @@ contract AxelarAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
             Bytes32ToString.toTrimmedString(params.symbol),
             params.amount
         );
+
+        // reset approval
+        IERC20(params.token).safeApprove(address(gateway), 0);
     }
 
     /// @notice Receiver function on dst chain

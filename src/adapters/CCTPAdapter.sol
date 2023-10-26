@@ -160,6 +160,9 @@ contract CCTPAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
             AddressToString.toString(params.destinationAddress),
             payload
         );
+
+        // reset approval
+        nativeUSDC.safeApprove(address(tokenMessenger), 0);
     }
 
     /// @notice Receiver function on dst chain

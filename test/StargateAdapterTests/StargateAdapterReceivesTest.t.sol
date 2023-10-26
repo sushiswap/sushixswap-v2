@@ -163,7 +163,7 @@ contract StargateAdapterReceivesTest is BaseTest {
     }
 
     function test_FuzzReceiveExtraERC20AndSwapToERC20UserReceivesExtra(uint32 amount) public {
-        vm.assume(amount > 1000000); // > 1 usdc
+        vm.assume(amount > 1000000 && amount < type(uint32).max); // > 1 usdc
 
         deal(address(usdc), address(stargateAdapter), amount + 1); // amount adapter receives
 
