@@ -194,6 +194,13 @@ contract StargateAdapter is ISushiXSwapV2Adapter, IStargateReceiver {
         );
 
         stargateWidget.partnerSwap(0x0001);
+
+        // reset approval since amounts can truncate sometimes
+        if (params.token != NATIVE_ADDRESS)
+            IERC20(params.token).safeApprove(
+                address(stargateComposer),
+                0
+            );
     }
 
     /// @notice Receiver function on dst chain
@@ -209,7 +216,8 @@ contract StargateAdapter is ISushiXSwapV2Adapter, IStargateReceiver {
         bytes memory payload
     ) external {
         uint256 gasLeft = gasleft();
-        if (msg.sender != address(stargateComposer)) revert NotStargateComposer();
+        if (msg.sender != address(stargateComposer))
+            revert NotStargateComposer();
 
         (address to, bytes memory _swapData, bytes memory _payloadData) = abi
             .decode(payload, (address, bytes, bytes));
@@ -251,7 +259,10 @@ contract StargateAdapter is ISushiXSwapV2Adapter, IStargateReceiver {
         } else {}
 
         if (IERC20(_token).balanceOf(address(this)) > 0 && _token != sgeth)
-            IERC20(_token).safeTransfer(to, IERC20(_token).balanceOf(address(this)));
+            IERC20(_token).safeTransfer(
+                to,
+                IERC20(_token).balanceOf(address(this))
+            );
 
         /// @dev transfer any native token received as dust to the to address
         if (address(this).balance > 0)
