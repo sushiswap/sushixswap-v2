@@ -17,7 +17,7 @@ contract CCIPAdapter is ISushiXSwapV2Adapter, CCIPReceiver {
     IRouteProcessor public immutable rp;
     IRouterClient router;
     IWETH public immutable weth;
-    // link address for payWithLink
+    // todo: link address for payWithLink
 
     address constant NATIVE_ADDRESS =
         0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
@@ -219,6 +219,9 @@ contract CCIPAdapter is ISushiXSwapV2Adapter, CCIPReceiver {
 
         // return extra native to sender
         _refundAddress.call{value: (address(this).balance)}("");
+
+        // reset approval
+        IERC20(params.token).safeApprove(address(router), 0);
     }
 
     // message receiver - ccipReceive
