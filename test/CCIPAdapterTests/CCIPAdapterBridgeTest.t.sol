@@ -176,7 +176,9 @@ contract CCIPAdapterBridgeTest is BaseTest {
         vm.startPrank(user);
         betsToken.safeIncreaseAllowance(address(sushiXswap), amount);
 
-        bytes4 selector = bytes4(keccak256("NotEnoughNativeForFees(uint256,uint256)"));
+        bytes4 selector = bytes4(
+            keccak256("NotEnoughNativeForFees(uint256,uint256)")
+        );
         vm.expectRevert(abi.encodeWithSelector(selector, 100, gasNeeded));
         sushiXswap.bridge{value: 100}(
             ISushiXSwapV2.BridgeParams({
@@ -227,7 +229,11 @@ contract CCIPAdapterBridgeTest is BaseTest {
 
         bytes memory rpd_encoded_dst = abi.encode(rpd_dst);
 
-        uint256 gasNeeded = ccipAdapter.getFee(adapterData, rpd_encoded_dst, "");
+        uint256 gasNeeded = ccipAdapter.getFee(
+            adapterData,
+            rpd_encoded_dst,
+            ""
+        );
 
         deal(address(betsToken), user, amount);
         vm.deal(user, gasNeeded);
@@ -288,7 +294,6 @@ contract CCIPAdapterBridgeTest is BaseTest {
 
     function testFuzz_BridgeERC20WithSwapData(uint64 amount) public {
         vm.assume(amount > 0.1 ether);
-        
 
         bytes memory adapterData = abi.encode(
             polygon_chainId, // chainId
@@ -320,7 +325,11 @@ contract CCIPAdapterBridgeTest is BaseTest {
 
         bytes memory rpd_encoded_dst = abi.encode(rpd_dst);
 
-        uint256 gasNeeded = ccipAdapter.getFee(adapterData, rpd_encoded_dst, "");
+        uint256 gasNeeded = ccipAdapter.getFee(
+            adapterData,
+            rpd_encoded_dst,
+            ""
+        );
 
         deal(address(betsToken), user, amount);
         vm.deal(user, gasNeeded);

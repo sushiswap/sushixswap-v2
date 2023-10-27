@@ -101,65 +101,63 @@ contract CCIPAdapter is ISushiXSwapV2Adapter, CCIPReceiver {
 
     //getFee function -> router.getFee
     function getFee(
-      bytes calldata _adapterData,
-      bytes calldata _swapData,
-      bytes calldata _payloadData
+        bytes calldata _adapterData,
+        bytes calldata _swapData,
+        bytes calldata _payloadData
     ) public view returns (uint256 fees) {
-      CCIPBridgeParams memory params = abi.decode(
-        _adapterData,
-        (CCIPBridgeParams)
-      );
+        CCIPBridgeParams memory params = abi.decode(
+            _adapterData,
+            (CCIPBridgeParams)
+        );
 
-      if (params.amount == 0)
-        params.amount = 1000;
-      
-      // build swapData and payloadData for CCIPMessage
-      bytes memory payload = bytes("");
-      if (_swapData.length > 0 || _payloadData.length > 0) {
-        payload = abi.encode(params.to, _swapData, _payloadData);
-      }
+        if (params.amount == 0) params.amount = 1000;
 
-      // build ccip message
-      Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(
-        params.receiver,
-        payload,
-        params.token,
-        params.amount,
-        address(0), // native payment token
-        params.gasLimit
-      );
+        // build swapData and payloadData for CCIPMessage
+        bytes memory payload = bytes("");
+        if (_swapData.length > 0 || _payloadData.length > 0) {
+            payload = abi.encode(params.to, _swapData, _payloadData);
+        }
 
-      fees = router.getFee(params.destinationChain, evm2AnyMessage); 
+        // build ccip message
+        Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(
+            params.receiver,
+            payload,
+            params.token,
+            params.amount,
+            address(0), // native payment token
+            params.gasLimit
+        );
+
+        fees = router.getFee(params.destinationChain, evm2AnyMessage);
     }
 
     function buildEvm2AnyMessage(
-      bytes calldata _adapterData,
-      bytes calldata _swapData,
-      bytes calldata _payloadData
+        bytes calldata _adapterData,
+        bytes calldata _swapData,
+        bytes calldata _payloadData
     ) public pure returns (Client.EVM2AnyMessage memory evm2AnyMessage) {
-      CCIPBridgeParams memory params = abi.decode(
-        _adapterData,
-        (CCIPBridgeParams)
-      );
+        CCIPBridgeParams memory params = abi.decode(
+            _adapterData,
+            (CCIPBridgeParams)
+        );
 
-      if (params.amount == 0)
-        params.amount = 1000;
-      
-      // build swapData and payloadData for CCIPMessage
-      bytes memory payload = bytes("");
-      if (_swapData.length > 0 || _payloadData.length > 0) {
-        payload = abi.encode(params.to, _swapData, _payloadData);
-      }
+        if (params.amount == 0) params.amount = 1000;
 
-      // build ccip message
-      evm2AnyMessage = _buildCCIPMessage(
-        params.receiver,
-        payload,
-        params.token,
-        params.amount,
-        address(0), // native payment token
-        params.gasLimit
-      );
+        // build swapData and payloadData for CCIPMessage
+        bytes memory payload = bytes("");
+        if (_swapData.length > 0 || _payloadData.length > 0) {
+            payload = abi.encode(params.to, _swapData, _payloadData);
+        }
+
+        // build ccip message
+        evm2AnyMessage = _buildCCIPMessage(
+            params.receiver,
+            payload,
+            params.token,
+            params.amount,
+            address(0), // native payment token
+            params.gasLimit
+        );
     }
 
     /// @inheritdoc ISushiXSwapV2Adapter
@@ -170,8 +168,8 @@ contract CCIPAdapter is ISushiXSwapV2Adapter, CCIPReceiver {
         bytes calldata _payloadData
     ) external payable override {
         CCIPBridgeParams memory params = abi.decode(
-          _adapterData,
-          (CCIPBridgeParams)
+            _adapterData,
+            (CCIPBridgeParams)
         );
 
         if (params.token == NATIVE_ADDRESS) {
@@ -183,39 +181,36 @@ contract CCIPAdapter is ISushiXSwapV2Adapter, CCIPReceiver {
 
         if (params.amount == 0)
             params.amount = IERC20(params.token).balanceOf(address(this));
-        
+
         // build swapData and payloadData for CCIPMessage
         bytes memory payload = bytes("");
         if (_swapData.length > 0 || _payloadData.length > 0) {
-          // @dev dst gas should be more than 100k
-          if (params.gasLimit < 100000) revert InsufficientGas();
-          payload = abi.encode(params.to, _swapData, _payloadData);
+            // @dev dst gas should be more than 100k
+            if (params.gasLimit < 100000) revert InsufficientGas();
+            payload = abi.encode(params.to, _swapData, _payloadData);
         }
 
         // build ccip message
         Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(
-          params.receiver,
-          payload,
-          params.token,
-          params.amount,
-          address(0), // native payment token
-          params.gasLimit
+            params.receiver,
+            payload,
+            params.token,
+            params.amount,
+            address(0), // native payment token
+            params.gasLimit
         );
 
         // getFees
         uint256 fees = router.getFee(params.destinationChain, evm2AnyMessage);
 
         if (fees > address(this).balance)
-          revert NotEnoughNativeForFees(address(this).balance, fees);
-        
+            revert NotEnoughNativeForFees(address(this).balance, fees);
+
         // aprove router to spend tokens
         IERC20(params.token).safeApprove(address(router), params.amount);
 
         // send message thru router
-        router.ccipSend{value: fees}(
-          params.destinationChain,
-          evm2AnyMessage
-        );
+        router.ccipSend{value: fees}(params.destinationChain, evm2AnyMessage);
 
         // return extra native to sender
         _refundAddress.call{value: (address(this).balance)}("");
@@ -234,8 +229,8 @@ contract CCIPAdapter is ISushiXSwapV2Adapter, CCIPReceiver {
 
         // decode any2EvmMessage.data into to, swapData, and payloadData
         (address to, bytes memory _swapData, bytes memory _payloadData) = abi
-          .decode(any2EvmMessage.data, (address, bytes, bytes));
-        
+            .decode(any2EvmMessage.data, (address, bytes, bytes));
+
         // any2EvmMessage.destTokenAmounts[0].token;
         // any2EvmMessage.destTokenAmounts[0].amount;
         address token = any2EvmMessage.destTokenAmounts[0].token;
@@ -246,13 +241,13 @@ contract CCIPAdapter is ISushiXSwapV2Adapter, CCIPReceiver {
 
         // if gasLeft() < reserveGas
         if (gasleft() < reserveGas) {
-          IERC20(token).safeTransfer(to, amount);
+            IERC20(token).safeTransfer(to, amount);
 
-          // @dev transfer any native token
-          if (address(this).balance > 0)
-            to.call{value: (address(this).balance)}("");
+            // @dev transfer any native token
+            if (address(this).balance > 0)
+                to.call{value: (address(this).balance)}("");
 
-          return;
+            return;
         }
 
         // 100000 -> exit gas
@@ -262,60 +257,63 @@ contract CCIPAdapter is ISushiXSwapV2Adapter, CCIPReceiver {
         // else if payloadData.length > 0 try payloadExecutor
         // else {}
         if (_swapData.length > 0) {
-          try
-            ISushiXSwapV2Adapter(address(this)).swap{gas: limit}(
-              amount,
-              _swapData,
-              token,
-              _payloadData
-            )
-          {} catch (bytes memory) {}
+            try
+                ISushiXSwapV2Adapter(address(this)).swap{gas: limit}(
+                    amount,
+                    _swapData,
+                    token,
+                    _payloadData
+                )
+            {} catch (bytes memory) {}
         } else if (_payloadData.length > 0) {
             try
-              ISushiXSwapV2Adapter(address(this)).executePayload{gas: limit}(
-                amount,
-                _payloadData,
-                token
-              )
+                ISushiXSwapV2Adapter(address(this)).executePayload{gas: limit}(
+                    amount,
+                    _payloadData,
+                    token
+                )
             {} catch (bytes memory) {}
         }
 
         // if IERC20 balance transfer to to
         if (IERC20(token).balanceOf(address(this)) > 0)
-          IERC20(token).safeTransfer(to, IERC20(token).balanceOf(address(this)));
+            IERC20(token).safeTransfer(
+                to,
+                IERC20(token).balanceOf(address(this))
+            );
 
         // @dev transfer any native token leftover to the to address
         if (address(this).balance > 0)
-          to.call{value: (address(this).balance)}("");
+            to.call{value: (address(this).balance)}("");
     }
 
     function _buildCCIPMessage(
-      address _receiver,
-      bytes memory _payload,
-      address _token,
-      uint256 _amount,
-      address _feeTokenAddress,
-      uint256 _gasLimit
+        address _receiver,
+        bytes memory _payload,
+        address _token,
+        uint256 _amount,
+        address _feeTokenAddress,
+        uint256 _gasLimit
     ) internal pure returns (Client.EVM2AnyMessage memory) {
         // set token amounts
         Client.EVMTokenAmount[]
-          memory tokenAmounts = new Client.EVMTokenAmount[](1);
+            memory tokenAmounts = new Client.EVMTokenAmount[](1);
         Client.EVMTokenAmount memory tokenAmount = Client.EVMTokenAmount({
-          token: _token,
-          amount: _amount
+            token: _token,
+            amount: _amount
         });
         tokenAmounts[0] = tokenAmount;
-        
+
         // create an EVM2AnyMesszge struct in memory w/ necessary information for sending message
         Client.EVM2AnyMessage memory evm2AnyMessage = Client.EVM2AnyMessage({
-          receiver: abi.encode(_receiver), // encoded receiver address
-          data: _payload, // encoded message
-          tokenAmounts: tokenAmounts, // the amount and type of token being transferred
-          extraArgs: Client._argsToBytes(
-            // additional arguments, setting gas limit and non-strict sequencing mode
-            Client.EVMExtraArgsV1({gasLimit: _gasLimit, strict: false})
-          ),
-          feeToken: _feeTokenAddress
+            receiver: abi.encode(_receiver), // encoded receiver address
+            data: _payload, // encoded message
+            tokenAmounts: tokenAmounts, // the amount and type of token being transferred
+            extraArgs: Client._argsToBytes(
+                // additional arguments, setting gas limit and non-strict sequencing mode
+                Client.EVMExtraArgsV1({gasLimit: _gasLimit, strict: false})
+            ),
+            feeToken: _feeTokenAddress
         });
 
         return evm2AnyMessage;
