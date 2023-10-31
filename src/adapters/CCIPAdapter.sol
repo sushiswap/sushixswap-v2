@@ -131,7 +131,7 @@ contract CCIPAdapter is ISushiXSwapV2Adapter, CCIPReceiver {
         fees = router.getFee(params.destinationChain, evm2AnyMessage);
     }
 
-    function buildEvm2AnyMessage(
+    /*function buildEVM2AnyMessage(
         bytes calldata _adapterData,
         bytes calldata _swapData,
         bytes calldata _payloadData
@@ -158,7 +158,7 @@ contract CCIPAdapter is ISushiXSwapV2Adapter, CCIPReceiver {
             address(0), // native payment token
             params.gasLimit
         );
-    }
+    }*/
 
     /// @inheritdoc ISushiXSwapV2Adapter
     function adapterBridge(
@@ -221,20 +221,20 @@ contract CCIPAdapter is ISushiXSwapV2Adapter, CCIPReceiver {
 
     // message receiver - ccipReceive
     function _ccipReceive(
-        Client.Any2EVMMessage memory any2EvmMessage
+        Client.Any2EVMMessage memory evm2AnyMessage
     ) internal override {
         // check msg.sender is the router address
         //if (msg.sender != address(router)) revert NotCCIPRouter();
         // don't think above is needed since CCIPReceiver ccipReceive function has onlyRouter modifier
 
-        // decode any2EvmMessage.data into to, swapData, and payloadData
+        // decode evm2AnyMessage.data into to, swapData, and payloadData
         (address to, bytes memory _swapData, bytes memory _payloadData) = abi
-            .decode(any2EvmMessage.data, (address, bytes, bytes));
+            .decode(evm2AnyMessage.data, (address, bytes, bytes));
 
-        // any2EvmMessage.destTokenAmounts[0].token;
-        // any2EvmMessage.destTokenAmounts[0].amount;
-        address token = any2EvmMessage.destTokenAmounts[0].token;
-        uint256 amount = any2EvmMessage.destTokenAmounts[0].amount;
+        // evm2AnyMessage.destTokenAmounts[0].token;
+        // evm2AnyMessage.destTokenAmounts[0].amount;
+        address token = evm2AnyMessage.destTokenAmounts[0].token;
+        uint256 amount = evm2AnyMessage.destTokenAmounts[0].amount;
 
         // set reserve Gas
         uint256 reserveGas = 100000;

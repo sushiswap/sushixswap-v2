@@ -7,6 +7,8 @@ import {ISushiXSwapV2} from "../../src/interfaces/ISushiXSwapV2.sol";
 import {IRouteProcessor} from "../../src/interfaces/IRouteProcessor.sol";
 import {IWETH} from "../../src/interfaces/IWETH.sol";
 import "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
+
+import "ccip/contracts/src/v0.8/ccip/interfaces/IRouterClient.sol";
 import "../../utils/BaseTest.sol";
 import "../../utils/RouteProcessorHelper.sol";
 
@@ -113,6 +115,56 @@ contract CCIPAdapterBridgeTest is BaseTest {
     }
 
     // todo: test build evm2AnyMessage
+    /*function test_buildEVM2AnyMessage() public {
+        bytes memory adapterData = abi.encode(
+            polygon_chainId, // chainId
+            user, // receiver
+            address(ccipAdapter), // to
+            address(betsToken), // token
+            0.1 ether, // amount
+            150000 // gasLimit
+        );
+        
+        bytes memory computedRoute_dst = routeProcessorHelper.computeRoute(
+            false,
+            false,
+            address(betsToken),
+            address(usdc),
+            3000,
+            user
+        );
+
+        IRouteProcessor.RouteProcessorData memory rpd_dst = IRouteProcessor
+            .RouteProcessorData({
+                tokenIn: address(betsToken),
+                amountIn: 0,
+                tokenOut: address(usdc),
+                amountOutMin: 0,
+                to: user,
+                route: computedRoute_dst
+            });
+
+        bytes memory rpd_encoded_dst = abi.encode(rpd_dst);
+
+        Client.EVM2AnyMessage memory evm2AnyMessage = ccipAdapter.buildEVM2AnyMessage(
+            adapterData,
+            rpd_encoded_dst,
+            ""
+        );
+
+        // decode emv2AnyMessage
+        (address to, bytes memory _swapData, bytes memory payloadData) = abi
+            .decode(evm2AnyMessage.data, (address, bytes, bytes));
+
+        address token = evm2AnyMessage.destTokenAmounts[0].token;
+        uint256 amount = evm2AnyMessage.destTokenAmounts[0].amount;
+
+        assertEq(token, address(betsToken), "betsToken should be destination token in evmMessage");
+        assertEq(amount, 0.1 ether, "amount should be 0.1 ether in evmMessage");
+        assertEq(to, address(ccipAdapter), "to should be ccipAdapter in evmMessage");
+        assertEq(_swapData, rpd_encoded_dst, "swapData should be rpd_encoded_dst in evmMessage");
+        assertEq(payloadData, "", "payloadData should be empty in evmMessage");
+    }*/
 
     function testFuzz_BridgeERC20(uint64 amount) public {
         vm.assume(amount > 0.1 ether);

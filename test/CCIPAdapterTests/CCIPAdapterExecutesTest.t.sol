@@ -7,16 +7,54 @@ import {ISushiXSwapV2} from "../../src/interfaces/ISushiXSwapV2.sol";
 import {IRouteProcessor} from "../../src/interfaces/IRouteProcessor.sol";
 import {IWETH} from "../../src/interfaces/IWETH.sol";
 import "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
+import "ccip/contracts/src/v0.8/ccip/interfaces/IRouterClient.sol";
 import "../../utils/BaseTest.sol";
 import "../../utils/RouteProcessorHelper.sol";
 
 import {IOwnerAndAllowListManager} from "./interfaces/IOwnerAndAllowListManager.sol";
+
+contract CCIPAdapterHarness is CCIPAdapter {
+  constructor(
+    address _router,
+    address _link,
+    address _rp,
+    address _weth
+  ) CCIPAdapter(_router, _link, _rp, _weth) {}
+
+  function exposed_ccipReceive(
+    Client.Any2EVMMessage memory any2EVMMessage
+  ) external {
+    _ccipReceive(any2EVMMessage);
+  }
+
+  function build_Any2EVMMessage(
+      address sender,
+      address token,
+      uint256 amount,
+      bytes calldata mockPayload
+    ) external returns (Client.Any2EVMMessage memory any2EVMMessage){
+        Client.EVMTokenAmount[] memory destTokenAmounts = new Client.EVMTokenAmount[](1);
+        destTokenAmounts[0] = Client.EVMTokenAmount({
+          token: token,
+          amount: amount
+        });
+
+        any2EVMMessage = Client.Any2EVMMessage({
+          messageId: 0,
+          sourceChainSelector: 3734403246176062136,
+          sender: abi.encode(sender),
+          data: mockPayload,
+          destTokenAmounts: destTokenAmounts
+        });
+    }
+}
 
 contract CCIPAdapterExecutesTest is BaseTest {
     using SafeERC20 for IERC20;
 
     SushiXSwapV2 public sushiXswap;
     CCIPAdapter public ccipAdapter;
+    CCIPAdapterHarness public ccipAdapterHarness;
     IRouteProcessor public routeProcessor;
     RouteProcessorHelper public routeProcessorHelper;
 
@@ -70,6 +108,12 @@ contract CCIPAdapterExecutesTest is BaseTest {
             constants.getAddress("mainnet.routeProcessor"),
             constants.getAddress("mainnet.weth")
         );
+        ccipAdapterHarness = new CCIPAdapterHarness(
+            constants.getAddress("mainnet.ccipRouter"),
+            constants.getAddress("mainnet.link"),
+            constants.getAddress("mainnet.routeProcessor"),
+            constants.getAddress("mainnet.weth")
+        );
         sushiXswap.updateAdapterStatus(address(ccipAdapter), true);
 
         vm.stopPrank();
@@ -91,8 +135,64 @@ contract CCIPAdapterExecutesTest is BaseTest {
         burnMintPool.applyAllowListUpdates(removeList, addList);
     }
 
-    function test_ReceiveERC20SwapToERC20() public {
+    function testFuzz_ReceiveERC20SwapToERC20(uint64 amount) public {
+      vm.assume(amount > 0.1 ether);
 
+      deal(address(betsToken), address(ccipAdapterHarness), amount);
+
+      // receive 1 betsToken and swap to usdc
+      bytes memory computedRoute_dst = routeProcessorHelper.computeRoute(
+        true,
+        false,
+        address(betsToken),
+        address(usdc),
+        3000,
+        user
+      );
+
+      IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor
+        .RouteProcessorData({
+            tokenIn: address(betsToken),
+            amountIn: amount,
+            tokenOut: address(usdc),
+            amountOutMin: 0,
+            to: user,
+            route: computedRoute_dst
+        });
+
+      bytes memory rpd_encoded = abi.encode(rpd);
+
+      bytes memory mockPayload = abi.encode(
+        user, // to
+        rpd_encoded, // _swapData
+        "" // _payloadData
+      );
+
+      Client.Any2EVMMessage memory mockEvmMessage = ccipAdapterHarness.build_Any2EVMMessage(
+        address(ccipAdapter),
+        address(betsToken),
+        amount,
+        mockPayload
+      );
+
+      ccipAdapterHarness.exposed_ccipReceive(mockEvmMessage);
+
+      assertEq(
+        betsToken.balanceOf(address(ccipAdapterHarness)),
+        0,
+        "ccipAdapterHarness should have 0 betsToken"
+      );
+      assertEq(
+        betsToken.balanceOf(user),
+        0,
+        "user should have 0 betsToken"
+      );
+      assertEq(
+        usdc.balanceOf(address(ccipAdapterHarness)),
+        0,
+        "ccipAdapterHarness should have 0 usdc"
+      );
+      assertGt(usdc.balanceOf(user), 0, "user should have > 0 usdc");
     }
 
     function test_ReceiveExtraERC20SwapToERC20UserReceivesExtra() public {
