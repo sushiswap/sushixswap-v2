@@ -24,10 +24,10 @@ contract AxelarAdapterHarness is AxelarAdapter {
     ) AxelarAdapter(_axelarGateway, _gasService, _rp, _weth) {}
 
     function exposed_executeWithToken(
-        string memory sourceChain,
-        string memory sourceAddress,
+        string calldata sourceChain,
+        string calldata sourceAddress,
         bytes calldata payload,
-        string memory tokenSymbol,
+        string calldata tokenSymbol,
         uint256 amount
     ) external {
         _executeWithToken(
