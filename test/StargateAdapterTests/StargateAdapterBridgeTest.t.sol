@@ -219,7 +219,7 @@ contract StargateAdapterBridgeTest is BaseTest {
 
         // basic usdc bridge
         vm.startPrank(user);
-        usdt.safeApprove(address(sushiXswap), amount);
+        usdt.forceApprove(address(sushiXswap), amount);
 
         (uint256 gasNeeded, ) = stargateAdapter.getFee(
             110, // dstChainId
@@ -232,8 +232,8 @@ contract StargateAdapterBridgeTest is BaseTest {
 
         (, uint256 eqFee, , , uint256 protocolFee, ) = stargateFeeLibrary
             .getFees(
-                1, // srcPoolId
-                1, // dstPoolId
+                2, // srcPoolId
+                2, // dstPoolId
                 110, // dstChainId
                 address(stargateAdapter), // from
                 amount // amountSD
