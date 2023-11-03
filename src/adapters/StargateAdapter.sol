@@ -164,7 +164,7 @@ contract StargateAdapter is ISushiXSwapV2Adapter, IStargateReceiver {
             if (params.amount == 0)
                 params.amount = IERC20(params.token).balanceOf(address(this));
 
-            IERC20(params.token).safeApprove(
+            IERC20(params.token).forceApprove(
                 address(stargateComposer),
                 params.amount
             );
@@ -194,13 +194,6 @@ contract StargateAdapter is ISushiXSwapV2Adapter, IStargateReceiver {
         );
 
         stargateWidget.partnerSwap(0x0001);
-
-        // reset approval since amounts can truncate sometimes
-        if (params.token != NATIVE_ADDRESS)
-            IERC20(params.token).safeApprove(
-                address(stargateComposer),
-                0
-            );
     }
 
     /// @notice Receiver function on dst chain

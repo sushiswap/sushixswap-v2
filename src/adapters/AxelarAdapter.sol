@@ -117,7 +117,7 @@ contract AxelarAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
         if (params.amount == 0)
             params.amount = IERC20(params.token).balanceOf(address(this));
 
-        IERC20(params.token).safeApprove(address(gateway), params.amount);
+        IERC20(params.token).forceApprove(address(gateway), params.amount);
 
         // build payload from _swapData and _payloadData
         bytes memory payload = abi.encode(params.to, _swapData, _payloadData);
@@ -143,9 +143,6 @@ contract AxelarAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
             Bytes32ToString.toTrimmedString(params.symbol),
             params.amount
         );
-
-        // reset approval
-        IERC20(params.token).safeApprove(address(gateway), 0);
     }
 
     /// @notice Receiver function on dst chain
@@ -155,10 +152,10 @@ contract AxelarAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
     /// @param tokenSymbol bridged token symbol
     /// @param amount bridged token amount
     function _executeWithToken(
-        string memory sourceChain,
-        string memory sourceAddress,
+        string calldata sourceChain,
+        string calldata sourceAddress,
         bytes calldata payload,
-        string memory tokenSymbol,
+        string calldata tokenSymbol,
         uint256 amount
     ) internal override {
         uint256 gasLeft = gasleft();

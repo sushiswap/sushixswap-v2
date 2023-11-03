@@ -124,7 +124,7 @@ contract CCTPAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
             params.amount = nativeUSDC.balanceOf(address(this));
 
         // burn params.amount of USDC tokens
-        nativeUSDC.safeApprove(address(tokenMessenger), params.amount);
+        nativeUSDC.forceApprove(address(tokenMessenger), params.amount);
 
         tokenMessenger.depositForBurn(
             params.amount,
@@ -160,9 +160,6 @@ contract CCTPAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
             AddressToString.toString(params.destinationAddress),
             payload
         );
-
-        // reset approval
-        nativeUSDC.safeApprove(address(tokenMessenger), 0);
     }
 
     /// @notice Receiver function on dst chain
