@@ -48,7 +48,7 @@ contract SquidAdapter is ISushiXSwapV2Adapter {
         );
 
         if (token != NATIVE_ADDRESS) {
-            IERC20(token).safeApprove(
+            IERC20(token).forceApprove(
                 squidRouter,
                 IERC20(token).balanceOf(address(this))
             );
