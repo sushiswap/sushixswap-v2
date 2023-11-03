@@ -152,10 +152,10 @@ contract AxelarAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
     /// @param tokenSymbol bridged token symbol
     /// @param amount bridged token amount
     function _executeWithToken(
-        string memory sourceChain,
-        string memory sourceAddress,
+        string calldata sourceChain,
+        string calldata sourceAddress,
         bytes calldata payload,
-        string memory tokenSymbol,
+        string calldata tokenSymbol,
         uint256 amount
     ) internal override {
         uint256 gasLeft = gasleft();
