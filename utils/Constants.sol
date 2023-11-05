@@ -35,6 +35,8 @@ contract Constants {
     setAddress("mainnet.cctpTokenMessenger", 0xBd3fa81B58Ba92a82136038B25aDec7066af3155);
 
     setAddress("mainnet.squidRouter", 0xce16F69375520ab01377ce7B88f5BA8C48F8D666);
+
+    setAddress("mainnet.connext", 0x8898B472C54c31894e3B9bb83cEA802a5d0e63C6);
   } 
 
   function initAddressLabels(Vm vm) public {
