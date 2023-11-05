@@ -27,6 +27,8 @@ contract ConnextAdapterXReceiveTest is BaseTest {
     IERC20 public usdc;
     IERC20 public usdt;
 
+    uint32 opDestinationDomain = 1869640809;
+
     address constant NATIVE_ADDRESS =
         0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
     address public operator = address(0xbeef);

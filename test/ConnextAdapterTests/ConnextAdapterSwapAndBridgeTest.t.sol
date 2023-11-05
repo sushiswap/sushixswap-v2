@@ -23,6 +23,8 @@ contract ConnextAdapterSwapAndBridgeTest is BaseTest {
     IERC20 public usdc;
     IERC20 public usdt;
 
+    uint32 opDestinationDomain = 1869640809;
+
     address constant NATIVE_ADDRESS =
         0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
     address public operator = address(0xbeef);
@@ -65,11 +67,276 @@ contract ConnextAdapterSwapAndBridgeTest is BaseTest {
         vm.stopPrank();
     }
 
-    function test_SwapFromERC20ToERC20AndBridge() public {}
+    function test_SwapFromERC20ToERC20AndBridge() public {
+        // basic swap 1 weth to usdc and bridge
+        uint64 amount = 1 ether; // 1 weth
+        uint64 gasNeeded = 0.1 ether; // eth for gas to pass
 
-    function test_SwapFromERC20ToUSDTAndBridge() public {}
+        deal(address(weth), user, amount);
+        vm.deal(user, gasNeeded);
 
-    function test_SwapFromNativeToERC20AndBridge() public {}
+        bytes memory computedRoute = routeProcessorHelper.computeRoute(
+            true, // rpHasToken
+            false, // isV2
+            address(weth), // tokenIn
+            address(usdc), // tokenOut
+            500, // fee
+            address(connextAdapter) // to
+        );
 
-    function test_RevertWhen_SwapFromERC20ToNativeAndBridge() public {}
+        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor
+            .RouteProcessorData({
+                tokenIn: address(weth),
+                amountIn: amount,
+                tokenOut: address(usdc),
+                amountOutMin: 0,
+                to: address(connextAdapter),
+                route: computedRoute
+            });
+
+        bytes memory rpd_encoded = abi.encode(rpd);
+
+        bytes memory adapterData = abi.encode(
+            opDestinationDomain, // dst domain
+            address(user), // target
+            address(user), // address for fallback transfers
+            address(usdc), // token to bridge
+            amount, // amouint to bridge
+            300 // slippage tolerance, 3%
+        );
+
+        vm.startPrank(user);
+        IERC20(address(weth)).safeIncreaseAllowance(
+            address(sushiXswap),
+            amount
+        );
+
+        sushiXswap.swapAndBridge{value: gasNeeded}(
+            ISushiXSwapV2.BridgeParams({
+                refId: 0x0000,
+                adapter: address(connextAdapter),
+                tokenIn: address(weth),
+                amountIn: amount,
+                to: user,
+                adapterData: adapterData
+            }),
+            user, // _refundAddress
+            rpd_encoded, // swap data
+            "", // swap payload data
+            "" // payload data
+        );
+
+        assertEq(
+            usdc.balanceOf(address(connextAdapter)),
+            0,
+            "connextAdapter should have 0 usdc"
+        );
+        assertEq(usdc.balanceOf(user), 0, "user should have 0 usdc");
+        assertEq(
+            weth.balanceOf(address(connextAdapter)),
+            0,
+            "connextAdapter should have 0 weth"
+        );
+        assertEq(weth.balanceOf(user), 0, "user should have 0 weth");
+    }
+
+    function test_SwapFromERC20ToUSDTAndBridge() public {
+        uint32 amount = 1000000; // 1 usdt
+
+        uint64 gasNeeded = 0.1 ether; // eth for gas to pass
+
+        deal(address(usdt), user, amount);
+        vm.deal(user, gasNeeded);
+
+        bytes memory computedRoute = routeProcessorHelper.computeRoute(
+            true, // rpHasToken
+            false, // isV2
+            address(usdt), // tokenIn
+            address(usdc), // tokenOut
+            100, // fee
+            address(connextAdapter) // to
+        );
+
+        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor
+            .RouteProcessorData({
+                tokenIn: address(usdt),
+                amountIn: amount,
+                tokenOut: address(usdc),
+                amountOutMin: 0,
+                to: address(connextAdapter),
+                route: computedRoute
+            });
+
+        bytes memory rpd_encoded = abi.encode(rpd);
+
+        bytes memory adapterData = abi.encode(
+            opDestinationDomain, // dst domain
+            address(user), // target
+            address(user), // address for fallback transfers
+            address(usdc), // token to bridge
+            amount, // amouint to bridge
+            300 // slippage tolerance, 3%
+        );
+
+        vm.startPrank(user);
+        IERC20(address(usdt)).safeIncreaseAllowance(
+            address(sushiXswap),
+            amount
+        );
+
+        sushiXswap.swapAndBridge{value: gasNeeded}(
+            ISushiXSwapV2.BridgeParams({
+                refId: 0x0000,
+                adapter: address(connextAdapter),
+                tokenIn: address(usdt),
+                amountIn: amount,
+                to: user,
+                adapterData: adapterData
+            }),
+            user, // _refundAddress
+            rpd_encoded, // swap data
+            "", // swap payload data
+            "" // payload data
+        );
+
+        assertEq(
+            usdc.balanceOf(address(connextAdapter)),
+            0,
+            "connextAdapter should have 0 usdc"
+        );
+        assertEq(usdc.balanceOf(user), 0, "user should have 0 usdc");
+        assertEq(
+            usdt.balanceOf(address(connextAdapter)),
+            0,
+            "connextAdapter should have 0 usdt"
+        );
+    }
+
+    function test_SwapFromNativeToERC20AndBridge() public {
+        // basic swap 1 eth to usdc and bridge
+        uint64 amount = 1 ether; // 1 eth
+        uint64 gasNeeded = 0.1 ether; // eth for gas to pass
+
+        uint256 valueToSend = amount + gasNeeded;
+        vm.deal(user, valueToSend);
+
+        bytes memory computeRoute = routeProcessorHelper.computeRouteNativeIn(
+            address(weth), // wrapToken
+            false, // isV2
+            address(usdc), // tokenOut
+            500, // fee
+            address(connextAdapter) // to
+        );
+
+        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor
+            .RouteProcessorData({
+                tokenIn: NATIVE_ADDRESS,
+                amountIn: amount,
+                tokenOut: address(usdc),
+                amountOutMin: 0,
+                to: address(connextAdapter),
+                route: computeRoute
+            });
+
+        bytes memory rpd_encoded = abi.encode(rpd);
+
+        bytes memory adapterData = abi.encode(
+            opDestinationDomain, // dst domain
+            address(user), // target
+            address(user), // address for fallback transfers
+            address(usdc), // token to bridge
+            amount, // amouint to bridge
+            300 // slippage tolerance, 3%
+        );
+
+        vm.startPrank(user);
+        sushiXswap.swapAndBridge{value: valueToSend}(
+            ISushiXSwapV2.BridgeParams({
+                refId: 0x0000,
+                adapter: address(connextAdapter),
+                tokenIn: NATIVE_ADDRESS, // doesn't matter what you put for bridge params when swapping first
+                amountIn: amount,
+                to: user,
+                adapterData: adapterData
+            }),
+            user, // _refundAddress
+            rpd_encoded, // swap data
+            "", // swap payload data
+            "" // payload data
+        );
+
+        assertEq(
+            address(connextAdapter).balance,
+            0,
+            "connextAdapter should have 0 eth"
+        );
+        assertEq(user.balance, 0, "user should have 0 eth");
+        assertEq(
+            usdc.balanceOf(address(connextAdapter)),
+            0,
+            "connextAdapter should have 0 usdc"
+        );
+        assertEq(usdc.balanceOf(user), 0, "user should have 0 usdc");
+    }
+
+    function test_RevertWhen_SwapFromERC20ToNativeAndBridge() public {
+        // basic swap 1 usdc to native and bridge
+        uint32 amount = 1000000; // 1 usdc
+        uint64 gasNeeded = 0.1 ether; // eth for gas to pass
+
+        deal(address(usdc), user, amount);
+        vm.deal(user, gasNeeded);
+
+        bytes memory computeRoute = routeProcessorHelper.computeRouteNativeOut(
+            true, // rpHasToken
+            false, // isV2
+            address(usdc), // tokenIn
+            address(weth), // tokenOut
+            500, // fee
+            address(connextAdapter) // to
+        );
+
+        IRouteProcessor.RouteProcessorData memory rpd = IRouteProcessor
+            .RouteProcessorData({
+                tokenIn: address(usdc),
+                amountIn: amount,
+                tokenOut: NATIVE_ADDRESS,
+                amountOutMin: 0,
+                to: address(connextAdapter),
+                route: computeRoute
+            });
+
+        bytes memory rpd_encoded = abi.encode(rpd);
+
+        bytes memory adapterData = abi.encode(
+            opDestinationDomain, // dst domain
+            address(user), // target
+            address(user), // address for fallback transfers
+            NATIVE_ADDRESS, // token to bridge
+            amount, // amouint to bridge
+            300 // slippage tolerance, 3%
+        );
+
+        vm.startPrank(user);
+        IERC20(address(usdc)).safeIncreaseAllowance(
+            address(sushiXswap),
+            amount
+        );
+
+        vm.expectRevert(bytes4(keccak256("RpSentNativeIn()")));
+        sushiXswap.swapAndBridge{value: gasNeeded}(
+            ISushiXSwapV2.BridgeParams({
+                refId: 0x0000,
+                adapter: address(connextAdapter),
+                tokenIn: address(weth), // doesn't matter what you put for bridge params when swapping first
+                amountIn: amount,
+                to: user,
+                adapterData: adapterData
+            }),
+            user, // _refundAddress
+            rpd_encoded, // swap data
+            "", // swap payload data
+            "" // payload data
+        );
+    }
 }
