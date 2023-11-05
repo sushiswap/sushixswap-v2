@@ -190,9 +190,9 @@ contract AxelarAdapterBridgeTest is BaseTest {
         assertEq(
             address(axelarAdapter).balance,
             0,
-            "axelarAdapter should have 0 usdc"
+            "axelarAdapter should have 0 native"
         );
-        assertEq(user.balance, 0, "user should have 0 usdc");
+        assertEq(user.balance, 0, "user should have 0 native");
     }
 
     function test_RevertWhen_BridgeUnsupportedERC20() public {

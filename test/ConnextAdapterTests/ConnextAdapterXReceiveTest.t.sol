@@ -76,6 +76,9 @@ contract ConnextAdapterXReceiveTest is BaseTest {
 
     function test_ReceiveERC20SwapToERC20() public {}
 
+    function test_ReceiveWethUnwrapIntoNativeWithRP() public {
+    }
+
     function test_ReceiveExtraERC20SwapToERC20UserReceivesExtra() public {}
 
     function test_ReceiveUSDTSwapToERC20() public {}

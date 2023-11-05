@@ -32,6 +32,7 @@ contract ConnextAdapter is ISushiXSwapV2Adapter, IXReceiver {
 
   error RpSentNativeIn();
   error NotConnext();
+  error NoGasReceived();
 
   constructor(
     address _connext,
@@ -126,6 +127,10 @@ contract ConnextAdapter is ISushiXSwapV2Adapter, IXReceiver {
 
         // build payload from params.to, _swapData, and _payloadData
         bytes memory payload = abi.encode(params.to, _swapData, _payloadData);
+
+        // check if gas was received, since it doesn't throw on xcall
+        if (address(this).balance == 0)
+          revert NoGasReceived();
 
         connext.xcall{value: address(this).balance} (
           params.destinationDomain,
