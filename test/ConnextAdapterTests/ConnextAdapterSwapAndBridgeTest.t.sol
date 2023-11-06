@@ -67,7 +67,7 @@ contract ConnextAdapterSwapAndBridgeTest is BaseTest {
         vm.stopPrank();
     }
 
-    function test_SwapFromERC20ToERC20AndBridge() public {
+    function test_SwapFromERC20ToERC20AndBridgeConnext() public {
         // basic swap 1 weth to usdc and bridge
         uint64 amount = 1 ether; // 1 weth
         uint64 gasNeeded = 0.1 ether; // eth for gas to pass
@@ -101,7 +101,7 @@ contract ConnextAdapterSwapAndBridgeTest is BaseTest {
             address(user), // target
             address(user), // address for fallback transfers
             address(usdc), // token to bridge
-            amount, // amouint to bridge
+            0, // amount to bridge - 0 since swap first
             300 // slippage tolerance, 3%
         );
 
@@ -174,7 +174,7 @@ contract ConnextAdapterSwapAndBridgeTest is BaseTest {
             address(user), // target
             address(user), // address for fallback transfers
             address(usdc), // token to bridge
-            amount, // amouint to bridge
+            0, // amouint to bridge
             300 // slippage tolerance, 3%
         );
 
@@ -245,7 +245,7 @@ contract ConnextAdapterSwapAndBridgeTest is BaseTest {
             address(user), // target
             address(user), // address for fallback transfers
             address(usdc), // token to bridge
-            amount, // amouint to bridge
+            0, // amouint to bridge
             300 // slippage tolerance, 3%
         );
 
@@ -313,7 +313,7 @@ contract ConnextAdapterSwapAndBridgeTest is BaseTest {
             address(user), // target
             address(user), // address for fallback transfers
             NATIVE_ADDRESS, // token to bridge
-            amount, // amouint to bridge
+            0, // amouint to bridge
             300 // slippage tolerance, 3%
         );
 

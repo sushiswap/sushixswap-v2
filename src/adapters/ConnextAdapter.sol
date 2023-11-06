@@ -161,8 +161,6 @@ contract ConnextAdapter is ISushiXSwapV2Adapter, IXReceiver {
         uint256 gasLeft = gasleft();
         if (msg.sender != address(connext))
           revert NotConnext();
-        
-        // todo: check that msg sender does come from connext contract?
 
         (address to, bytes memory _swapData, bytes memory _payloadData) = abi
           .decode(_callData, (address, bytes, bytes));
@@ -175,6 +173,8 @@ contract ConnextAdapter is ISushiXSwapV2Adapter, IXReceiver {
           /// @dev transfer any native token
           if (address(this).balance > 0)
             to.call{value: (address(this).balance)}("");
+          
+          return bytes("");
         } 
 
         // 100000 -> exit gas
