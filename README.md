@@ -50,7 +50,7 @@ make test
 [0xbF3B71decBCEFABB3210B9D8f18eC22e0556f5F0](https://etherscan.io/address/0xbF3B71decBCEFABB3210B9D8f18eC22e0556f5F0)
 </td><td>
 
-[0x02a480a258361c9bc3eaacbd6473364c67adcd3a](https://etherscan.io/address/0x02a480a258361c9bc3eaacbd6473364c67adcd3a)
+[0x5AbEdAc449A8301467c3e124B98e7151641F1e56](https://etherscan.io/address/0x5AbEdAc449A8301467c3e124B98e7151641F1e56)
 </td></tr>
 <tr>
 <td>BSC</td>
@@ -62,7 +62,7 @@ make test
 [0x454714482cA38fBBcE7fC76D96Ba1CE2028A4fF6](https://bscscan.com/address/0x454714482cA38fBBcE7fC76D96Ba1CE2028A4fF6)
 </td><td>
 
-[0x02a480a258361c9bc3eaacbd6473364c67adcd3a](https://bscscan.com/address/0x02a480a258361c9bc3eaacbd6473364c67adcd3a)
+[0x580ED43F3BBa06555785C81c2957efCCa71f7483](https://bscscan.com/address/0x580ED43F3BBa06555785C81c2957efCCa71f7483)
 </td></tr>
 <tr>
 <td>Avalanche</td>
@@ -74,7 +74,7 @@ make test
 [0x454714482cA38fBBcE7fC76D96Ba1CE2028A4fF6](https://snowtrace.io/address/0x454714482cA38fBBcE7fC76D96Ba1CE2028A4fF6)
 </td><td>
 
-[0x02a480a258361c9bc3eaacbd6473364c67adcd3a](https://snowtrace.io/address/0x02a480a258361c9bc3eaacbd6473364c67adcd3a)
+[0x580ED43F3BBa06555785C81c2957efCCa71f7483](https://snowtrace.io/address/0x580ED43F3BBa06555785C81c2957efCCa71f7483)
 </td></tr>
 <tr>
 <td>Polygon</td>
@@ -86,7 +86,7 @@ make test
 [0xFF51a7C624Eb866917102707F3dA8bFb99Db8692](https://polygonscan.com/address/0xFF51a7C624Eb866917102707F3dA8bFb99Db8692)
 </td><td>
 
-[0x01f27998B1fc39b5280BcBe2a24043f9dbDFc305](https://polygonscan.com/address/0x01f27998B1fc39b5280BcBe2a24043f9dbDFc305)
+[0xA62eC622DbA415Aa94110739B1f951B1202Cf322](https://polygonscan.com/address/0xA62eC622DbA415Aa94110739B1f951B1202Cf322)
 </td></tr>
 <tr>
 <td>Arbitrum</td>
@@ -98,7 +98,7 @@ make test
 [0x2ABf469074dc0b54d793850807E6eb5Faf2625b1](https://arbiscan.io/address/0x2ABf469074dc0b54d793850807E6eb5Faf2625b1)
 </td><td>
 
-[0x02a480a258361c9bc3eaacbd6473364c67adcd3a](https://arbiscan.io/address/0x02a480a258361c9bc3eaacbd6473364c67adcd3a)
+[0x078047150F8efa223B3d407f00E462e38f4B1b9C](https://arbiscan.io/address/0x078047150F8efa223B3d407f00E462e38f4B1b9C)
 </td></tr>
 <tr>
 <td>Optimism</td>
@@ -110,7 +110,7 @@ make test
 [0x454714482cA38fBBcE7fC76D96Ba1CE2028A4fF6](https://optimistic.etherscan.io/address/0x454714482cA38fBBcE7fC76D96Ba1CE2028A4fF6)
 </td><td>
 
-[0x02a480a258361c9bc3eaacbd6473364c67adcd3a](https://optimistic.etherscan.io/address/0x02a480a258361c9bc3eaacbd6473364c67adcd3a)
+[0x580ED43F3BBa06555785C81c2957efCCa71f7483](https://optimistic.etherscan.io/address/0x580ED43F3BBa06555785C81c2957efCCa71f7483)
 </td></tr>
 <tr>
 <td>Base</td>
@@ -122,7 +122,7 @@ make test
 [0xbF3B71decBCEFABB3210B9D8f18eC22e0556f5F0](https://basescan.org/address/0xbF3B71decBCEFABB3210B9D8f18eC22e0556f5F0)
 </td><td>
 
-[0x02a480a258361c9bc3eaacbd6473364c67adcd3a](https://basescan.org/address/0x02a480a258361c9bc3eaacbd6473364c67adcd3a)
+[0x5AbEdAc449A8301467c3e124B98e7151641F1e56](https://basescan.org/address/0x5AbEdAc449A8301467c3e124B98e7151641F1e56)
 </td></tr>
 <tr>
 <td>Fantom</td>
@@ -134,7 +134,7 @@ make test
 [0x2ABf469074dc0b54d793850807E6eb5Faf2625b1](https://ftmscan.com/address/0x2ABf469074dc0b54d793850807E6eb5Faf2625b1)
 </td><td>
 
-[0x02a480a258361c9Bc3eaacBd6473364C67adCD3a](https://ftmscan.com/address/0x02a480a258361c9Bc3eaacBd6473364C67adCD3a)
+[0x078047150F8efa223B3d407f00E462e38f4B1b9C](https://ftmscan.com/address/0x078047150F8efa223B3d407f00E462e38f4B1b9C)
 </td></tr>
 <tr>
 <td>Linea</td>
@@ -146,7 +146,7 @@ make test
 [0x454714482cA38fBBcE7fC76D96Ba1CE2028A4fF6](https://lineascan.build/address/0x454714482cA38fBBcE7fC76D96Ba1CE2028A4fF6)
 </td><td>
 
-[0x01f27998B1fc39b5280BcBe2a24043f9dbDFc305](https://lineascan.build/address/0x01f27998b1fc39b5280bcbe2a24043f9dbdfc305)
+[0x580ED43F3BBa06555785C81c2957efCCa71f7483](https://lineascan.build/address/0x580ED43F3BBa06555785C81c2957efCCa71f7483)
 </td></tr>
 <tr>
 <td>Kava</td>
@@ -158,7 +158,7 @@ make test
 [0xDf1cfEc0DCF05bf647FbfbE12ea550Baa102E195](https://kavascan.com/address/0xDf1cfEc0DCF05bf647FbfbE12ea550Baa102E195)
 </td><td>
 
-[0x630BE2985674D31920BAbb4F96657960F131E7b1](https://kavascan.com/address/0x630BE2985674D31920BAbb4F96657960F131E7b1)
+[0xb620Fb60194D81547Df18F351b94236EecbE6Acf](https://kavascan.com/address/0xb620Fb60194D81547Df18F351b94236EecbE6Acf)
 </td></tr>
 <tr>
 <td>Metis</td>
