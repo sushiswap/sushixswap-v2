@@ -6,6 +6,7 @@ import "../interfaces/IRouteProcessor.sol";
 import "../interfaces/IWETH.sol";
 
 import "axelar-gmp-sdk-solidity/contracts/executable/AxelarExecutable.sol";
+import "axelar-gmp-sdk-solidity/contracts/express/ExpressExecutable.sol";
 import "axelar-gmp-sdk-solidity/contracts/interfaces/IAxelarGasService.sol";
 import "axelar-gmp-sdk-solidity/contracts/interfaces/IAxelarGateway.sol";
 import "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -30,6 +31,7 @@ contract AxelarAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
         bytes32 symbol; // bridged token symbol
         uint256 amount; // amount to bridge
         address to; // address for fallback transfers on _execute call
+        bool useExpress;
     }
 
     error RpSentNativeIn();
@@ -123,17 +125,31 @@ contract AxelarAdapter is ISushiXSwapV2Adapter, AxelarExecutable {
         bytes memory payload = abi.encode(params.to, _swapData, _payloadData);
 
         // pay native gas to gasService
-        axelarGasService.payNativeGasForContractCallWithToken{
-            value: address(this).balance
-        }(
-            address(this),
-            Bytes32ToString.toTrimmedString(params.destinationChain),
-            AddressToString.toString(params.destinationAddress),
-            payload,
-            Bytes32ToString.toTrimmedString(params.symbol),
-            params.amount,
-            payable(_refundAddress) // refund address
-        );
+        if (params.useExpress) {
+            axelarGasService.payNativeGasForExpressCallWithToken{
+                value: address(this).balance
+            }(
+                address(this),
+                Bytes32ToString.toTrimmedString(params.destinationChain),
+                AddressToString.toString(params.destinationAddress),
+                payload,
+                Bytes32ToString.toTrimmedString(params.symbol),
+                params.amount,
+                payable(_refundAddress) // refund address
+            );
+        } else {
+            axelarGasService.payNativeGasForContractCallWithToken{
+                value: address(this).balance
+            }(
+                address(this),
+                Bytes32ToString.toTrimmedString(params.destinationChain),
+                AddressToString.toString(params.destinationAddress),
+                payload,
+                Bytes32ToString.toTrimmedString(params.symbol),
+                params.amount,
+                payable(_refundAddress) // refund address
+            );
+        }
 
         // sendToken and message w/ payload to the gateway contract
         gateway.callContractWithToken(
