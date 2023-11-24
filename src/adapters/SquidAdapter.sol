@@ -54,7 +54,12 @@ contract SquidAdapter is ISushiXSwapV2Adapter {
             );
         }
 
-        squidRouter.call{value: address(this).balance}(squidRouterData);
+        (bool success, bytes memory returnBytes) = squidRouter.call{value: address(this).balance}(squidRouterData);
+        if (!success) {
+            assembly {
+                revert(add(32, returnBytes), mload(returnBytes))
+            }
+        }
     }
 
     /// @inheritdoc ISushiXSwapV2Adapter
