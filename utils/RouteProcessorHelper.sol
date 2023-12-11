@@ -166,4 +166,28 @@ contract RouteProcessorHelper {
       to
     );
   }
+
+  function computeRouteWrapNative(address to) public view returns (bytes memory route) {
+    route = abi.encodePacked(
+      uint8(0x03), // 0x03 processNative cmd code
+      uint8(0x01), // 1 route
+      uint16(0xffff), // full amount
+      uint8(0x02), // wrapNative pool type
+      uint8(0x01), // wrap direction (deposit)
+      to, // to
+      weth
+    );
+  }
+
+  function computeRouteUnwrapNative(bool rpHasToken, address to) public view returns (bytes memory route) {
+    route = abi.encodePacked(
+      uint8(rpHasToken ? 0x01 : 0x02), // 0x01 for pre-transfer to rp & 0x02 for transferFrom msg.sender
+      weth,
+      uint8(0x01), // 1 route
+      uint16(0xffff), // full amount
+      uint8(0x02), // wrapNative pool type
+      uint8(0x00), // directionAndFake (unwrap weth)
+      to // to
+    );
+  }
 }

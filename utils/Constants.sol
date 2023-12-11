@@ -35,6 +35,13 @@ contract Constants {
     setAddress("mainnet.cctpTokenMessenger", 0xBd3fa81B58Ba92a82136038B25aDec7066af3155);
 
     setAddress("mainnet.squidRouter", 0xce16F69375520ab01377ce7B88f5BA8C48F8D666);
+    setAddress("mainnet.squidMulticall", 0x4fd39C9E151e50580779bd04B1f7eCc310079fd3);
+
+    // Arbitrum
+    setAddress("arbitrum.axlUSDC", 0xEB466342C4d449BC9f53A865D5Cb90586f405215);
+    setAddress("arbitrum.axlUSDT", 0x7f5373AE26c3E8FfC4c77b7255DF7eC1A9aF52a6);
+    setAddress("arbitrum.axlETH", 0xb829b68f57CC546dA7E5806A929e53bE32a4625D);
+    setAddress("arbitrum.usdt", 0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9);
   } 
 
   function initAddressLabels(Vm vm) public {
