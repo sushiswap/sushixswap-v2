@@ -164,10 +164,10 @@ make test
 <td>Metis</td>
 <td>
 
-[0x804b526e5bF4349819fe2Db65349d0825870F8Ee](https://andromeda-explorer.metis.io/address/0x804b526e5bF4349819fe2Db65349d0825870F8Ee)
+[0x804b526e5bF4349819fe2Db65349d0825870F8Ee](https://explorer.metis.io/address/0x804b526e5bF4349819fe2Db65349d0825870F8Ee)
 </td><td>
 
-[0xDf1cfEc0DCF05bf647FbfbE12ea550Baa102E195](https://andromeda-explorer.metis.io/address/0xDf1cfEc0DCF05bf647FbfbE12ea550Baa102E195)
+[0xDf1cfEc0DCF05bf647FbfbE12ea550Baa102E195](https://explorer.metis.io/address/0xDf1cfEc0DCF05bf647FbfbE12ea550Baa102E195)
 </td><td>
 </td></tr>
 <tr>
