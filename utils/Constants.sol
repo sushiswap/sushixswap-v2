@@ -32,9 +32,15 @@ contract Constants {
     setAddress("mainnet.axelarGateway", 0x4F4495243837681061C4743b74B3eEdf548D56A5);
     setAddress("mainnet.axelarGasService", 0x2d5d7d31F671F86C782533cc367F14109a082712);
 
+    setAddress("mainnet.nitroAssetForwarder", 0xC21e4ebD1d92036Cb467b53fE3258F219d909Eb9);
+
     setAddress("mainnet.cctpTokenMessenger", 0xBd3fa81B58Ba92a82136038B25aDec7066af3155);
 
     setAddress("mainnet.squidRouter", 0xce16F69375520ab01377ce7B88f5BA8C48F8D666);
+
+    // Arbitrum
+    setAddress("arbitrum.usdt", 0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9);
+    setAddress("arbitrum.weth", 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1);
   } 
 
   function initAddressLabels(Vm vm) public {
