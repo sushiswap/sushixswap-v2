@@ -17,7 +17,7 @@ contract Constants {
     setAddress("mainnet.usdc", 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48);
     setAddress("mainnet.usdt", 0xdAC17F958D2ee523a2206206994597C13D831ec7);
 
-    setAddress("mainnet.routeProcessor", 0x827179dD56d07A7eeA32e3873493835da2866976);
+    setAddress("mainnet.routeProcessor", 0xe43ca1Dee3F0fc1e2df73A0745674545F11A59F5);
     setAddress("mainnet.v2Factory", 0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac);
     setAddress("mainnet.v3Factory", 0xbACEB8eC6b9355Dfc0269C18bac9d6E2Bdc29C4F);
 
@@ -35,6 +35,13 @@ contract Constants {
     setAddress("mainnet.cctpTokenMessenger", 0xBd3fa81B58Ba92a82136038B25aDec7066af3155);
 
     setAddress("mainnet.squidRouter", 0xce16F69375520ab01377ce7B88f5BA8C48F8D666);
+    setAddress("mainnet.squidMulticall", 0x4fd39C9E151e50580779bd04B1f7eCc310079fd3);
+
+    // Arbitrum
+    setAddress("arbitrum.axlUSDC", 0xEB466342C4d449BC9f53A865D5Cb90586f405215);
+    setAddress("arbitrum.axlUSDT", 0x7f5373AE26c3E8FfC4c77b7255DF7eC1A9aF52a6);
+    setAddress("arbitrum.axlETH", 0xb829b68f57CC546dA7E5806A929e53bE32a4625D);
+    setAddress("arbitrum.usdt", 0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9);
   } 
 
   function initAddressLabels(Vm vm) public {
